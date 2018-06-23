@@ -33,8 +33,8 @@ class command:
 class command_spec(sb.Spec):
     def normalise_filled(self, meta, val):
         val = sb.set_options(
-              command = sb.required(sb.string_spec())
-            , args = sb.dictionary_spec()
+              args = sb.dictionary_spec()
+            , command = sb.required(sb.string_spec())
             ).normalise(meta, val)
 
         args = val["args"]
@@ -217,7 +217,7 @@ class QueryCommand(Command):
         script = self.target.script(msg)
         reference = self.finder.find(filtr=fltr)
 
-        afr = await self.finder.loops.args_for_run()
+        afr = await self.finder.args_for_run()
         async for pkt, _, _ in script.run_with(reference, afr
             , multiple_replies=self.multiple, error_catcher=result.error, timeout=self.timeout
             ):
@@ -257,7 +257,7 @@ class TransformCommand(Command):
         script = self.target.script(msg)
         reference = await self.finder.serials(filtr=fltr)
 
-        afr = await self.finder.loops.args_for_run()
+        afr = await self.finder.args_for_run()
         await script.run_with_all(reference, afr, error_catcher=result.error, timeout=self.timeout)
         result = result.result
 
@@ -302,7 +302,7 @@ class SetCommand(Command):
         script = self.target.script(msg)
         reference = await self.finder.serials(filtr=fltr)
 
-        afr = await self.finder.loops.args_for_run()
+        afr = await self.finder.args_for_run()
         await script.run_with_all(reference, afr, error_catcher=result.error, timeout=self.timeout)
         result = result.result
 
