@@ -1,0 +1,13 @@
+#!/usr/bin/env python3.6
+
+import runpy
+import os
+
+this_dir = os.path.abspath(os.path.dirname(__file__))
+
+version_mod = runpy.run_path(os.path.join(this_dir, "photons_interactor", "__init__.py"))
+
+from venvstarter import ignite
+ignite(__file__, "photons-interactor"
+    , deps = ["-e file:" + this_dir + "#egg=photons-interactor=={0}".format(version_mod["VERSION"])]
+    )
