@@ -65,7 +65,7 @@ class Commander:
 
     async def execute(self, command):
         if not isinstance(command, Command):
-            command = self.command_spec.normalise(self.meta.at("command"), command)
+            command = self.command_spec.normalise(self.meta.at("<input>"), command)
         return await command.execute()
 
 @command(name="help")
