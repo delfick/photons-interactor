@@ -12,7 +12,6 @@ from option_merge import MergedOptions
 from textwrap import dedent
 
 available_commands = {}
-available_commands_specs = {}
 
 class NoSuchCommand(PhotonsAppError):
     desc = "no such command"
@@ -26,8 +25,8 @@ class command:
 
     def __call__(self, kls):
         kls.__interactor_command__ = True
-        available_commands[self.name] = kls
-        available_commands_specs[self.name] = kls.FieldSpec(formatter=MergedOptionStringFormatter)
+        spec = kls.FieldSpec(formatter=MergedOptionStringFormatter)
+        available_commands[self.name] = {"kls": kls, "spec": spec}
         return kls
 
 class command_spec(sb.Spec):
@@ -43,7 +42,7 @@ class command_spec(sb.Spec):
         if command not in available_commands:
             raise BadSpecValue("Unknown command", wanted=command, available=sorted(available_commands), meta=meta)
 
-        return available_commands_specs[command].normalise(meta.at("args"), args)
+        return available_commands[command]["spec"].normalise(meta.at("args"), args)
 
 class Command(dictobj.Spec):
     async def execute(self):
@@ -83,7 +82,7 @@ class HelpCommand(Command):
         if self.command not in available_commands:
             raise NoSuchCommand(wanted=self.command, available=sorted(available_commands))
         header = f"Command {self.command}"
-        doc = dedent(available_commands[self.command].__doc__)
+        doc = dedent(available_commands[self.command]["kls"].__doc__)
         extra = ""
         if self.command == "help":
             extra = "\nAvailable commands:\n{}".format(
