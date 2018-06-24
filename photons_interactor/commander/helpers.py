@@ -1,8 +1,12 @@
+from photons_interactor.commander.spec_description import signature
 from photons_interactor.commander.errors import NoSuchPacket
+
+from photons_app.formatter import MergedOptionStringFormatter
 
 from photons_device_finder import Filter
 
 from input_algorithms.meta import Meta
+from textwrap import dedent
 
 def filter_from_matcher(matcher, refresh=None):
     if matcher is None:
@@ -84,3 +88,16 @@ class ResultBuilder:
             if "errors" not in self.result:
                 self.result["errors"] = []
             self.result["errors"].append(err)
+
+def fields_description(kls):
+    final_specs = kls.FieldSpec(formatter=MergedOptionStringFormatter).make_spec(Meta.empty()).kwargs
+
+    for name, field in kls.fields.items():
+        hlp = ""
+        if type(field) is tuple:
+            hlp, field = field
+        else:
+            hlp = field.help
+
+        if hlp:
+            yield name, " ".join(signature(final_specs[name])), dedent(hlp).strip()
