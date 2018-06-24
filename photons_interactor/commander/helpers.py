@@ -48,17 +48,17 @@ async def run(script, fltr, finder, add_replies=True, **kwargs):
         if add_replies:
             result.add_packet(pkt)
 
-    result = result.result
-
     for serial in reference:
-        if serial not in result["results"]:
-            result["results"][serial] = "ok"
+        result.set_ok(serial)
 
     return result
 
 class ResultBuilder:
     def __init__(self):
         self.result = {"results": {}}
+
+    def as_dict(self):
+        return self.result
 
     def add_packet(self, pkt):
         info = {
@@ -75,6 +75,10 @@ class ResultBuilder:
                 self.result["results"][pkt.serial] = [existing, info]
         else:
             self.result["results"][pkt.serial] = info
+
+    def set_ok(self, serial):
+        if serial not in self.result["results"]:
+            self.result["results"][serial] = "ok"
 
     def error(self, e):
         if hasattr(e, "as_dict"):
