@@ -92,18 +92,25 @@ class HelpCommand(Command):
 
 finder_field = dictobj.Field(sb.overridden("{finder}"), formatted=True)
 target_field = dictobj.Field(sb.overridden("{targets.lan}"), formatted=True)
+refresh_field = dictobj.NullableField(sb.boolean)
 timeout_field = dictobj.Field(sb.integer_spec, default=20)
 matcher_field = dictobj.NullableField(sb.or_spec(sb.string_spec(), sb.dictionary_spec()))
 protocol_register_field = dictobj.Field(sb.overridden("{protocol_register}"), formatted=True)
 
-def filter_from_matcher(matcher):
+def filter_from_matcher(matcher, refresh=None):
     if matcher is None:
-        return Filter.empty()
+        fltr = Filter.empty()
 
-    if type(matcher) is str:
-        return Filter.from_key_value_str(matcher)
+    elif type(matcher) is str:
+        fltr = Filter.from_key_value_str(matcher)
 
-    return Filter.from_options(matcher)
+    else:
+        fltr = Filter.from_options(matcher)
+
+    if refresh is not None:
+        fltr.force_refresh = refresh
+
+    return fltr
 
 def find_packet(protocol_register, pkt_type):
     for messages in protocol_register.message_register(1024):
@@ -166,7 +173,7 @@ class DiscoverCommand(Command):
     """
     finder = finder_field
     matcher = matcher_field
-    refresh = dictobj.NullableField(sb.boolean)
+    refresh = refresh_field
     just_serials = dictobj.Field(sb.boolean, default=False)
 
     async def execute(self):
@@ -198,7 +205,7 @@ class QueryCommand(Command):
     target = target_field
     matcher = matcher_field
     timeout = timeout_field
-    refresh = dictobj.NullableField(sb.boolean)
+    refresh = refresh_field
     multiple = dictobj.Field(sb.boolean, default=False)
     protocol_register = protocol_register_field
 
@@ -206,15 +213,12 @@ class QueryCommand(Command):
     pkt_args = dictobj.NullableField(sb.dictionary_spec())
 
     async def execute(self):
-        fltr = filter_from_matcher(self.matcher)
-
-        if self.refresh is not None:
-            fltr.force_refresh = self.refresh
-
-        result = ResultBuilder()
+        fltr = filter_from_matcher(self.matcher, self.refresh)
         msg = make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         script = self.target.script(msg)
         reference = self.finder.find(filtr=fltr)
+
+        result = ResultBuilder()
 
         afr = await self.finder.args_for_run()
         async for pkt, _, _ in script.run_with(reference, afr
@@ -240,21 +244,17 @@ class TransformCommand(Command):
     target = target_field
     matcher = matcher_field
     timeout = timeout_field
-    refresh = dictobj.NullableField(sb.boolean)
+    refresh = refresh_field
 
     transform = dictobj.Field(sb.dictionary_spec(), wrapper=sb.required)
 
     async def execute(self):
-        fltr = filter_from_matcher(self.matcher)
-
-        if self.refresh is not None:
-            fltr.force_refresh = self.refresh
-
-        result = ResultBuilder()
-
+        fltr = filter_from_matcher(self.matcher, self.refresh)
         msg = Transformer.using(self.transform)
         script = self.target.script(msg)
         reference = await self.finder.serials(filtr=fltr)
+
+        result = ResultBuilder()
 
         afr = await self.finder.args_for_run()
         await script.run_with_all(reference, afr, error_catcher=result.error, timeout=self.timeout)
@@ -283,23 +283,20 @@ class SetCommand(Command):
     target = target_field
     matcher = matcher_field
     timeout = timeout_field
-    refresh = dictobj.NullableField(sb.boolean)
+    refresh = refresh_field
     protocol_register = protocol_register_field
 
     pkt_type = dictobj.Field(sb.or_spec(sb.integer_spec(), sb.string_spec()), wrapper=sb.required)
     pkt_args = dictobj.NullableField(sb.dictionary_spec())
 
     async def execute(self):
-        fltr = filter_from_matcher(self.matcher)
-
-        if self.refresh is not None:
-            fltr.force_refresh = self.refresh
-
-        result = ResultBuilder()
+        fltr = filter_from_matcher(self.matcher, self.refresh)
         msg = make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         msg.res_required = False
         script = self.target.script(msg)
         reference = await self.finder.serials(filtr=fltr)
+
+        result = ResultBuilder()
 
         afr = await self.finder.args_for_run()
         await script.run_with_all(reference, afr, error_catcher=result.error, timeout=self.timeout)
