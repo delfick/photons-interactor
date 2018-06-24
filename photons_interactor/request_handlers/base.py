@@ -169,42 +169,42 @@ class Simple(RequestsMixin, RequestHandler):
     * delete
     """
 
-    async def get(self):
+    async def get(self, *args, **kwargs):
         if not hasattr(self, "do_get"):
             raise HTTPError(405)
 
         info = {"result": None}
         async with self.async_catcher(info):
-            info["result"] = await self.do_get()
+            info["result"] = await self.do_get(*args, **kwargs)
 
-    async def put(self):
+    async def put(self, *args, **kwargs):
         if not hasattr(self, "do_put"):
             raise HTTPError(405)
 
         info = {"result": None}
         async with self.async_catcher(info):
-            info["result"] = await self.do_put()
+            info["result"] = await self.do_put(*args, **kwargs)
 
-    async def post(self):
+    async def post(self, *args, **kwargs):
         if not hasattr(self, "do_post"):
             raise HTTPError(405)
 
         info = {"result": None}
         async with self.async_catcher(info):
-            info["result"] = await self.do_post()
+            info["result"] = await self.do_post(*args, **kwargs)
 
-    async def patch(self):
+    async def patch(self, *args, **kwargs):
         if not hasattr(self, "do_patch"):
             raise HTTPError(405)
 
         info = {"result": None}
         async with self.async_catcher(info):
-            info["result"] = await self.do_patch()
+            info["result"] = await self.do_patch(*args, **kwargs)
 
-    async def delete(self):
+    async def delete(self, *args, **kwargs):
         if not hasattr(self, "do_delete"):
             raise HTTPError(405)
 
         info = {"result": None}
         async with self.async_catcher(info):
-            info["result"] = await self.do_delete()
+            info["result"] = await self.do_delete(*args, **kwargs)
