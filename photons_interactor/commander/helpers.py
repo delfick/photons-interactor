@@ -39,26 +39,30 @@ def make_message(protocol_register, pkt_type, pkt_args):
         return kls()
 
 async def run(script, fltr, finder, add_replies=True, **kwargs):
-    result = ResultBuilder()
 
     afr = await finder.args_for_run()
-    reference = await finder.serials(filtr=fltr)
+    serials = await finder.serials(filtr=fltr)
 
-    async for pkt, _, _ in script.run_with(reference, afr, error_catcher=result.error, **kwargs):
+    result = ResultBuilder(serials)
+
+    async for pkt, _, _ in script.run_with(serials, afr, error_catcher=result.error, **kwargs):
         if add_replies:
             result.add_packet(pkt)
-
-    for serial in reference:
-        result.set_ok(serial)
 
     return result
 
 class ResultBuilder:
-    def __init__(self):
+    def __init__(self, serials):
+        self.serials = serials
         self.result = {"results": {}}
 
     def as_dict(self):
-        return self.result
+        res = dict(self.result)
+        res["results"] = dict(res["results"])
+        for serial in self.serials:
+            if serial not in res["results"]:
+                res["results"][serial] = "ok"
+        return res
 
     def add_packet(self, pkt):
         info = {
@@ -75,10 +79,6 @@ class ResultBuilder:
                 self.result["results"][pkt.serial] = [existing, info]
         else:
             self.result["results"][pkt.serial] = info
-
-    def set_ok(self, serial):
-        if serial not in self.result["results"]:
-            self.result["results"][serial] = "ok"
 
     def error(self, e):
         if hasattr(e, "as_dict"):
