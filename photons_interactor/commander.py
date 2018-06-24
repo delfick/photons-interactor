@@ -127,6 +127,24 @@ def make_message(protocol_register, pkt_type, pkt_args):
     else:
         return kls()
 
+async def run(script, fltr, finder, add_replies=True, **kwargs):
+    result = ResultBuilder()
+
+    afr = await finder.args_for_run()
+    reference = await finder.serials(filtr=fltr)
+
+    async for pkt, _, _ in script.run_with(reference, afr, error_catcher=result.error, **kwargs):
+        if add_replies:
+            result.add_packet(pkt)
+
+    result = result.result
+
+    for serial in reference:
+        if serial not in result["results"]:
+            result["results"][serial] = "ok"
+
+    return result
+
 class ResultBuilder:
     def __init__(self):
         self.result = {"results": {}}
@@ -216,17 +234,7 @@ class QueryCommand(Command):
         fltr = filter_from_matcher(self.matcher, self.refresh)
         msg = make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         script = self.target.script(msg)
-        reference = self.finder.find(filtr=fltr)
-
-        result = ResultBuilder()
-
-        afr = await self.finder.args_for_run()
-        async for pkt, _, _ in script.run_with(reference, afr
-            , multiple_replies=self.multiple, error_catcher=result.error, timeout=self.timeout
-            ):
-            result.add_packet(pkt)
-
-        return result.result
+        return await run(script, fltr, self.finder, timeout=self.timeout, multiple_replies=self.multiple)
 
 @command(name="transform")
 class TransformCommand(Command):
@@ -252,19 +260,7 @@ class TransformCommand(Command):
         fltr = filter_from_matcher(self.matcher, self.refresh)
         msg = Transformer.using(self.transform)
         script = self.target.script(msg)
-        reference = await self.finder.serials(filtr=fltr)
-
-        result = ResultBuilder()
-
-        afr = await self.finder.args_for_run()
-        await script.run_with_all(reference, afr, error_catcher=result.error, timeout=self.timeout)
-        result = result.result
-
-        for serial in reference:
-            if serial not in result["results"]:
-                result["results"][serial] = "ok"
-
-        return result
+        return await run(script, fltr, self.finder, add_replies=False, timeout=self.timeout)
 
 @command(name="set")
 class SetCommand(Command):
@@ -294,16 +290,4 @@ class SetCommand(Command):
         msg = make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         msg.res_required = False
         script = self.target.script(msg)
-        reference = await self.finder.serials(filtr=fltr)
-
-        result = ResultBuilder()
-
-        afr = await self.finder.args_for_run()
-        await script.run_with_all(reference, afr, error_catcher=result.error, timeout=self.timeout)
-        result = result.result
-
-        for serial in reference:
-            if serial not in result["results"]:
-                result["results"][serial] = "ok"
-
-        return result
+        return await run(script, fltr, self.finder, timeout=self.timeout)
