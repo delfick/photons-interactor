@@ -120,7 +120,7 @@ class TransformCommand(Command):
             ``{"power": "on", "color": "red"}``
 
             Or,
-            ``{"color": "blue", "effect": "breathe"}``
+            ``{"color": "blue", "effect": "breathe", "cycles": 5}``
           """
         )
 
