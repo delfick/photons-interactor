@@ -22,11 +22,15 @@ class HelpCommand(Command):
         , help = "The command to show help for"
         )
 
-    async def execute(self):
+    @property
+    def command_kls(self):
         if self.command not in available_commands:
             raise NoSuchCommand(wanted=self.command, available=sorted(available_commands))
+        return available_commands[self.command]["kls"]
+
+    async def execute(self):
         header = f"Command {self.command}"
-        kls = available_commands[self.command]["kls"]
+        kls = self.command_kls
         doc = dedent(getattr(kls, "__help__", kls.__doc__))
 
         fields = chp.fields_description(kls)
