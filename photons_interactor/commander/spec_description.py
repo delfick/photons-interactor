@@ -1,6 +1,15 @@
 from input_algorithms import spec_base as sb
 
 def signature(spec):
+    """
+    yield parts of a type information for this spec
+
+    i.e. sb.integer_spec yields "integer"
+
+    and sb.listof yields "[", <signature for child spec>, ", ... ]"
+
+    Implemented for common specs.
+    """
     if isinstance(spec, sb.integer_spec):
         yield "integer"
     if isinstance(spec, sb.float_spec):
