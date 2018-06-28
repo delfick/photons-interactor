@@ -158,7 +158,7 @@ class ResultBuilder:
 
     def error(self, e):
         if hasattr(e, "as_dict"):
-            err = e.as_dict()
+            err = {k: v for k, v in e.as_dict().items() if k != "serial"}
         else:
             err = str(e)
 
