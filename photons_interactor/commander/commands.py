@@ -1,6 +1,6 @@
-from photons_interactor.commander.decorator import command, available_commands
 from photons_interactor.commander.errors import NoSuchCommand
 from photons_interactor.commander import default_fields as df
+from photons_interactor.commander.decorator import command
 from photons_interactor.commander import helpers as chp
 
 from photons_transform.transformer import Transformer
@@ -24,9 +24,9 @@ class HelpCommand(Command):
 
     @property
     def command_kls(self):
-        if self.command not in available_commands:
-            raise NoSuchCommand(wanted=self.command, available=sorted(available_commands))
-        return available_commands[self.command]["kls"]
+        if self.command not in command.available_commands:
+            raise NoSuchCommand(wanted=self.command, available=sorted(command.available_commands))
+        return command.available_commands[self.command]["kls"]
 
     async def execute(self):
         header = f"Command {self.command}"
@@ -47,7 +47,7 @@ class HelpCommand(Command):
         extra = ""
         if self.command == "help":
             extra = "\nAvailable commands:\n{}".format(
-                  "\n".join(f" * {name}" for name in sorted(available_commands))
+                  "\n".join(f" * {name}" for name in sorted(command.available_commands))
                 )
 
         return f"{header}\n{'=' * len(header)}\n{doc}{fields_string}{extra}"
