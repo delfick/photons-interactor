@@ -5,6 +5,7 @@ from photons_app.formatter import MergedOptionStringFormatter
 
 from photons_device_finder import Filter
 
+from input_algorithms.dictobj import dictobj
 from input_algorithms.meta import Meta
 from textwrap import dedent
 
@@ -185,5 +186,9 @@ def fields_description(kls):
         else:
             hlp = field.help
 
+        spec = final_specs[name]
+        if isinstance(field, dictobj.NullableField):
+            spec = spec.spec.specs[1]
+
         if hlp:
-            yield name, " ".join(signature(final_specs[name])), dedent(hlp).strip()
+            yield name, " ".join(signature(spec)), dedent(hlp).strip()
