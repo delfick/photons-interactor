@@ -275,7 +275,7 @@ class Device(FakeDevice):
                 ]
 
 class Around:
-    def __init__(self, val, gap=1):
+    def __init__(self, val, gap=0.05):
         self.val = val
         self.gap = gap
 
@@ -376,7 +376,7 @@ discovery_response = {
         "serial": "d073d5000004"
     },
     "d073d5000005": {
-        "brightness": Around(0.5, 0.05),
+        "brightness": Around(0.5),
         "cap": [
             "color",
             "multizone",
@@ -395,11 +395,11 @@ discovery_response = {
         "power": "on",
         "product_id": 32,
         "product_identifier": "lifx_z",
-        "saturation": Around(0.5, 0.05),
+        "saturation": Around(0.5),
         "serial": "d073d5000005"
     },
     "d073d5000006": {
-        "brightness": Around(0.5, 0.05),
+        "brightness": Around(0.5),
         "cap": [
             "color",
             "multizone",
@@ -475,24 +475,24 @@ light_state_responses = {
         },
         "d073d5000005": {
             "payload": {
-                "brightness": Around(0.5, 0.05),
+                "brightness": Around(0.5),
                 "hue": Around(200),
                 "kelvin": 3500,
                 "label": "desk",
                 "power": 65535,
-                "saturation": Around(0.5, 0.05)
+                "saturation": Around(0.5)
             },
             "pkt_name": "LightState",
             "pkt_type": 107
         },
         "d073d5000006": {
             "payload": {
-                "brightness": Around(0.5, 0.05),
+                "brightness": Around(0.5),
                 "hue": Around(200),
                 "kelvin": 3500,
                 "label": "tv",
                 "power": 65535,
-                "saturation": Around(0.5, 0.05)
+                "saturation": Around(0.5)
             },
             "pkt_name": "LightState",
             "pkt_type": 107
