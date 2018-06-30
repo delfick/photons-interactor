@@ -38,7 +38,7 @@ describe TestCase, "fields_description":
             , "target_field": None
             , "protocol_register_field": None
             , "refresh_field": "boolean"
-            , "timeout_field": "integer (default 20)"
+            , "timeout_field": "float (default 20)"
             , "matcher_field": "string or dictionary"
             , "pkt_type_field": "integer or string (required)"
             , "pkt_args_field": "dictionary"

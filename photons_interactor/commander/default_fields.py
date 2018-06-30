@@ -13,7 +13,7 @@ refresh_field = dictobj.NullableField(sb.boolean
       """
     )
 
-timeout_field = dictobj.Field(sb.integer_spec, default=20
+timeout_field = dictobj.Field(sb.float_spec, default=20
     , help = "The max amount of time we wait for replies from the lights"
     )
 
