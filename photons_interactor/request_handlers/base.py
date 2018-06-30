@@ -56,9 +56,9 @@ class AsyncCatcher(object):
         if isinstance(exc, Finished):
             return exc.kwargs
         elif isinstance(exc, DelfickError):
-            return {"status": 400, "error": as_dct}
+            return {"status": 400, "error": as_dct, "error_code": exc.__class__.__name__}
         else:
-            return {"status": 500, "error": "Internal Server Error"}
+            return {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"}
 
     def send_msg(self, msg, status=200):
         if self.request._finished and not hasattr(self.request, "ws_connection"):

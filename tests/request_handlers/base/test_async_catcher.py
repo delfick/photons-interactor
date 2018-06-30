@@ -86,21 +86,21 @@ describe AsyncTestCase, "AsyncCatcher":
                         return {"error": error_message}
 
                 result = self.catcher.message_from_exc(MyError())
-                self.assertEqual(result, {"status": 500, "error": "Internal Server Error"})
+                self.assertEqual(result, {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"})
 
                 class MyError2:
                     def as_dict(self):
                         return {"status": status}
 
                 result = self.catcher.message_from_exc(MyError2())
-                self.assertEqual(result, {"status": 500, "error": "Internal Server Error"})
+                self.assertEqual(result, {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"})
 
             async it "returns internal server error if exc has no as_dict":
                 class MyError:
                     pass
 
                 result = self.catcher.message_from_exc(MyError())
-                self.assertEqual(result, {"status": 500, "error": "Internal Server Error"})
+                self.assertEqual(result, {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"})
 
             async it "returns kwargs if the error is a Finished":
                 exc = Finished(status=408, reason="I'm a teapot")
@@ -109,18 +109,20 @@ describe AsyncTestCase, "AsyncCatcher":
                 self.assertEqual(result, {"status": 408, "reason": "I'm a teapot"})
 
             async it "converts any other DelfickError into dict with status 400 and error as the exc.as_dict":
-                exc = DelfickError(wat=1, blah=2)
+                class BadError(DelfickError):
+                    pass
+                exc = BadError(wat=1, blah=2)
                 result = self.catcher.message_from_exc(exc)
-                self.assertEqual(result, {"status": 400, "error": {"wat": 1, "blah": 2}})
+                self.assertEqual(result, {"status": 400, "error": {"wat": 1, "blah": 2}, "error_code": "BadError"})
 
                 exc = PhotonsAppError(other=3, meh=3)
                 result = self.catcher.message_from_exc(exc)
-                self.assertEqual(result, {"status": 400, "error": {"other": 3, "meh": 3}})
+                self.assertEqual(result, {"status": 400, "error": {"other": 3, "meh": 3}, "error_code": "PhotonsAppError"})
 
             async it "converts everything else into internal server error":
                 exc = ValueError("WRONG!")
                 result = self.catcher.message_from_exc(exc)
-                self.assertEqual(result, {"status": 500, "error": "Internal Server Error"})
+                self.assertEqual(result, {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"})
 
         describe "complete":
             async it "calls send_msg with the msg if it's not a dictionary":
