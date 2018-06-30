@@ -163,11 +163,11 @@ class ResultBuilder:
             err = str(e)
 
         if hasattr(e, "kwargs") and "serial" in e.kwargs:
-            self.result["results"][e.kwargs["serial"]] = {"error": err}
+            self.result["results"][e.kwargs["serial"]] = {"error": err, "error_code": e.__class__.__name__}
         else:
             if "errors" not in self.result:
                 self.result["errors"] = []
-            self.result["errors"].append(err)
+            self.result["errors"].append({"error": err, "error_code": e.__class__.__name__})
 
 def fields_description(kls):
     """
