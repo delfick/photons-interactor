@@ -18,3 +18,7 @@ class Options(dictobj.Spec):
     cookie_secret = dictobj.Field(random_secret_spec
         , help = "The secret used to secure cookies in the web server"
         )
+
+    device_finder_repeat_spread = dictobj.Field(sb.float_spec, default=1
+        , help = "Time between sending out messages to devices on the lan for the device finder"
+        )
