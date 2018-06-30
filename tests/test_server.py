@@ -1,5 +1,6 @@
 # coding: spec
 
+from photons_interactor import test_helpers as thp
 from photons_interactor.options import Options
 from photons_interactor.server import Server
 
@@ -7,27 +8,11 @@ from photons_app.test_helpers import AsyncTestCase
 from photons_app import helpers as hp
 
 from noseOfYeti.tokeniser.async_support import async_noy_sup_setUp, async_noy_sup_tearDown
+from contextlib import contextmanager
 from unittest import mock
 import http.client
 import asynctest
 import asyncio
-import socket
-import time
-
-def free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('0.0.0.0', 0))
-        return s.getsockname()[1]
-
-def port_connected(port):
-    s = socket.socket()
-    s.settimeout(5)
-    try:
-        s.connect(("127.0.0.1", port))
-        s.close()
-        return True
-    except Exception as error:
-        return False
 
 describe AsyncTestCase, "Server":
     async it "takes in options":
@@ -74,7 +59,7 @@ describe AsyncTestCase, "Server":
         async it "works":
             options = Options.FieldSpec().empty_normalise(
                   host = "127.0.0.1"
-                , port = free_port()
+                , port = thp.free_port()
                 )
 
             lan_target = mock.Mock(name="lan_target")
@@ -91,41 +76,14 @@ describe AsyncTestCase, "Server":
             cleaners = []
             server = Server(self.final_future, options, cleaners, self.target_register, self.protocol_register)
 
-            async def doit():
+            @contextmanager
+            def wrapper():
                 with mock.patch("photons_interactor.server.Commander", FakeCommander):
                     with mock.patch("photons_interactor.server.DeviceFinder", FakeDeviceFinder):
-                        await server.serve()
+                        yield
 
-            assert not port_connected(options.port)
-            t = hp.async_as_background(doit())
-
-            try:
-                start = time.time()
-                while time.time() - start < 5:
-                    if port_connected(options.port):
-                        break
-                    await asyncio.sleep(1)
-                assert port_connected(options.port)
-
+            async with thp.ServerRunner(self.final_future, server, options, wrapper()):
                 await self.assertPUTCommand(options, commander)
-            finally:
-                self.final_future.cancel()
-                try:
-                    await t
-                except asyncio.CancelledError:
-                    pass
-
-                self.assertEqual(len(finder.finish.mock_calls), 0)
-
-                for thing in cleaners:
-                    try:
-                        await thing()
-                    except:
-                        pass
-
-                finder.finish.assert_called_once_with()
-
-            assert not port_connected(options.port)
 
             self.assertIs(server.commander, commander)
             self.assertIs(server.finder, finder)
