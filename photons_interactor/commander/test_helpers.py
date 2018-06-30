@@ -1,10 +1,11 @@
 from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.registers import ProtocolRegister
 
+from photons_products_registry import LIFIProductRegistry, capability_for_ids
 from photons_socket.fake import FakeDevice, MemorySocketTarget
-from photons_products_registry import LIFIProductRegistry
 from photons_socket.messages import DiscoveryMessages
 from photons_device_messages import DeviceMessages
+from photons_multizone import MultiZoneMessages
 from photons_protocol.frame import LIFXPacket
 from photons_colour import ColourMessages
 
@@ -17,6 +18,7 @@ import uuid
 def make_protocol_register():
     protocol_register = ProtocolRegister()
     protocol_register.add(1024, LIFXPacket)
+    protocol_register.message_register(1024).add(MultiZoneMessages)
     protocol_register.message_register(1024).add(DiscoveryMessages)
     protocol_register.message_register(1024).add(DeviceMessages)
     protocol_register.message_register(1024).add(ColourMessages)
@@ -194,6 +196,10 @@ class Device(FakeDevice):
         self.vendor_id = vendor_id
         self.product_id = product_id
 
+    @property
+    def capability(self):
+        return capability_for_ids(self.product_id, self.vendor_id)
+
     def light_state_message(self):
         return ColourMessages.LightState(
               hue = self.hue
@@ -257,6 +263,16 @@ class Device(FakeDevice):
             res = DeviceMessages.StatePower(pkt.power)
             self.change_power(pkt.level)
             return res
+
+        elif pkt | MultiZoneMessages.GetMultiZoneColorZones and self.capability.has_multizone:
+            colors = []
+            for i in range(16):
+                colors.append(Color(i * 10, 1, 1, 2500).as_dict())
+
+            return [
+                  MultiZoneMessages.StateMultiZoneStateMultiZones(num_zones=8, zone_index=0, colors=colors[:8])
+                , MultiZoneMessages.StateMultiZoneStateMultiZones(num_zones=8, zone_index=8, colors=colors[8:])
+                ]
 
 class Around:
     def __init__(self, val, gap=1):
@@ -528,5 +544,246 @@ label_state_responses = {
             "pkt_name": "StateLabel",
             "pkt_type": 25
         }
+    }
+}
+
+multizone_state_responses = {
+    "results": {
+        "d073d5000005": [
+            {
+                "payload": {
+                    "colors": [
+                        {
+                            "brightness": 1.0,
+                            "hue": 0.0,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 9.997711146715496,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 19.99542229343099,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 29.998626688029297,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 39.99633783474479,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 49.9995422293431,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 59.997253376058595,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 69.99496452277408,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        }
+                    ],
+                    "num_zones": 8,
+                    "zone_index": 0
+                },
+                "pkt_name": "StateMultiZoneStateMultiZones",
+                "pkt_type": 506
+            },
+            {
+                "payload": {
+                    "colors": [
+                        {
+                            "brightness": 1.0,
+                            "hue": 79.9981689173724,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 89.99588006408788,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 99.9990844586862,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 109.99679560540169,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 120.0,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 129.9977111467155,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 139.99542229343098,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 149.9986266880293,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        }
+                    ],
+                    "num_zones": 8,
+                    "zone_index": 8
+                },
+                "pkt_name": "StateMultiZoneStateMultiZones",
+                "pkt_type": 506
+            }
+        ],
+        "d073d5000006": [
+            {
+                "payload": {
+                    "colors": [
+                        {
+                            "brightness": 1.0,
+                            "hue": 0.0,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 9.997711146715496,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 19.99542229343099,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 29.998626688029297,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 39.99633783474479,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 49.9995422293431,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 59.997253376058595,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 69.99496452277408,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        }
+                    ],
+                    "num_zones": 8,
+                    "zone_index": 0
+                },
+                "pkt_name": "StateMultiZoneStateMultiZones",
+                "pkt_type": 506
+            },
+            {
+                "payload": {
+                    "colors": [
+                        {
+                            "brightness": 1.0,
+                            "hue": 79.9981689173724,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 89.99588006408788,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 99.9990844586862,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 109.99679560540169,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 120.0,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 129.9977111467155,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 139.99542229343098,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        },
+                        {
+                            "brightness": 1.0,
+                            "hue": 149.9986266880293,
+                            "kelvin": 2500,
+                            "saturation": 1.0
+                        }
+                    ],
+                    "num_zones": 8,
+                    "zone_index": 8
+                },
+                "pkt_name": "StateMultiZoneStateMultiZones",
+                "pkt_type": 506
+            }
+        ]
     }
 }
