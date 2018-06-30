@@ -11,6 +11,7 @@ from photons_colour import ColourMessages
 from input_algorithms.dictobj import dictobj
 from input_algorithms.meta import Meta
 
+from unittest import mock
 import uuid
 
 def make_protocol_register():
@@ -53,12 +54,14 @@ class Firmware(dictobj):
     fields = ["version", "build_time"]
 
 def fake_devices(protocol_register):
-    group_one = Group("Living Room", str(uuid.uuid4()), 0)
-    group_two = Group("Bathroom", str(uuid.uuid4()), 0)
-    location_one = Group("Home", str(uuid.uuid4()), 0)
+    identifier = lambda : str(uuid.uuid4()).replace('-', "")
 
-    location_two = Group("Work", str(uuid.uuid4()), 0)
-    group_three = Group("desk", str(uuid.uuid4()), 0)
+    group_one = Group("Living Room", identifier(), 0)
+    group_two = Group("Bathroom", identifier(), 0)
+    location_one = Group("Home", identifier(), 0)
+
+    location_two = Group("Work", identifier(), 0)
+    group_three = Group("desk", identifier(), 0)
 
     a19_1 = Device("d073d5000001", protocol_register
         , label = "kitchen"
@@ -185,7 +188,7 @@ class Device(FakeDevice):
 
     def change_firmware(self, firmware):
         self.firmware_version = firmware.version
-        self.build_time = firmware.build_time
+        self.firmware_build_time = firmware.build_time
 
     def change_version(self, vendor_id, product_id):
         self.vendor_id = vendor_id
@@ -251,3 +254,151 @@ class Device(FakeDevice):
             res = DeviceMessages.StatePower(pkt.power)
             self.change_power(pkt.level)
             return res
+
+class Around:
+    def __init__(self, val):
+        self.val = val
+
+    def __eq__(self, other):
+        return other > other - 1 and other < other + 1
+
+discovery_response = {
+    "d073d5000001": {
+        "brightness": 1.0,
+        "cap": [
+            "color",
+            "not_chain",
+            "not_ir",
+            "not_multizone",
+            "variable_color_temp"
+        ],
+        "firmware_version": 2.75,
+        "group_id": mock.ANY,
+        "group_name": "Living Room",
+        "hue": 0.0,
+        "kelvin": 3500,
+        "label": "kitchen",
+        "location_id": mock.ANY,
+        "location_name": "Home",
+        "power": "off",
+        "product_id": 27,
+        "product_identifier": "lifx_a19",
+        "saturation": 1.0,
+        "serial": "d073d5000001"
+    },
+    "d073d5000002": {
+        "brightness": 1.0,
+        "cap": [
+            "color",
+            "not_chain",
+            "not_ir",
+            "not_multizone",
+            "variable_color_temp"
+        ],
+        "firmware_version": 2.75,
+        "group_id": mock.ANY,
+        "group_name": "Bathroom",
+        "hue": Around(100),
+        "kelvin": 3500,
+        "label": "bathroom",
+        "location_id": mock.ANY,
+        "location_name": "Home",
+        "power": "on",
+        "product_id": 27,
+        "product_identifier": "lifx_a19",
+        "saturation": 1.0,
+        "serial": "d073d5000002"
+    },
+    "d073d5000003": {
+        "brightness": 1.0,
+        "cap": [
+            "color",
+            "not_chain",
+            "not_ir",
+            "not_multizone",
+            "variable_color_temp"
+        ],
+        "firmware_version": 1.1,
+        "group_id": mock.ANY,
+        "group_name": "desk",
+        "hue": Around(100),
+        "kelvin": 3500,
+        "label": "lamp",
+        "location_id": mock.ANY,
+        "location_name": "Work",
+        "power": "on",
+        "product_id": 22,
+        "product_identifier": "lifx_a19_color",
+        "saturation": 0.0,
+        "serial": "d073d5000003"
+    },
+    "d073d5000004": {
+        "brightness": 1.0,
+        "cap": [
+            "not_chain",
+            "not_color",
+            "not_ir",
+            "not_multizone",
+            "variable_color_temp"
+        ],
+        "firmware_version": 1.1,
+        "group_id": mock.ANY,
+        "group_name": "desk",
+        "hue": Around(100),
+        "kelvin": 3500,
+        "label": "lamp",
+        "location_id": mock.ANY,
+        "location_name": "Work",
+        "power": "on",
+        "product_id": 10,
+        "product_identifier": "lifx_a19_white",
+        "saturation": 0.0,
+        "serial": "d073d5000004"
+    },
+    "d073d5000005": {
+        "brightness": 0.49999237048905165,
+        "cap": [
+            "color",
+            "multizone",
+            "not_chain",
+            "not_ir",
+            "variable_color_temp"
+        ],
+        "firmware_version": 2.75,
+        "group_id": mock.ANY,
+        "group_name": "Living Room",
+        "hue": Around(200),
+        "kelvin": 3500,
+        "label": "desk",
+        "location_id": mock.ANY,
+        "location_name": "Home",
+        "power": "on",
+        "product_id": 32,
+        "product_identifier": "lifx_z",
+        "saturation": 0.49999237048905165,
+        "serial": "d073d5000005"
+    },
+    "d073d5000006": {
+        "brightness": 0.49999237048905165,
+        "cap": [
+            "color",
+            "multizone",
+            "not_chain",
+            "not_ir",
+            "variable_color_temp"
+        ],
+        "firmware_version": 1.1,
+        "group_id": mock.ANY,
+        "group_name": "desk",
+        "hue": Around(200),
+        "kelvin": 3500,
+        "label": "tv",
+        "location_id": mock.ANY,
+        "location_name": "Work",
+        "power": "on",
+        "product_id": 31,
+        "product_identifier": "lifx_z",
+        "saturation": Around(0.5),
+        "serial": "d073d5000006"
+    }
+}
