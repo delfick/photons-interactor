@@ -280,7 +280,10 @@ class Around:
         self.gap = gap
 
     def __eq__(self, other):
-        return other > other - self.gap and other < other + self.gap
+        return other - self.gap < self.val < other + self.gap
+
+    def __repr__(self):
+        return f"<Around {self.val}>"
 
 discovery_response = {
     "d073d5000001": {
