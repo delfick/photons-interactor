@@ -40,7 +40,10 @@ class HelpCommand(Command):
             for name, type_info, desc in fields:
                 fields_string.append(f"{name}: {type_info}")
                 for line in desc.split("\n"):
-                    fields_string.append(f"\t{line}")
+                    if not line.strip():
+                        fields_string.append("")
+                    else:
+                        fields_string.append(f"\t{line}")
                 fields_string.append("")
             fields_string = "\n".join(fields_string)
 

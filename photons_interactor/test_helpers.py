@@ -50,7 +50,8 @@ class ServerRunner:
         except asyncio.CancelledError:
             pass
 
-        assert len(self.server.finder.finish.mock_calls) == 0
+        if hasattr(self.server.finder.finish, "mock_calls"):
+            assert len(self.server.finder.finish.mock_calls) == 0
 
         for thing in self.server.cleaners:
             try:
@@ -58,6 +59,7 @@ class ServerRunner:
             except:
                 pass
 
-        self.server.finder.finish.assert_called_once_with()
+        if hasattr(self.server.finder.finish, "mock_calls"):
+            self.server.finder.finish.assert_called_once_with()
 
         assert not port_connected(self.options.port)
