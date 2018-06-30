@@ -48,7 +48,7 @@ class Server(object):
 
     async def extra_futures(self):
         self.finder = DeviceFinder(self.target_register.resolve("lan")
-            , repeat_spread = self.server_options.device_finder_repeat_spread
+            , **self.server_options.device_finder_options
             )
 
         await self.finder.start()

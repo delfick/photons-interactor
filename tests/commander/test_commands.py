@@ -131,7 +131,7 @@ describe AsyncTestCase, "Commands":
         options = Options.FieldSpec().empty_normalise(
               host = "127.0.0.1"
             , port = thp.free_port()
-            , device_finder_repeat_spread = 0.01
+            , device_finder_options = {"repeat_spread": 0.01}
             )
 
         protocol_register = cthp.make_protocol_register()

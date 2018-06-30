@@ -60,6 +60,7 @@ describe AsyncTestCase, "Server":
             options = Options.FieldSpec().empty_normalise(
                   host = "127.0.0.1"
                 , port = thp.free_port()
+                , device_finder_options = {"arg1": 0.1, "arg2": True}
                 )
 
             lan_target = mock.Mock(name="lan_target")
@@ -89,6 +90,6 @@ describe AsyncTestCase, "Server":
             self.assertIs(server.finder, finder)
 
             FakeCommander.assert_called_once_with(finder, self.target_register, self.protocol_register)
-            FakeDeviceFinder.assert_called_once_with(lan_target, repeat_spread=options.device_finder_repeat_spread)
+            FakeDeviceFinder.assert_called_once_with(lan_target, arg1=0.1, arg2=True)
             self.target_register.resolve.assert_called_once_with("lan")
             finder.start.assert_called_once_with()
