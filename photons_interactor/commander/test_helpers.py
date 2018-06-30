@@ -564,43 +564,43 @@ multizone_state_responses = {
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 9.997711146715496,
+                            "hue": Around(10),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 19.99542229343099,
+                            "hue": Around(20),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 29.998626688029297,
+                            "hue": Around(30),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 39.99633783474479,
+                            "hue": Around(40),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 49.9995422293431,
+                            "hue": Around(50),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 59.997253376058595,
+                            "hue": Around(60),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 69.99496452277408,
+                            "hue": Around(70),
                             "kelvin": 2500,
                             "saturation": 1.0
                         }
@@ -616,49 +616,49 @@ multizone_state_responses = {
                     "colors": [
                         {
                             "brightness": 1.0,
-                            "hue": 79.9981689173724,
+                            "hue": Around(80),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 89.99588006408788,
+                            "hue": Around(90),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 99.9990844586862,
+                            "hue": Around(100),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 109.99679560540169,
+                            "hue": Around(110),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 120.0,
+                            "hue": Around(120),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 129.9977111467155,
+                            "hue": Around(130),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 139.99542229343098,
+                            "hue": Around(140),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 149.9986266880293,
+                            "hue": Around(150),
                             "kelvin": 2500,
                             "saturation": 1.0
                         }
@@ -682,46 +682,46 @@ multizone_state_responses = {
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 9.997711146715496,
+                            "hue": Around(10),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 19.99542229343099,
+                            "hue": Around(20),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 29.998626688029297,
+                            "hue": Around(30),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 39.99633783474479,
+                            "hue": Around(40),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 49.9995422293431,
+                            "hue": Around(50),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 59.997253376058595,
+                            "hue": Around(60),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 69.99496452277408,
+                            "hue": Around(70),
                             "kelvin": 2500,
                             "saturation": 1.0
-                        }
+                        },
                     ],
                     "num_zones": 8,
                     "zone_index": 0
@@ -734,49 +734,49 @@ multizone_state_responses = {
                     "colors": [
                         {
                             "brightness": 1.0,
-                            "hue": 79.9981689173724,
+                            "hue": Around(80),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 89.99588006408788,
+                            "hue": Around(90),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 99.9990844586862,
+                            "hue": Around(100),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 109.99679560540169,
+                            "hue": Around(110),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 120.0,
+                            "hue": Around(120),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 129.9977111467155,
+                            "hue": Around(130),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 139.99542229343098,
+                            "hue": Around(140),
                             "kelvin": 2500,
                             "saturation": 1.0
                         },
                         {
                             "brightness": 1.0,
-                            "hue": 149.9986266880293,
+                            "hue": Around(150),
                             "kelvin": 2500,
                             "saturation": 1.0
                         }
