@@ -54,7 +54,11 @@ describe AsyncTestCase, "Commands":
             else:
                 if json_output is not None:
                     self.maxDiff = None
-                    self.assertEqual(json.loads(body.decode()), json_output)
+                    try:
+                        self.assertEqual(json.loads(body.decode()), json_output)
+                    except AssertionError:
+                        print(json.dumps(json.loads(body.decode()), sort_keys=True, indent="    "))
+                        raise
                 else:
                     self.assertEqual(body, text_output)
         return await self.wait_for(self.loop.run_in_executor(None, doit), timeout=timeout)
