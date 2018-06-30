@@ -6,6 +6,7 @@ from photons_app.formatter import MergedOptionStringFormatter
 from photons_device_finder import Filter
 
 from input_algorithms.dictobj import dictobj
+from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
 from textwrap import dedent
 
@@ -35,6 +36,12 @@ def filter_from_matcher(matcher, refresh=None):
         fltr.force_refresh = refresh
 
     return fltr
+
+def clone_filter(fltr, **kwargs):
+    """Clone a Filter with additional settings"""
+    dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
+    dct.update(**kwargs)
+    return Filter.from_options(dct)
 
 def find_packet(protocol_register, pkt_type):
     """
@@ -75,10 +82,11 @@ async def run(script, fltr, finder, add_replies=True, **kwargs):
     """
     afr = await finder.args_for_run()
     serials = await finder.serials(filtr=fltr)
+    find_fltr = clone_filter(fltr, force_refresh=False)
 
     result = ResultBuilder(serials)
 
-    async for pkt, _, _ in script.run_with(finder.find(filtr=fltr), afr, error_catcher=result.error, **kwargs):
+    async for pkt, _, _ in script.run_with(finder.find(filtr=find_fltr), afr, error_catcher=result.error, **kwargs):
         if add_replies:
             result.add_packet(pkt)
 

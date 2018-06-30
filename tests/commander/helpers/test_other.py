@@ -68,6 +68,24 @@ describe TestCase, "filter_from_matcher":
         fltr = chp.filter_from_matcher({"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": False}, refresh=True)
         self.assertFilter(fltr, force_refresh=True, label=["one", "two"], hue=[(20.0, 20.0)])
 
+describe TestCase, "clone_filter":
+    def assertFilter(self, fltr, **kwargs):
+        dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
+        self.assertEqual(dct, kwargs)
+
+    it "clones with additional kwargs":
+        fltr = chp.filter_from_matcher({"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": True}, refresh=True)
+        self.assertFilter(fltr, force_refresh=True, label=["one", "two"], hue=[(20.0, 20.0)])
+        self.assertFilter(chp.clone_filter(fltr, force_refresh=False), force_refresh=False, label=["one", "two"], hue=[(20.0, 20.0)])
+        # Make sure the original isn't modified
+        self.assertFilter(fltr, force_refresh=True, label=["one", "two"], hue=[(20.0, 20.0)])
+
+        fltr = chp.filter_from_matcher({"label": "one", "hue": [(20, 20)], "force_refresh": True}, refresh=True)
+        clone = chp.clone_filter(fltr, label=["three", "four"], location_name="blah")
+        self.assertFilter(clone, force_refresh=True, label=["three", "four"], hue=[(20.0, 20.0)], location_name=["blah"])
+        # Make sure the original isn't modified
+        self.assertFilter(fltr, force_refresh=True, label=["one"], hue=[(20.0, 20.0)])
+
 describe TestCase, "find_packet":
     before_each:
         self.protocol_register = ProtocolRegister()
@@ -124,7 +142,11 @@ describe AsyncTestCase, "run":
         finder.args_for_run = asynctest.mock.CoroutineMock(name="args_for_run", return_value=afr)
         finder.find.return_value = find
 
+        find_filter = mock.Mock(name="find_filtr")
+        clone_filter = mock.Mock(name="clone_filter", return_value=find_filter)
+
         fltr = mock.Mock(name="fltr")
+        fltr.as_dict.return_value = {}
         script = mock.Mock(name="script")
 
         run_with = mock.Mock(name="run_with")
@@ -148,7 +170,9 @@ describe AsyncTestCase, "run":
                     raise StopAsyncIteration
         script.run_with = RunWith
 
-        result = await self.wait_for(chp.run(script, fltr, finder, one=1))
+        with mock.patch("photons_interactor.commander.helpers.clone_filter", clone_filter):
+            result = await self.wait_for(chp.run(script, fltr, finder, one=1))
+
         self.assertEqual(result.as_dict()
             , { "results":
                 { "d073d5000001": {"pkt_type": 22, "pkt_name": "StatePower", "payload": {"level": 0}}
@@ -160,7 +184,8 @@ describe AsyncTestCase, "run":
 
         finder.args_for_run.assert_called_once_with()
         finder.serials.assert_called_once_with(filtr=fltr)
-        finder.find.assert_called_once_with(filtr=fltr)
+        finder.find.assert_called_once_with(filtr=find_filter)
+        clone_filter.assert_called_once_with(fltr, force_refresh=False)
         run_with.assert_called_once_with(find, afr, error_catcher=mock.ANY, one=1)
 
     async it "doesn't add packets if add_replies is False":
@@ -173,7 +198,11 @@ describe AsyncTestCase, "run":
         finder.args_for_run = asynctest.mock.CoroutineMock(name="args_for_run", return_value=afr)
         finder.find.return_value = find
 
+        find_filter = mock.Mock(name="find_filtr")
+        clone_filter = mock.Mock(name="clone_filter", return_value=find_filter)
+
         fltr = mock.Mock(name="fltr")
+        fltr.as_dict.return_value = {}
         script = mock.Mock(name="script")
 
         run_with = mock.Mock(name="run_with")
@@ -198,7 +227,8 @@ describe AsyncTestCase, "run":
                     raise StopAsyncIteration
         script.run_with = RunWith
 
-        result = await self.wait_for(chp.run(script, fltr, finder, add_replies=False, one=1))
+        with mock.patch("photons_interactor.commander.helpers.clone_filter", clone_filter):
+            result = await self.wait_for(chp.run(script, fltr, finder, add_replies=False, one=1))
         self.assertEqual(result.as_dict()
             , { "results":
                 { "d073d5000001": "ok"
@@ -210,5 +240,6 @@ describe AsyncTestCase, "run":
 
         finder.args_for_run.assert_called_once_with()
         finder.serials.assert_called_once_with(filtr=fltr)
-        finder.find.assert_called_once_with(filtr=fltr)
+        finder.find.assert_called_once_with(filtr=find_filter)
+        clone_filter.assert_called_once_with(fltr, force_refresh=False)
         run_with.assert_called_once_with(find, afr, error_catcher=mock.ANY, one=1)
