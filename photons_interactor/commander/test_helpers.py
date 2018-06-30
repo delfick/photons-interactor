@@ -250,17 +250,21 @@ class Device(FakeDevice):
             self.change_label(pkt.label)
             return DeviceMessages.StateLabel(label=pkt.label)
 
+        elif pkt | DeviceMessages.GetLabel:
+            return DeviceMessages.StateLabel(label=self.label)
+
         elif pkt | DeviceMessages.SetPower or pkt | DeviceMessages.SetLightPower:
             res = DeviceMessages.StatePower(pkt.power)
             self.change_power(pkt.level)
             return res
 
 class Around:
-    def __init__(self, val):
+    def __init__(self, val, gap=1):
         self.val = val
+        self.gap = gap
 
     def __eq__(self, other):
-        return other > other - 1 and other < other + 1
+        return other > other - self.gap and other < other + self.gap
 
 discovery_response = {
     "d073d5000001": {
@@ -356,7 +360,7 @@ discovery_response = {
         "serial": "d073d5000004"
     },
     "d073d5000005": {
-        "brightness": 0.49999237048905165,
+        "brightness": Around(0.5, 0.05),
         "cap": [
             "color",
             "multizone",
@@ -375,11 +379,11 @@ discovery_response = {
         "power": "on",
         "product_id": 32,
         "product_identifier": "lifx_z",
-        "saturation": 0.49999237048905165,
+        "saturation": Around(0.5, 0.05),
         "serial": "d073d5000005"
     },
     "d073d5000006": {
-        "brightness": 0.49999237048905165,
+        "brightness": Around(0.5, 0.05),
         "cap": [
             "color",
             "multizone",
@@ -400,5 +404,129 @@ discovery_response = {
         "product_identifier": "lifx_z",
         "saturation": Around(0.5),
         "serial": "d073d5000006"
+    }
+}
+
+light_state_responses = {
+    "results": {
+        "d073d5000001": {
+            "payload": {
+                "brightness": 1.0,
+                "hue": 0.0,
+                "kelvin": 3500,
+                "label": "kitchen",
+                "power": 0,
+                "saturation": 1.0
+            },
+            "pkt_name": "LightState",
+            "pkt_type": 107
+        },
+        "d073d5000002": {
+            "payload": {
+                "brightness": 1.0,
+                "hue": Around(100),
+                "kelvin": 3500,
+                "label": "bathroom",
+                "power": 65535,
+                "saturation": 1.0
+            },
+            "pkt_name": "LightState",
+            "pkt_type": 107
+        },
+        "d073d5000003": {
+            "payload": {
+                "brightness": 1.0,
+                "hue": Around(100),
+                "kelvin": 3500,
+                "label": "lamp",
+                "power": 65535,
+                "saturation": 0.0
+            },
+            "pkt_name": "LightState",
+            "pkt_type": 107
+        },
+        "d073d5000004": {
+            "payload": {
+                "brightness": 1.0,
+                "hue": Around(100),
+                "kelvin": 3500,
+                "label": "lamp",
+                "power": 65535,
+                "saturation": 0.0
+            },
+            "pkt_name": "LightState",
+            "pkt_type": 107
+        },
+        "d073d5000005": {
+            "payload": {
+                "brightness": Around(0.5, 0.05),
+                "hue": Around(200),
+                "kelvin": 3500,
+                "label": "desk",
+                "power": 65535,
+                "saturation": Around(0.5, 0.05)
+            },
+            "pkt_name": "LightState",
+            "pkt_type": 107
+        },
+        "d073d5000006": {
+            "payload": {
+                "brightness": Around(0.5, 0.05),
+                "hue": Around(200),
+                "kelvin": 3500,
+                "label": "tv",
+                "power": 65535,
+                "saturation": Around(0.5, 0.05)
+            },
+            "pkt_name": "LightState",
+            "pkt_type": 107
+        }
+    }
+}
+
+label_state_responses = {
+    "results": {
+        "d073d5000001": {
+            "payload": {
+                "label": "kitchen"
+            },
+            "pkt_name": "StateLabel",
+            "pkt_type": 25
+        },
+        "d073d5000002": {
+            "payload": {
+                "label": "bathroom"
+            },
+            "pkt_name": "StateLabel",
+            "pkt_type": 25
+        },
+        "d073d5000003": {
+            "payload": {
+                "label": "lamp"
+            },
+            "pkt_name": "StateLabel",
+            "pkt_type": 25
+        },
+        "d073d5000004": {
+            "payload": {
+                "label": "lamp"
+            },
+            "pkt_name": "StateLabel",
+            "pkt_type": 25
+        },
+        "d073d5000005": {
+            "payload": {
+                "label": "desk"
+            },
+            "pkt_name": "StateLabel",
+            "pkt_type": 25
+        },
+        "d073d5000006": {
+            "payload": {
+                "label": "tv"
+            },
+            "pkt_name": "StateLabel",
+            "pkt_type": 25
+        }
     }
 }

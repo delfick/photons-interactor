@@ -52,7 +52,7 @@ describe AsyncTestCase, "Commands":
             if json_output is None and text_output is None:
                 return body
             else:
-                if json_output:
+                if json_output is not None:
                     self.maxDiff = None
                     self.assertEqual(json.loads(body.decode()), json_output)
                 else:
@@ -125,6 +125,31 @@ describe AsyncTestCase, "Commands":
         j = json.loads(res.decode())
         self.assertEqual(j, {"error": {"message": "Didn't find any devices"}, "status": 400, "error_code": "FoundNoDevices"})
 
+    async def assertQueryCommand(self, options, devices):
+        await self.assertCommand(options, {"command": "query", "args": {"pkt_type": 101}}, json_output=cthp.light_state_responses)
+
+        results = cthp.light_state_responses["results"]
+        expected = {device.serial: results[device.serial] for device in devices["devices"] if device.power == 65535}
+        self.assertEqual(len(expected), 5)
+        await self.assertCommand(options
+            , {"command": "query", "args": {"pkt_type": 101, "matcher": "power=on"}}
+            , json_output = {"results": expected}
+            )
+
+        try:
+            devices["devices"][1].online = False
+            expected["d073d5000002"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut"}
+            await self.assertCommand(options
+                , {"command": "query", "args": {"pkt_type": 101, "matcher": "power=on", "timeout": 0.1}}
+                , json_output = {"results": expected}
+                )
+        finally:
+            devices["devices"][1].online = True
+
+        await self.assertCommand(options, {"command": "query", "args": {"pkt_type": "GetLabel"}}
+            , json_output=cthp.label_state_responses
+            )
+
     async it "works":
         final_future = asyncio.Future()
 
@@ -160,5 +185,6 @@ describe AsyncTestCase, "Commands":
                     await self.assertHelpCommand(options, fake)
                     await self.assertTestCommand(options, fake)
                     await self.assertDiscoverCommand(options, fake)
+                    await self.assertQueryCommand(options, fake)
 
         await self.wait_for(doit(), timeout=6)
