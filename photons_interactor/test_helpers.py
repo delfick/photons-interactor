@@ -37,7 +37,7 @@ class ServerRunner:
         while time.time() - start < 5:
             if port_connected(self.options.port):
                 break
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.1)
         assert port_connected(self.options.port)
 
     async def __aexit__(self, typ, exc, tb):
