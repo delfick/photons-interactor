@@ -78,7 +78,7 @@ async def run(script, fltr, finder, add_replies=True, **kwargs):
 
     result = ResultBuilder(serials)
 
-    async for pkt, _, _ in script.run_with(serials, afr, error_catcher=result.error, **kwargs):
+    async for pkt, _, _ in script.run_with(finder.find(filtr=fltr), afr, error_catcher=result.error, **kwargs):
         if add_replies:
             result.add_packet(pkt)
 

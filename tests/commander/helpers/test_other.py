@@ -118,9 +118,11 @@ describe AsyncTestCase, "run":
         afr = mock.Mock(name="afr")
         serials = ["d073d5000001", "d073d5000002", "d073d5000003"]
 
+        find = mock.Mock(name="find")
         finder = mock.Mock(name="finder")
         finder.serials = asynctest.mock.CoroutineMock(name="serials", return_value=serials)
         finder.args_for_run = asynctest.mock.CoroutineMock(name="args_for_run", return_value=afr)
+        finder.find.return_value = find
 
         fltr = mock.Mock(name="fltr")
         script = mock.Mock(name="script")
@@ -158,15 +160,18 @@ describe AsyncTestCase, "run":
 
         finder.args_for_run.assert_called_once_with()
         finder.serials.assert_called_once_with(filtr=fltr)
-        run_with.assert_called_once_with(serials, afr, error_catcher=mock.ANY, one=1)
+        finder.find.assert_called_once_with(filtr=fltr)
+        run_with.assert_called_once_with(find, afr, error_catcher=mock.ANY, one=1)
 
     async it "doesn't add packets if add_replies is False":
         afr = mock.Mock(name="afr")
         serials = ["d073d5000001", "d073d5000002", "d073d5000003"]
 
+        find = mock.Mock(name="find")
         finder = mock.Mock(name="finder")
         finder.serials = asynctest.mock.CoroutineMock(name="serials", return_value=serials)
         finder.args_for_run = asynctest.mock.CoroutineMock(name="args_for_run", return_value=afr)
+        finder.find.return_value = find
 
         fltr = mock.Mock(name="fltr")
         script = mock.Mock(name="script")
@@ -205,4 +210,5 @@ describe AsyncTestCase, "run":
 
         finder.args_for_run.assert_called_once_with()
         finder.serials.assert_called_once_with(filtr=fltr)
-        run_with.assert_called_once_with(serials, afr, error_catcher=mock.ANY, one=1)
+        finder.find.assert_called_once_with(filtr=fltr)
+        run_with.assert_called_once_with(find, afr, error_catcher=mock.ANY, one=1)
