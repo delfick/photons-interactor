@@ -9,7 +9,7 @@ setup(
     , include_package_data = True
 
     , install_requires =
-      [ "lifx-photons-core==0.5.6"
+      [ "lifx-photons-core==0.5.7"
       , "tornado==5.0.2"
       ]
 

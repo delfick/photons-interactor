@@ -1,12 +1,8 @@
 from photons_interactor.commander.decorator import command_spec
 from photons_interactor.commander.commands import Command
 
-from photons_device_finder import DeviceFinder
-
 from option_merge import MergedOptions
 from input_algorithms.meta import Meta
-
-DeviceFinder._merged_options_formattable = True
 
 class Commander:
     """
