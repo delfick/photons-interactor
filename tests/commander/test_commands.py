@@ -9,6 +9,8 @@ from photons_interactor.server import Server
 
 from photons_app.test_helpers import AsyncTestCase
 
+from photons_device_messages import DeviceMessages
+
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 from contextlib import contextmanager
@@ -140,15 +142,13 @@ describe AsyncTestCase, "Commands":
             , json_output = {"results": expected}
             )
 
-        try:
-            devices["devices"][1].online = False
+        bathroom_light = devices["devices"][1]
+        with bathroom_light.offline():
             expected["d073d5000002"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut"}
             await self.assertCommand(options
                 , {"command": "query", "args": {"pkt_type": 101, "matcher": "power=on", "timeout": 0.1}}
                 , json_output = {"results": expected}
                 )
-        finally:
-            devices["devices"][1].online = True
 
         await self.assertCommand(options, {"command": "query", "args": {"pkt_type": "GetLabel"}}
             , json_output=cthp.label_state_responses
@@ -183,6 +183,48 @@ describe AsyncTestCase, "Commands":
             , json_output = {'results': results}
             )
 
+    async def assertSetCommand(self, options, devices):
+        expected = {"results": {device.serial: "ok" for device in devices["devices"]}}
+
+        await self.assertCommand(options, {"command": "set", "args": {"pkt_type": "SetPower", "pkt_args": {"level": 0}}}
+            , json_output = expected
+            )
+
+        for device in devices["devices"]:
+            device.expectSetMessages(DeviceMessages.SetPower(level=0, res_required=False))
+
+        # With an offline light
+        bathroom_light = devices["devices"][1]
+        with bathroom_light.offline():
+            expected["results"]["d073d5000002"] = {
+                  'error': {'message': 'Timed out. Waiting for reply to a packet'}
+                , "error_code": "TimedOut"
+                }
+
+            await self.assertCommand(options
+                , {"command": "set", "args": {"pkt_type": "SetPower", "pkt_args": {"level": 65535}, "timeout": 0.1}}
+                , json_output = expected
+                )
+
+            for device in devices["devices"]:
+                if device is not bathroom_light:
+                    device.expectSetMessages(DeviceMessages.SetPower(level=65535, res_required=False))
+
+        # With a matcher
+        kitchen_light = devices["devices"][0]
+        self.assertEqual(kitchen_light.label, "kitchen")
+        expected = {"results": {kitchen_light.serial: "ok"}}
+
+        await self.assertCommand(options
+            , {"command": "set", "args": {"pkt_type": 24, "pkt_args": {"label": "blah"}, "matcher": "label=kitchen"}}
+            , json_output = expected
+            )
+
+        kitchen_light.expectSetMessages(DeviceMessages.SetLabel(label="blah", res_required=False))
+        for device in devices["devices"]:
+            if device is not kitchen_light:
+                device.expectNoSetMessages()
+
     async it "works":
         final_future = asyncio.Future()
 
@@ -215,9 +257,9 @@ describe AsyncTestCase, "Commands":
 
             async with cthp.MemoryTargetRunner(lan_target, fake["devices"]):
                 async with thp.ServerRunner(final_future, server, options, wrapper()):
-                    await self.assertHelpCommand(options, fake)
-                    await self.assertTestCommand(options, fake)
-                    await self.assertDiscoverCommand(options, fake)
-                    await self.assertQueryCommand(options, fake)
+                    for test in ("Help", "Test", "Discover", "Query", "Set"):
+                        for device in fake["devices"]:
+                            device.reset()
+                        await getattr(self, f"assert{test}Command")(options, fake)
 
         await self.wait_for(doit(), timeout=6)

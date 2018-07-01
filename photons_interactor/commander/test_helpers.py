@@ -1,4 +1,5 @@
 from photons_app.formatter import MergedOptionStringFormatter
+from photons_app.test_helpers import print_packet_difference
 from photons_app.registers import ProtocolRegister
 
 from photons_products_registry import LIFIProductRegistry, capability_for_ids
@@ -12,6 +13,7 @@ from photons_colour import ColourMessages
 from input_algorithms.dictobj import dictobj
 from input_algorithms.meta import Meta
 
+from contextlib import contextmanager
 from unittest import mock
 import uuid
 
@@ -145,23 +147,27 @@ class Device(FakeDevice):
     def __init__(self, serial, protocol_register, *, label, power, group, location, color, vendor_id, product_id, firmware):
         super().__init__(serial, protocol_register)
 
-        self.gets = []
-        self.sets = []
+        def reset():
+            self.gets = []
+            self.sets = []
 
-        self.change_hsbk(color)
-        self.change_label(label)
-        self.change_power(power)
-        self.change_infrared(0)
+            self.change_hsbk(color)
+            self.change_label(label)
+            self.change_power(power)
+            self.change_infrared(0)
 
-        for k, v in [("group", group), ("location", location)]:
-            setattr(self, k, "")
-            setattr(self, f"{k}_label", "")
-            setattr(self, f"{k}_updated_at", 0)
-            if v:
-                getattr(self, f"change_{k}")(v)
+            for k, v in [("group", group), ("location", location)]:
+                setattr(self, k, "")
+                setattr(self, f"{k}_label", "")
+                setattr(self, f"{k}_updated_at", 0)
+                if v:
+                    getattr(self, f"change_{k}")(v)
 
-        self.change_firmware(firmware)
-        self.change_version(vendor_id, product_id)
+            self.change_firmware(firmware)
+            self.change_version(vendor_id, product_id)
+
+        self.reset = reset
+        reset()
 
     def change_infrared(self, level):
         self.infrared = level
@@ -196,6 +202,14 @@ class Device(FakeDevice):
         self.vendor_id = vendor_id
         self.product_id = product_id
 
+    @contextmanager
+    def offline(self):
+        try:
+            self.online = False
+            yield
+        finally:
+            self.online = True
+
     @property
     def capability(self):
         return capability_for_ids(self.product_id, self.vendor_id)
@@ -208,6 +222,41 @@ class Device(FakeDevice):
             , power = self.power
             , label = self.label
             )
+
+    def clearGetMessages(self):
+        self.gets = []
+
+    def clearSetMessages(self):
+        self.sets = []
+
+    def expectNoSetMessages(self):
+        assert len(self.sets) == 0, f"Expected no set messages, have {self.sets}"
+
+    def expectNoGetMessages(self):
+        assert len(self.gets) == 0, f"Expected no get messages, have {self.gets}"
+
+    def expectSetMessages(self, *msgs):
+        return self.expectMessages("sets", *msgs)
+
+    def expectGetMessages(self, *msgs):
+        return self.expectMessages("gets", *msgs)
+
+    def expectMessages(self, typ, *msgs):
+        lst = getattr(self, typ)
+
+        assert len(lst) == len(msgs), f"Expected same messages, got {[type(s) for s in self.sets]}, want {[type(m) for m in msgs]}"
+        for got, want in zip(lst, msgs):
+            if type(got) != type(want):
+                assert type(got) == type(want), f"Message of different type, got {type(got)} wanted {type(want)}"
+
+            if repr(got.payload) != repr(want.payload):
+                print_packet_difference(got, want)
+            assert repr(got.payload) == repr(want.payload), f"Expected payloads to be the same, got {repr(got.payload)}, want {repr(want.payload)}"
+
+            assert got.res_required == want.res_required, f"Expected same res_required, got {got}, want {want}"
+            assert got.ack_required == want.ack_required, f"Expected same ack_required, got {got}, want {want}"
+
+        setattr(self, typ, [])
 
     def make_response(self, pkt):
         if pkt.__class__.__name__.startswith("Get"):
@@ -260,7 +309,7 @@ class Device(FakeDevice):
             return DeviceMessages.StateLabel(label=self.label)
 
         elif pkt | DeviceMessages.SetPower or pkt | DeviceMessages.SetLightPower:
-            res = DeviceMessages.StatePower(pkt.power)
+            res = DeviceMessages.StatePower(level=pkt.level)
             self.change_power(pkt.level)
             return res
 
