@@ -244,17 +244,17 @@ class Device(FakeDevice):
     def expectMessages(self, typ, *msgs):
         lst = getattr(self, typ)
 
-        assert len(lst) == len(msgs), f"Expected same messages, got {[type(s) for s in self.sets]}, want {[type(m) for m in msgs]}"
-        for got, want in zip(lst, msgs):
+        assert len(lst) == len(msgs), f"{self.serial}: Expected same messages, got {[type(s) for s in self.sets]}, want {[type(m) for m in msgs]}"
+        for i, (got, want) in enumerate(zip(lst, msgs)):
             if type(got) != type(want):
-                assert type(got) == type(want), f"Message of different type, got {type(got)} wanted {type(want)}"
+                assert type(got) == type(want), f"{self.serial}: msg#{i}: Message of different type, got {type(got)} wanted {type(want)}"
 
             if repr(got.payload) != repr(want.payload):
                 print_packet_difference(got, want)
-            assert repr(got.payload) == repr(want.payload), f"Expected payloads to be the same, got {repr(got.payload)}, want {repr(want.payload)}"
+            assert repr(got.payload) == repr(want.payload), f"{self.serial}: msg#{i}: Expected payloads to be the same, got {repr(got.payload)}, want {repr(want.payload)}"
 
-            assert got.res_required == want.res_required, f"Expected same res_required, got {got}, want {want}"
-            assert got.ack_required == want.ack_required, f"Expected same ack_required, got {got}, want {want}"
+            assert got.res_required == want.res_required, f"{self.serial}: msg#{i}: Expected same res_required, got {got}, want {want}"
+            assert got.ack_required == want.ack_required, f"{self.serial}: msg#{i}: Expected same ack_required, got {got}, want {want}"
 
         setattr(self, typ, [])
 
