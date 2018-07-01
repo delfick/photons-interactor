@@ -102,7 +102,11 @@ class QueryCommand(Command):
         fltr = chp.filter_from_matcher(self.matcher, self.refresh)
         msg = chp.make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         script = self.target.script(msg)
-        return await chp.run(script, fltr, self.finder, timeout=self.timeout, multiple_replies=self.multiple)
+        kwargs = {}
+        if self.multiple:
+            kwargs["multiple_replies"] = True
+            kwargs["first_wait"] = 0.5
+        return await chp.run(script, fltr, self.finder, timeout=self.timeout, **kwargs)
 
 @command(name="transform")
 class TransformCommand(Command):
