@@ -3,15 +3,23 @@ from photons_interactor.errors import InteractorError
 from photons_app import helpers as hp
 
 from tornado.web import RequestHandler, HTTPError
+from input_algorithms import spec_base as sb
+from input_algorithms.dictobj import dictobj
+from input_algorithms.meta import Meta
 from delfick_error import DelfickError
+from tornado import websocket
 from bitarray import bitarray
 import binascii
 import logging
 import json
+import uuid
 
 log = logging.getLogger("photons_interactor.request_handlers.base")
 
 class Finished(InteractorError):
+    pass
+
+class InvalidMessage(InteractorError):
     pass
 
 def reprer(o):
@@ -208,3 +216,122 @@ class Simple(RequestsMixin, RequestHandler):
         info = {"result": None}
         async with self.async_catcher(info):
             info["result"] = await self.do_delete(*args, **kwargs)
+
+json_spec = sb.match_spec(
+      (bool, sb.any_spec())
+    , (int, sb.any_spec())
+    , (float, sb.any_spec())
+    , (str, sb.any_spec())
+    , (list, lambda: sb.listof(json_spec))
+    , (type(None), sb.any_spec())
+    , fallback=lambda: sb.dictof(sb.string_spec(), json_spec)
+    )
+
+class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
+    """
+    Used for websocket handlers
+
+    Implement ``process_message``
+
+    .. automethod:: photons_interactor.request_handlers.base.SimpleWebSocketBase.process_message
+
+    This class takes in messages of the form ``{"path": <string>, "message_id": <string>, "body": <dictionary}``
+
+    It will respond with messages of the form ``{"reply": <reply>, "message_id": <message_id>}``
+
+    It treats path of ``__tick__`` as special and respond with ``{"reply": {"ok": "thankyou"}, "message_id": "__tick__"}``
+
+    It relies on the client side closing the connection when it's finished.
+    """
+    class WSMessage(dictobj.Spec):
+        path = dictobj.Field(sb.string_spec, wrapper=sb.required)
+        message_id = dictobj.Field(sb.string_spec, wrapper=sb.required)
+        body = dictobj.Field(json_spec, wrapper=sb.required)
+
+    message_spec = WSMessage.FieldSpec()
+
+    class Closing(object):
+        pass
+
+    def open(self):
+        self.key = str(uuid.uuid1())
+        log.info(hp.lc("WebSocket opened", key=self.key))
+
+    def reply(self, msg, message_id=None):
+        # I bypass tornado converting the dictionary so that non jsonable things can be repr'd
+        reply = {"reply": msg, "message_id": message_id}
+        reply = json.dumps(reply, default=lambda o: repr(o)).replace("</", "<\\/")
+
+        if self.ws_connection:
+            self.write_message(reply)
+
+    def on_message(self, message):
+        log.debug(hp.lc("websocket message", message=message, key=self.key))
+        try:
+            parsed = json.loads(message)
+        except (TypeError, ValueError) as error:
+            self.reply({"error": "Message wasn't valid json\t{0}".format(str(error))})
+            return
+
+        if type(parsed) is dict and "path" in parsed and parsed["path"] == "__tick__":
+            parsed["message_id"] = "__tick__"
+            parsed["body"] = "__tick__"
+
+        try:
+            msg = self.message_spec.normalise(Meta.empty(), parsed)
+        except Exception as error:
+            log.exception(hp.lc("Invalid message received on websocket", error=error, got=parsed))
+            if hasattr(error, "as_dict"):
+                error = error.as_dict()
+            else:
+                error = str(error)
+
+            self.reply({"error": InvalidMessage(error=error).as_dict()})
+        else:
+            path = msg.path
+            body = msg.body
+            message_id = msg.message_id
+
+            if path == "__tick__":
+                self.reply({"ok": "thankyou"}, message_id=message_id)
+                return
+
+            def on_processed(msg):
+                if msg is self.Closing:
+                    self.reply({"closing": "goodbye"}, message_id = message_id)
+                    self.close()
+                    return
+
+                self.reply(msg, message_id=message_id)
+
+            async def doit():
+                info = {}
+
+                progress_cb = lambda progress: self.reply({"progress": progress}, message_id=message_id)
+                async with self.async_catcher(info, on_processed):
+                    info["result"] = await self.process_message(path, body, message_id, progress_cb)
+
+            hp.async_as_background(doit())
+
+    async def process_message(self, path, body, message_id, progress_cb):
+        """
+        Return the response to be sent back when we get a message from the conn.
+
+        path
+            The uri specified in the message
+
+        body
+            The body specified in the message
+
+        message_id
+            The unique message_id for this stream of requests as supplied in the request
+
+        progress_cb
+            A callback that will send a message of the form ``{"progress": <progress>, "message_id": <message_id}``
+            where ``<progress>`` is the argument passed into the callback
+        """
+        raise NotImplementedError
+
+    def on_close(self):
+        """Hook for when a websocket connection closes"""
+        log.info(hp.lc("WebSocket closed", key=self.key))

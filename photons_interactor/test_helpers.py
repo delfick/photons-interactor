@@ -37,18 +37,20 @@ class ServerRunner:
         while time.time() - start < 5:
             if port_connected(self.options.port):
                 break
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.001)
         assert port_connected(self.options.port)
+        return self
 
     async def __aexit__(self, typ, exc, tb):
         self.final_future.cancel()
         if not hasattr(self, "t"):
             return
 
-        try:
-            await self.t
-        except asyncio.CancelledError:
-            pass
+        if self.t is not None and not self.t.done():
+            try:
+                await asyncio.wait_for(self.t, timeout=5)
+            except asyncio.CancelledError:
+                pass
 
         if hasattr(self.server.finder.finish, "mock_calls"):
             assert len(self.server.finder.finish.mock_calls) == 0
