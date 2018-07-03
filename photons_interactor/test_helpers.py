@@ -1,8 +1,10 @@
 from photons_app import helpers as hp
 
+from tornado.websocket import websocket_connect
 import asyncio
 import socket
 import time
+import json
 
 def free_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -65,3 +67,19 @@ class ServerRunner:
             self.server.finder.finish.assert_called_once_with()
 
         assert not port_connected(self.options.port)
+
+    @property
+    def ws_url(self):
+        return f"ws://127.0.0.1:{self.options.port}/v1/ws"
+
+    async def ws_connect(self):
+        return await websocket_connect(self.ws_url)
+
+    async def ws_write(self, connection, message):
+        return await connection.write_message(json.dumps(message))
+
+    async def ws_read(self, connection):
+        res = await connection.read_message()
+        if res is None:
+            return res
+        return json.loads(res)

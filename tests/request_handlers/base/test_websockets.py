@@ -10,13 +10,11 @@ from photons_app.test_helpers import AsyncTestCase
 from photons_app.errors import PhotonsAppError
 from photons_app import helpers as hp
 
-from tornado.websocket import websocket_connect
 from contextlib import contextmanager
 from unittest import mock
 import asynctest
 import asyncio
 import socket
-import json
 import uuid
 
 class WSServer(thp.ServerRunner):
@@ -29,7 +27,7 @@ class WSServer(thp.ServerRunner):
 
         class WSS(Server):
             def tornado_routes(self):
-                return [("/ws", Handler, {} if handler_args is None else handler_args)]
+                return [("/v1/ws", Handler, {} if handler_args is None else handler_args)]
 
         self.lan_target = mock.Mock(name="lan_target")
         self.target_register = mock.Mock(name="target_register")
@@ -52,22 +50,6 @@ class WSServer(thp.ServerRunner):
 
         super().__init__(self.final_future, self.server, self.options, wrapper())
 
-    @property
-    def ws_url(self):
-        return f"ws://127.0.0.1:{self.options.port}/ws"
-
-    async def connect(self):
-        return await websocket_connect(self.ws_url)
-
-    async def write(self, connection, message):
-        return await connection.write_message(json.dumps(message))
-
-    async def read(self, connection):
-        res = await connection.read_message()
-        if res is None:
-            return res
-        return json.loads(res)
-
 describe AsyncTestCase, "SimpleWebSocketBase":
     async it "has ws_connection object":
         f = asyncio.Future()
@@ -83,22 +65,22 @@ describe AsyncTestCase, "SimpleWebSocketBase":
             message_id = str(uuid.uuid1())
 
             async with WSServer(Handler) as server:
-                connection = await server.connect()
-                await server.write(connection
+                connection = await server.ws_connect()
+                await server.ws_write(connection
                     , {"path": "/one/two", "body": {"hello": "there"}, "message_id": message_id}
                     )
-                res = await server.read(connection)
+                res = await server.ws_read(connection)
                 self.assertEqual(res["message_id"], message_id)
                 self.assertEqual(res["reply"], {"one": "two"})
 
                 await f
 
-                res = await server.read(connection)
+                res = await server.ws_read(connection)
                 self.assertEqual(res["message_id"], message_id)
                 self.assertEqual(res["reply"], "blah")
 
                 connection.close()
-                self.assertIs(await server.read(connection), None)
+                self.assertIs(await server.ws_read(connection), None)
 
         await self.wait_for(doit())
 
@@ -113,23 +95,23 @@ describe AsyncTestCase, "SimpleWebSocketBase":
             message_id = str(uuid.uuid1())
 
             async with WSServer(Handler) as server:
-                connection = await server.connect()
-                await server.write(connection
+                connection = await server.ws_connect()
+                await server.ws_write(connection
                     , {"path": "/one/two", "body": {"wat": "one"}, "message_id": message_id}
                     )
-                res = await server.read(connection)
+                res = await server.ws_read(connection)
                 self.assertEqual(res["message_id"], message_id)
                 self.assertEqual(res["reply"], "one")
 
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/one/two", "body": {"wat": "two"}, "message_id": message_id}
                     )
-                res = await server.read(connection)
+                res = await server.ws_read(connection)
                 self.assertEqual(res["message_id"], message_id)
                 self.assertEqual(res["reply"], "two")
 
                 connection.close()
-                self.assertIs(await server.read(connection), None)
+                self.assertIs(await server.ws_read(connection), None)
 
         await self.wait_for(doit())
 
@@ -144,23 +126,23 @@ describe AsyncTestCase, "SimpleWebSocketBase":
             message_id = str(uuid.uuid1())
 
             async with WSServer(Handler) as server:
-                connection = await server.connect()
-                await server.write(connection
+                connection = await server.ws_connect()
+                await server.ws_write(connection
                     , {"path": "__tick__", "message_id": "__tick__"}
                     )
-                res = await server.read(connection)
+                res = await server.ws_read(connection)
                 self.assertEqual(res["message_id"], "__tick__")
                 self.assertEqual(res["reply"], {"ok": "thankyou"})
 
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/one/two", "body": {"wat": "two"}, "message_id": message_id}
                     )
-                res = await server.read(connection)
+                res = await server.ws_read(connection)
                 self.assertEqual(res["message_id"], message_id)
                 self.assertEqual(res["reply"], "two")
 
                 connection.close()
-                self.assertIs(await server.read(connection), None)
+                self.assertIs(await server.ws_read(connection), None)
 
         await self.wait_for(doit())
 
@@ -187,18 +169,18 @@ describe AsyncTestCase, "SimpleWebSocketBase":
                 ]
 
             async with WSServer(Handler) as server:
-                connection = await server.connect()
+                connection = await server.ws_connect()
 
                 for body in invalid:
-                    await server.write(connection, body)
-                    res = await server.read(connection)
+                    await server.ws_write(connection, body)
+                    res = await server.ws_read(connection)
                     assert res is not None, "Got no reply to : '{}'".format(body)
                     self.assertEqual(res["message_id"], None)
                     assert "reply" in res
                     assert "error" in res["reply"]
 
                 connection.close()
-                self.assertIs(await server.read(connection), None)
+                self.assertIs(await server.ws_read(connection), None)
 
         await self.wait_for(doit())
 
@@ -213,33 +195,33 @@ describe AsyncTestCase, "SimpleWebSocketBase":
 
         async def doit():
             async with WSServer(Handler) as server:
-                connection = await server.connect()
+                connection = await server.ws_connect()
 
                 msg_id1 = str(uuid.uuid1())
                 msg_id2 = str(uuid.uuid1())
 
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/process", "body": {"serial": "1", "sleep": 0.1}, "message_id": msg_id1}
                     )
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/process", "body": {"serial": "2", "sleep": 0.05}, "message_id": msg_id2}
                     )
 
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , {"message_id": msg_id1, "reply": {"progress": {"1": ["info", "start"]}}}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , {"message_id": msg_id2, "reply": {"progress": {"2": ["info", "start"]}}}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , {"message_id": msg_id2, "reply": {"processed": "2"}}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , {"message_id": msg_id1, "reply": {"processed": "1"}}
                     )
 
                 connection.close()
-                self.assertIs(await server.read(connection), None)
+                self.assertIs(await server.ws_read(connection), None)
 
         await self.wait_for(doit())
 
@@ -253,33 +235,33 @@ describe AsyncTestCase, "SimpleWebSocketBase":
 
         async def doit():
             async with WSServer(Handler) as server:
-                connection = await server.connect()
+                connection = await server.ws_connect()
 
                 msg_id = str(uuid.uuid1())
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/process", "body": {"close": False}, "message_id": msg_id}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , {"message_id": msg_id, "reply": "stillalive"}
                     )
 
                 msg_id = str(uuid.uuid1())
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/process", "body": {"close": False}, "message_id": msg_id}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , {"message_id": msg_id, "reply": "stillalive"}
                     )
 
                 msg_id = str(uuid.uuid1())
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/process", "body": {"close": True}, "message_id": msg_id}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , {"message_id": msg_id, "reply": {"closing": "goodbye"}}
                     )
 
-                self.assertIs(await server.read(connection), None)
+                self.assertIs(await server.ws_read(connection), None)
 
         await self.wait_for(doit())
 
@@ -290,7 +272,7 @@ describe AsyncTestCase, "SimpleWebSocketBase":
 
         async def doit():
             async with WSServer(Handler) as server:
-                connection = await server.connect()
+                connection = await server.ws_connect()
 
                 msg_id = str(uuid.uuid1())
                 body = {
@@ -303,15 +285,15 @@ describe AsyncTestCase, "SimpleWebSocketBase":
                     , "nine": {"one": "two", "three": None, "four": {"five": "six"}}
                     }
 
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/process", "body": body, "message_id": msg_id}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , {"message_id": msg_id, "reply": body}
                     )
                 connection.close()
 
-                self.assertIs(await server.read(connection), None)
+                self.assertIs(await server.ws_read(connection), None)
 
         await self.wait_for(doit())
 
@@ -327,13 +309,13 @@ describe AsyncTestCase, "SimpleWebSocketBase":
 
         async def doit():
             async with WSServer(Handler) as server:
-                connection = await server.connect()
+                connection = await server.ws_connect()
 
                 msg_id = str(uuid.uuid1())
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/error", "body": {"error": "one"}, "message_id": msg_id}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , { "message_id": msg_id
                       , "reply":
                         { "error": "Internal Server Error"
@@ -344,10 +326,10 @@ describe AsyncTestCase, "SimpleWebSocketBase":
                     )
 
                 msg_id2 = str(uuid.uuid1())
-                await server.write(connection
+                await server.ws_write(connection
                     , {"path": "/error", "body": {"error": "two"}, "message_id": msg_id2}
                     )
-                self.assertEqual(await server.read(connection)
+                self.assertEqual(await server.ws_read(connection)
                     , { "message_id": msg_id2
                       , "reply":
                         { "error": {"message": "nope. Try again", "stuff": 1}
@@ -358,6 +340,6 @@ describe AsyncTestCase, "SimpleWebSocketBase":
                     )
 
                 connection.close()
-                self.assertIs(await server.read(connection), None)
+                self.assertIs(await server.ws_read(connection), None)
 
         await self.wait_for(doit())
