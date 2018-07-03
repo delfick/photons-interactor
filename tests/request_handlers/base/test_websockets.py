@@ -1,6 +1,7 @@
 # coding: spec
 
 from photons_interactor.request_handlers.base import SimpleWebSocketBase
+from photons_interactor.commander import helpers as chp
 from photons_interactor import test_helpers as thp
 from photons_interactor.options import Options
 from photons_interactor.server import Server
@@ -336,6 +337,30 @@ describe AsyncTestCase, "SimpleWebSocketBase":
                         , "error_code": "BadError"
                         , "status": 400
                         }
+                      }
+                    )
+
+                connection.close()
+                self.assertIs(await server.ws_read(connection), None)
+
+        await self.wait_for(doit())
+
+    async it "can handle a ResultBuilder":
+        class Handler(SimpleWebSocketBase):
+            async def process_message(s, path, body, message_id, progress_cb):
+                return chp.ResultBuilder(["d073d5000001", "d073d5000002"])
+
+        async def doit():
+            async with WSServer(Handler) as server:
+                connection = await server.ws_connect()
+
+                msg_id = str(uuid.uuid1())
+                await server.ws_write(connection
+                    , {"path": "/thing", "body": {}, "message_id": msg_id}
+                    )
+                self.assertEqual(await server.ws_read(connection)
+                    , { "message_id": msg_id
+                      , "reply": {"results": {"d073d5000001": "ok", "d073d5000002": "ok"}}
                       }
                     )
 

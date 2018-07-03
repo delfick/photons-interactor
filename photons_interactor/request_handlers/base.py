@@ -259,6 +259,8 @@ class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
 
     def reply(self, msg, message_id=None):
         # I bypass tornado converting the dictionary so that non jsonable things can be repr'd
+        if hasattr(msg, "as_dict"):
+            msg = msg.as_dict()
         reply = {"reply": msg, "message_id": message_id}
         reply = json.dumps(reply, default=lambda o: repr(o)).replace("</", "<\\/")
 

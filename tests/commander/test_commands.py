@@ -20,6 +20,7 @@ from unittest import mock
 import http.client
 import asyncio
 import json
+import uuid
 
 class TestCommand(Command):
     """
@@ -275,6 +276,70 @@ describe AsyncTestCase, "Commands":
                     , Parser.color_to_msg("blue", overrides={"brightness": 0.5, "res_required": False})
                     )
 
+    async def assertWS(self, options, devices, server):
+        connection = await server.ws_connect()
+
+        # Invalid path
+        msg_id = str(uuid.uuid1())
+        await server.ws_write(connection
+            , {"path": "/blah", "body": {"stuff": True}, "message_id": msg_id}
+            )
+
+        error = "Specified path is invalid: /blah"
+        self.assertEqual(await server.ws_read(connection)
+            , {"message_id": msg_id, "reply": {"error": error, "status": 404}}
+            )
+
+        # invalid command
+        msg_id = str(uuid.uuid1())
+        await server.ws_write(connection
+            , {"path": "/v1/lifx/command", "body": {"command": "nope"}, "message_id": msg_id}
+            )
+
+        self.assertEqual(await server.ws_read(connection)
+            , { "message_id": msg_id
+              , "reply":
+                { "error":
+                  { "message": 'Bad value. Unknown command'
+                  , "wanted": "nope"
+                  , "meta": '{path=<input>}'
+                  , "available": ["discover", "help", "query", "set", "test", "transform"]
+                  }
+                , "error_code": "BadSpecValue"
+                , "status": 400
+                }
+              }
+            )
+
+        # valid command
+        msg_id = str(uuid.uuid1())
+        args = {"one": 1, "two": "TWO", "three": True}
+        await server.ws_write(connection
+            , {"path": "/v1/lifx/command", "body": {"command": "test", "args": args}, "message_id": msg_id}
+            )
+
+        self.assertEqual(await server.ws_read(connection)
+            , { "message_id": msg_id
+              , "reply": {"one": 1, "two": "TWO", "three": True}
+              }
+            )
+
+        # another valid command
+        msg_id = str(uuid.uuid1())
+        args = {"one": 1, "two": "TWO", "three": True}
+        await server.ws_write(connection
+            , {"path": "/v1/lifx/command", "body": {"command": "query", "args": {"pkt_type": 101}}, "message_id": msg_id}
+            )
+
+        self.assertEqual(await server.ws_read(connection)
+            , { "message_id": msg_id
+              , "reply": cthp.light_state_responses
+              }
+            )
+
+        connection.close()
+        self.assertIs(await server.ws_read(connection), None)
+
     async it "works":
         final_future = asyncio.Future()
 
@@ -305,11 +370,17 @@ describe AsyncTestCase, "Commands":
                     if "test" in command.available_commands:
                         del command.available_commands["test"]
 
+            self.maxDiff = None
+
             async with cthp.MemoryTargetRunner(lan_target, fake["devices"]):
-                async with thp.ServerRunner(final_future, server, options, wrapper()):
+                async with thp.ServerRunner(final_future, server, options, wrapper()) as s:
                     for test in ("Help", "Test", "Discover", "Query", "Set", "Transform"):
                         for device in fake["devices"]:
                             device.reset()
                         await getattr(self, f"assert{test}Command")(options, fake)
+
+                    for device in fake["devices"]:
+                        device.reset()
+                    await self.assertWS(options, fake, s)
 
         await self.wait_for(doit(), timeout=6)

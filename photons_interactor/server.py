@@ -1,4 +1,4 @@
-from photons_interactor.request_handlers.command import CommandHandler
+from photons_interactor.request_handlers.command import CommandHandler, WSHandler
 from photons_interactor.commander import Commander
 
 from photons_device_finder import DeviceFinder
@@ -42,6 +42,10 @@ class Server(object):
         return [
               ( "/v1/lifx/command"
               , CommandHandler
+              , {"commander": self.commander}
+              )
+            , ( "/v1/ws"
+              , WSHandler
               , {"commander": self.commander}
               )
             ]
