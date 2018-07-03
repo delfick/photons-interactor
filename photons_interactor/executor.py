@@ -9,9 +9,11 @@ from photons_app import helpers as hp
 from photons_app.executor import App
 
 from input_algorithms import spec_base as sb
+from delfick_app import ArgumentError
+from textwrap import dedent
 import logging
 import json
-import os
+import sys
 
 log = logging.getLogger("photons_interactor.executor")
 

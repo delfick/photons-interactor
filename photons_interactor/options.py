@@ -1,3 +1,7 @@
+from photons_interactor.assets import Assets
+
+from photons_app.formatter import MergedOptionStringFormatter
+
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 import secrets
@@ -22,3 +26,15 @@ class Options(dictobj.Spec):
     device_finder_options = dictobj.Field(sb.dictionary_spec
         , help = "Options for the device finder"
         )
+
+    assets = dictobj.Field(Assets.FieldSpec(formatter=MergedOptionStringFormatter)
+        , help = "Options for where assets can be found"
+        )
+
+    @property
+    def static_dest(self):
+        return self.assets.assets_folder
+
+    @property
+    def html_path(self):
+        return "/"

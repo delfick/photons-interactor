@@ -3,4 +3,7 @@ __pycache__/
 *.egg-info/
 .photons-interactor/
 .tox/
-dist/
+./dist/
+interactor.yml
+assets/
+photons_interactor/static/node_modules/

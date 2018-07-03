@@ -1,8 +1,10 @@
 from photons_interactor.request_handlers.command import CommandHandler, WSHandler
+from photons_interactor.request_handlers.index import Index
 from photons_interactor.commander import Commander
 
 from photons_device_finder import DeviceFinder
 
+from tornado.web import StaticFileHandler
 from tornado.httpserver import HTTPServer
 import tornado.web
 import tornado
@@ -47,6 +49,13 @@ class Server(object):
             , ( "/v1/ws"
               , WSHandler
               , {"commander": self.commander}
+              )
+            , ( r"/static/(.*)"
+              , StaticFileHandler
+              , {"path": self.server_options.static_dest}
+              )
+            , ( self.server_options.html_path
+              , Index
               )
             ]
 

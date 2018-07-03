@@ -42,6 +42,19 @@ describe AsyncTestCase, "Server":
             if hasattr(self, "final_future"):
                 self.final_future.cancel()
 
+        async def assertIndex(self, options):
+            def doit():
+                conn = http.client.HTTPConnection("127.0.0.1", options.port, timeout=5)
+                conn.request("GET", "/")
+                res = conn.getresponse()
+
+                self.assertEqual(res.status, 200)
+
+                recv = res.read().decode()
+                assert recv.startswith("<!DOCTYPE html>"), recv
+                self.assertEqual(res.headers['Content-Type'], "text/html; charset=UTF-8")
+            await self.wait_for(self.loop.run_in_executor(None, doit))
+
         async def assertPUTCommand(self, options, commander):
             commander.execute = asynctest.mock.CoroutineMock(name="execute", return_value={})
 
@@ -85,6 +98,7 @@ describe AsyncTestCase, "Server":
 
             async with thp.ServerRunner(self.final_future, server, options, wrapper()):
                 await self.assertPUTCommand(options, commander)
+                await self.assertIndex(options)
 
             self.assertIs(server.commander, commander)
             self.assertIs(server.finder, finder)
