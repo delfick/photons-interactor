@@ -21,7 +21,7 @@ def __lifx__(collector, *args, **kwargs):
         , Meta, collector.configuration, sb.NotSpecified
         )
 
-@an_action()
+@an_action(label="Interactor")
 async def serve(collector, **kwargs):
     conf = collector.configuration
     await Server(
@@ -32,7 +32,7 @@ async def serve(collector, **kwargs):
         , conf["protocol_register"]
         ).serve()
 
-@an_action()
+@an_action(label="Interactor")
 async def npm(collector, reference, **kwargs):
     if not os.path.exists(pkg_resources.resource_filename("photons_interactor", "static/js")):
         raise PhotonsAppError("Npm commands are only available during development")
