@@ -35,13 +35,13 @@ template = """
   </head>
 
   <body>
-    <div id="app"></div>
+    <div id="page"></div>
 
     <script src="/static/vendor.app.js?{timestamp}"></script>
     <script src="/static/app.js?{timestamp}"></script>
 
     <script>
-        ReactDOM.render(App, document.getElementById("app"));
+        ReactDOM.render(Page, document.getElementById("page"));
     </script>
   </body>
 </html>

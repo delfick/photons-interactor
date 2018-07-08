@@ -41,6 +41,10 @@ module.exports = {
         })
       },
       {
+        test: /\.woff2?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        use: "url-loader"
+      },
+      {
         test: /.js$/,
         exclude: /node_modules/,
         use: {
@@ -52,7 +56,8 @@ module.exports = {
               "syntax-export-extensions",
               "transform-decorators-legacy",
               "transform-function-bind",
-              "transform-class-properties"
+              "transform-class-properties",
+              "transform-es2015-template-literals"
             ]
           }
         }
