@@ -23,8 +23,20 @@ window.Page = (
   </Provider>
 );
 
+var scheme = "ws";
+if (window.location.protocol.startsWith("https")) {
+  scheme = "wss";
+}
+var url =
+  scheme +
+  "://" +
+  window.location.hostname +
+  ":" +
+  String(window.location.port) +
+  "/v1/ws";
+
 function* mainSaga() {
-  yield fork(listen);
+  yield fork(listen, url);
   yield routerFork;
 }
 

@@ -10,4 +10,10 @@ require("babel-register")({
   ],
   babelrc: false
 });
+require("babel-core/register");
+require("babel-polyfill");
+
+var WebSocket = require("ws");
+
 global.navigator = { userAgent: "node.js" };
+global.WebSocket = WebSocket;

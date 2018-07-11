@@ -1,19 +1,32 @@
 import { eventChannel, channel, END, delay } from "redux-saga";
 import { createAction } from "redux-act";
-import { call, cancel, fork, put, take, race } from "redux-saga/effects";
+import { call, spawn, cancel, fork, put, take, race } from "redux-saga/effects";
 
 import uuidv4 from "uuid/v4";
 
 export const WSCommand = createAction(
   "Command to the websocket server",
-  (path, body, { onsuccess, onerror, onprogress }) => ({
+  (path, body, { onsuccess, onerror, onprogress, timeout, original }) => ({
     path,
     body,
     onsuccess,
     onerror,
-    onprogress
+    onprogress,
+    timeout,
+    original
   })
 );
+
+function* maybeTimeoutMessage(action) {
+  yield call(delay, action.timeout || 5000);
+  var response = action.onerror({
+    error: "Timedout waiting for a reply to the message",
+    error_code: "Timedout"
+  });
+  if (response) {
+    yield put(response);
+  }
+}
 
 function* sendToSocket(socket, sendch) {
   while (true) {
@@ -21,41 +34,28 @@ function* sendToSocket(socket, sendch) {
     if (socket.readyState === 1) {
       socket.send(JSON.stringify(action.data));
     } else {
-      yield put(sendch, action);
-      break;
+      var response = action.onerror({
+        error: "Connection to the server wasn't active",
+        error_code: "InactiveConnection"
+      });
+      if (response) {
+        yield put(response);
+      }
     }
   }
 }
 
-function tickMessages(socket) {
-  var send_tick = () => {
+function* tickMessages(socket) {
+  while (true) {
+    yield call(delay, 15000);
     if (socket.readyState === 1) {
       socket.send(JSON.stringify({ path: "__tick__" }));
     }
-  };
-
-  var interval = setInterval(send_tick, 15000);
-
-  return eventChannel(emit => {
-    return () => {
-      clearInterval(interval);
-    };
-  });
+  }
 }
 
-function* startWS(count, sendch, receivech) {
-  var scheme = "ws";
-  if (window.location.protocol.startsWith("https")) {
-    scheme = "wss";
-  }
-  var socket = new WebSocket(
-    scheme +
-      "://" +
-      window.location.hostname +
-      ":" +
-      String(window.location.port) +
-      "/v1/ws"
-  );
+function* startWS(url, count, sendch, receivech) {
+  var socket = new WebSocket(url);
 
   var onerrors = [];
   var oncloses = [];
@@ -94,11 +94,16 @@ function* startWS(count, sendch, receivech) {
 
   var addonerror = cb => onerrors.push(cb);
   var addonclose = cb => oncloses.push(cb);
+  var start = Date.now();
 
   try {
     var { timeout, w } = yield race({ timeout: call(delay, 2000), w: ws });
   } catch (e) {
     console.error("Failed to start websocket connection", e);
+    var diff = Date.now() - start;
+    if (diff < 1000) {
+      yield call(delay, 1000 - diff);
+    }
     return;
   }
 
@@ -108,25 +113,27 @@ function* startWS(count, sendch, receivech) {
     return false;
   }
 
-  var ticker = yield call(tickMessages, w);
-  var sender = yield call(sendToSocket, w, sendch);
+  var waiter = yield call(channel);
+  var ticker = yield fork(tickMessages, w);
+  var sender = yield fork(sendToSocket, w, sendch);
 
-  yield take(
-    eventChannel(emit => {
-      addonclose(() => {
-        emit.put(END);
-      });
-    })
-  );
+  addonclose(() => {
+    waiter.put(END);
+  });
 
-  yield cancel(ticker);
-  yield cancel(sender);
+  try {
+    yield take(waiter);
+  } finally {
+    waiter.close();
+    yield cancel(ticker);
+    yield cancel(sender);
+  }
 }
 
-function* processWsSend(sendch, actions) {
+function* processWsSend(commandch, sendch, actions) {
   var normalise = (
     messageId,
-    { path, body, onerror, onsuccess, onprogress }
+    { path, body, onerror, onsuccess, onprogress, original, timeout }
   ) => {
     var done = false;
 
@@ -138,49 +145,66 @@ function* processWsSend(sendch, actions) {
 
       done = true;
       if (onerror) {
-        return onerror({ messageId, error });
+        return onerror({ messageId, error, original });
       }
     };
 
-    var dosuccess = data => {
+    var dosuccess = (data, msgid) => {
       if (done) {
         return;
       }
 
       done = true;
       if (onsuccess) {
-        return onsuccess({ messageId, data });
+        return onsuccess({ messageId, data, original });
       }
     };
 
-    var doprogress = data => {
-      if (done) {
-        return;
-      }
-
-      done = true;
+    var doprogress = progress => {
       if (onprogress) {
-        return onprogress({ messageId, data });
+        return onprogress({ messageId, progress, original });
       }
     };
 
     return {
       data,
+      messageId,
+      timeout: timeout,
       onsuccess: dosuccess,
       onerror: doerror,
       onprogress: doprogress
     };
   };
+
   while (true) {
-    var { payload } = yield take(WSCommand);
+    var { payload } = yield take(commandch);
     var messageId = uuidv4();
     var normalised = normalise(messageId, payload);
     actions[messageId] = normalised;
+    normalised.timeouter = yield spawn(maybeTimeoutMessage, normalised);
     yield put(sendch, normalised);
   }
 }
 
 function* processWsReceive(receivech, actions) {
+  var makeResponse = (action, data) => {
+    if (data.progress) {
+      return action.onprogress(data.progress);
+    }
+
+    if (data.reply) {
+      if (data.reply.error) {
+        return action.onerror(data.reply);
+      } else {
+        return action.onsuccess(data.reply, data.message_id);
+      }
+    }
+
+    if (data.error) {
+      return action.onerror(data.error);
+    }
+  };
+
   while (true) {
     var { data } = yield take(receivech);
     try {
@@ -210,44 +234,59 @@ function* processWsReceive(receivech, actions) {
       continue;
     }
 
-    var response;
-    if (data.progress) {
-      response = action.onprogress(data.progress);
-    } else if (data.reply) {
-      if (data.reply.error) {
-        response = action.onerror(data.reply);
-      } else {
-        response = action.onsuccess(data.reply);
-      }
-    } else if (data.error) {
-      response = action.onerror(data.error);
+    if (action.timeouter) {
+      yield cancel(action.timeouter);
     }
 
+    var response = makeResponse(action, data);
     if (response) {
       yield put(response);
     }
   }
 }
 
-export function* listen(ch, delayMS) {
+export function* getWSCommands(commandch) {
+  while (true) {
+    var nxt = yield take(WSCommand);
+    yield put(commandch, nxt);
+  }
+}
+
+export function* listen(url, delayMS) {
   var count = 0;
   var messages = {};
   var sendch = yield call(channel);
   var receivech = yield call(channel);
+  var commandch = yield call(channel);
+
+  yield fork(getWSCommands, commandch);
 
   while (true) {
     count += 1;
     var actions = {};
     messages[count] = actions;
-    var sendprocess = yield fork(processWsSend, sendch, actions);
+    var sendprocess = yield fork(processWsSend, commandch, sendch, actions);
     var receiveprocess = yield fork(processWsReceive, receivech, actions);
-    yield call(startWS, count, sendch, receivech);
+    yield call(startWS, url, count, sendch, receivech);
     yield cancel(sendprocess);
     yield cancel(receiveprocess);
-    Object.keys(actions).map(messageId => {
-      var action = actions[messageId];
-      action.onerror("Lost connection to the server");
-    });
+
+    var ids = Object.keys(actions);
+    for (var i = 0; i < ids.length; i++) {
+      var action = actions[ids[i]];
+      if (action.timeouter) {
+        yield cancel(action.timeouter);
+      }
+
+      var response = action.onerror({
+        error: "Lost connection to the server",
+        error_code: "LostConnection"
+      });
+      if (response) {
+        yield put(response);
+      }
+    }
+
     delete messages[count];
     yield call(delay, delayMS || 5000);
   }

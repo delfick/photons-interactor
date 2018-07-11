@@ -50,7 +50,8 @@ class DevicesStateKls {
 
 export const DevicesState = new DevicesStateKls();
 
-function* getDetailsSaga({ payload }) {
+function* getDetailsSaga(original) {
+  var { payload } = original;
   var onsuccess = ({ data }) => DevicesState.GotDetails({ devices: data });
   var onerror = DevicesState.DetailsError;
 
@@ -61,12 +62,13 @@ function* getDetailsSaga({ payload }) {
         command: "discover",
         args: payload.args
       },
-      { onsuccess, onerror }
+      { onsuccess, onerror, original }
     )
   );
 }
 
-function* getSerialsSaga({ payload }) {
+function* getSerialsSaga(original) {
+  var { payload } = original;
   var onsuccess = ({ data }) => DevicesState.GotSerials({ serials: data });
   var onerror = DevicesState.DetailsError;
 
@@ -77,7 +79,7 @@ function* getSerialsSaga({ payload }) {
         command: "discover",
         args: { ...payload.args, just_serials: true }
       },
-      { onsuccess, onerror }
+      { onsuccess, onerror, original }
     )
   );
 }
