@@ -25,6 +25,8 @@ function* maybeTimeoutMessage(actions, messageId) {
     error_code: "Timedout"
   });
   if (response) {
+    // We don't need a finally block here because maybeTimeoutMessage is spawned
+    // and so isn't ever explicitly cancelled
     yield put(response);
     delete actions[messageId];
   }
@@ -36,13 +38,18 @@ function* sendToSocket(socket, sendch, actions) {
     if (socket.readyState === 1) {
       socket.send(JSON.stringify(action.data));
     } else {
-      var response = action.onerror({
-        error: "Connection to the server wasn't active",
-        error_code: "InactiveConnection"
-      });
-      if (response) {
-        yield put(response);
-        delete actions[action.messageId];
+      try {
+        var response = action.onerror({
+          error: "Connection to the server wasn't active",
+          error_code: "InactiveConnection"
+        });
+      } finally {
+        // We use a finally block to make sure the response is dispatched
+        // if this saga gets cancelled
+        if (response) {
+          yield put(response);
+          delete actions[action.messageId];
+        }
       }
     }
   }
