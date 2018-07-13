@@ -1,3 +1,7 @@
+// Do polyfills, must happen first
+import "babel-core/register";
+import "babel-polyfill";
+
 import { store, sagaMiddleware } from "./store.js";
 import { routerFork, Routes } from "./router.js";
 import { listen } from "./wsclient.js";
@@ -7,10 +11,6 @@ import { Provider } from "react-redux";
 import ReactDOM from "react-dom";
 import React from "react";
 import "typeface-roboto";
-
-// Do polyfills
-import "babel-core/register";
-import "babel-polyfill";
 
 window.ReactDOM = ReactDOM;
 window.Page = (
