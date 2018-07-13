@@ -70,13 +70,6 @@ function* startWS(url, count, sendch, receivech) {
     socket.onerror = evt => {
       console.error("Websocket got error", evt);
       reject(evt);
-      onerrors.map(cb => {
-        try {
-          cb(evt);
-        } catch (e) {
-          console.error(e);
-        }
-      });
     };
 
     socket.onclose = evt => {
@@ -92,8 +85,6 @@ function* startWS(url, count, sendch, receivech) {
     };
   });
 
-  var addonerror = cb => onerrors.push(cb);
-  var addonclose = cb => oncloses.push(cb);
   var start = Date.now();
 
   try {
@@ -117,7 +108,7 @@ function* startWS(url, count, sendch, receivech) {
   var ticker = yield fork(tickMessages, w);
   var sender = yield fork(sendToSocket, w, sendch);
 
-  addonclose(() => {
+  oncloses.push(() => {
     waiter.put(END);
   });
 
