@@ -5,12 +5,19 @@ import { applyMiddleware, createStore } from "redux";
 import createSagaMiddleware from "redux-saga";
 import { combineReducers } from "redux";
 
-const reducer = combineReducers({ devices: DevicesState.reducer() });
+export const makeReducer = extra => {
+  return combineReducers({ ...extra, devices: DevicesState.reducer() });
+};
 
-const sagaMiddleware = createSagaMiddleware();
-const creator = applyMiddleware(sagaMiddleware)(createStore);
-const store = creator(reducer, devToolsEnhancer());
+export const makeSagaMiddleware = () => {
+  return createSagaMiddleware();
+};
 
-sagaMiddleware.run(deviceSaga);
+export const makeStore = (reducer, sagaMiddleware) => {
+  const creator = applyMiddleware(sagaMiddleware)(createStore);
+  return creator(reducer, devToolsEnhancer());
+};
 
-export { store, sagaMiddleware };
+export const runSagaMiddleware = sagaMiddleware => {
+  sagaMiddleware.run(deviceSaga);
+};

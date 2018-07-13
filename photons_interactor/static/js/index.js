@@ -2,15 +2,25 @@
 import "babel-core/register";
 import "babel-polyfill";
 
-import { store, sagaMiddleware } from "./store.js";
 import { routerFork, Routes } from "./router.js";
 import { listen } from "./wsclient.js";
+import {
+  makeReducer,
+  makeSagaMiddleware,
+  makeStore,
+  runSagaMiddleware
+} from "./store.js";
 
 import { fork } from "redux-saga/effects";
 import { Provider } from "react-redux";
 import ReactDOM from "react-dom";
 import React from "react";
 import "typeface-roboto";
+
+const reducer = makeReducer();
+const sagaMiddleware = makeSagaMiddleware();
+const store = makeStore(reducer, sagaMiddleware);
+runSagaMiddleware(sagaMiddleware);
 
 window.ReactDOM = ReactDOM;
 window.Page = (
