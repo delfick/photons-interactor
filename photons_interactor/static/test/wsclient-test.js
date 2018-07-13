@@ -264,6 +264,32 @@ describe("WSClient", function() {
       assertActions("message", "multi", "multi", "multi");
     });
 
+    it("can deal with not having onprogress and getting progress messages", async () => {
+      var original = GetData();
+      original.payload.progress = [];
+
+      var wscommand = WSCommand(
+        "/v1/test",
+        {
+          multiple: [
+            { progress: "one" },
+            { progress: "two" },
+            { reply: "three" }
+          ]
+        },
+        {
+          original,
+          onerror: GotError,
+          onsuccess: GotData
+        }
+      );
+      store.dispatch(wscommand);
+      var res = await waitFor(original.payload.promise);
+      assert.deepEqual(res, { data: "three" });
+      assert.deepEqual(original.payload.progress, []);
+      assertActions("message", "multi", "multi", "multi");
+    });
+
     it("ignores multiple replies", async () => {
       var original = GetData();
       var wscommand = WSCommand(
