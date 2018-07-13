@@ -20,15 +20,17 @@ export const WSCommand = createAction(
 function* maybeTimeoutMessage(actions, messageId) {
   var action = actions[messageId];
   yield call(delay, action.timeout || 5000);
-  var response = action.onerror({
-    error: "Timedout waiting for a reply to the message",
-    error_code: "Timedout"
-  });
-  if (response) {
-    // We don't need a finally block here because maybeTimeoutMessage is spawned
-    // and so isn't ever explicitly cancelled
-    yield put(response);
-    delete actions[messageId];
+  try {
+    var response = action.onerror({
+      error: "Timedout waiting for a reply to the message",
+      error_code: "Timedout"
+    });
+  } finally {
+    if (response) {
+      // finally block to make sure the response we made is sent if we get cancelled
+      yield put(response);
+      delete actions[messageId];
+    }
   }
 }
 
