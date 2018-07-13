@@ -131,7 +131,7 @@ describe("WSClient", function() {
           actions.push("message");
 
           if (data.stop) {
-            send(message_id, { closing: true });
+            send(message_id, { reply: { closing: true } });
             socket.close();
             return;
           }
@@ -188,7 +188,9 @@ describe("WSClient", function() {
       );
       store.dispatch(wscommand);
       var res = await waitFor(original.payload.promise);
-      assertActions("message", "close");
+
+      // Hack so the next message isn't given to our old connection
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       var original = GetData();
       var wscommand = WSCommand(
@@ -199,7 +201,8 @@ describe("WSClient", function() {
       store.dispatch(wscommand);
       var res = await waitFor(original.payload.promise);
       assert.deepEqual(res, { data: { three: "four" } });
-      assertActions("open", "message");
+
+      assertActions("message", "close", "open", "message");
     });
   });
 });

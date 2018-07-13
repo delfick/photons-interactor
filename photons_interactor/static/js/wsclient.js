@@ -238,10 +238,20 @@ function* processWsReceive(receivech, actions) {
       yield cancel(action.timeouter);
     }
 
-    var response = makeResponse(action, data);
-    if (response) {
-      yield put(response);
+    let response = undefined;
+    try {
+      response = makeResponse(action, data);
+    } finally {
+      // Really make sure we put our response
+      // This is because once the response is made,
+      // no other response can be made
+      if (response) {
+        yield put(response);
+      }
     }
+
+    // Finished with this message
+    delete actions[data.message_id];
   }
 }
 

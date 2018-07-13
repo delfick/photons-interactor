@@ -7,4 +7,4 @@ if ! which npm > /dev/null; then
   exit 1
 fi
 
-exec $DIR/interact npm test
+exec $DIR/interact npm test --silent
