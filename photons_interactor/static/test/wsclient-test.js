@@ -49,7 +49,7 @@ describe("WSClient", function() {
           return { ...state, errors: [...state.errors, error] };
         },
         [GotProgress]: (state, { progress, original }) => {
-          original.payload.promise.resolve({ progress });
+          original.payload.progress.push(progress);
           return { ...state, progresses: [...state.progresses, progress] };
         }
       },
@@ -181,7 +181,7 @@ describe("WSClient", function() {
           if (data.multiple) {
             data.multiple.map(d => {
               actions.push("multi");
-              send(message_id, { reply: d });
+              send(message_id, d);
             });
             return;
           }
@@ -237,11 +237,38 @@ describe("WSClient", function() {
       assertActions("message");
     });
 
+    it("knows of progress", async () => {
+      var original = GetData();
+      original.payload.progress = [];
+
+      var wscommand = WSCommand(
+        "/v1/test",
+        {
+          multiple: [
+            { progress: "one" },
+            { progress: "two" },
+            { reply: "three" }
+          ]
+        },
+        {
+          original,
+          onerror: GotError,
+          onsuccess: GotData,
+          onprogress: GotProgress
+        }
+      );
+      store.dispatch(wscommand);
+      var res = await waitFor(original.payload.promise);
+      assert.deepEqual(res, { data: "three" });
+      assert.deepEqual(original.payload.progress, ["one", "two"]);
+      assertActions("message", "multi", "multi", "multi");
+    });
+
     it("ignores multiple replies", async () => {
       var original = GetData();
       var wscommand = WSCommand(
         "/v1/test",
-        { multiple: ["one", "two"] },
+        { multiple: [{ reply: "one" }, { reply: "two" }] },
         { original, onerror: GotError, onsuccess: GotData }
       );
       store.dispatch(wscommand);

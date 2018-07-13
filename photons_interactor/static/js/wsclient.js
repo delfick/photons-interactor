@@ -241,8 +241,10 @@ function* processWsReceive(receivech, actions) {
       }
     }
 
-    // Finished with this message
-    delete actions[data.message_id];
+    // Finished with this message if not a progress message
+    if (response && !data.progress) {
+      delete actions[data.message_id];
+    }
   }
 }
 
