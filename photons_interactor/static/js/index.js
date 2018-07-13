@@ -4,6 +4,7 @@ import "babel-polyfill";
 
 import { routerFork, Routes } from "./router.js";
 import { listen } from "./wsclient.js";
+import { history } from "./history.js";
 import {
   makeReducer,
   makeSagaMiddleware,
@@ -11,7 +12,7 @@ import {
   runSagaMiddleware
 } from "./store.js";
 
-import { fork } from "redux-saga/effects";
+import { fork, call } from "redux-saga/effects";
 import { Provider } from "react-redux";
 import ReactDOM from "react-dom";
 import React from "react";
@@ -25,7 +26,7 @@ runSagaMiddleware(sagaMiddleware);
 window.ReactDOM = ReactDOM;
 window.Page = (
   <Provider store={store}>
-    <Routes />
+    <Routes history={history} />
   </Provider>
 );
 
@@ -43,7 +44,7 @@ var url =
 
 function* mainSaga() {
   yield fork(listen, url);
-  yield routerFork;
+  yield routerFork(history);
 }
 
 sagaMiddleware.run(mainSaga);
