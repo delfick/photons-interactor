@@ -17,7 +17,8 @@ export const WSCommand = createAction(
   })
 );
 
-function* maybeTimeoutMessage(action) {
+function* maybeTimeoutMessage(actions, messageId) {
+  var action = actions[messageId];
   yield call(delay, action.timeout || 5000);
   var response = action.onerror({
     error: "Timedout waiting for a reply to the message",
@@ -25,10 +26,11 @@ function* maybeTimeoutMessage(action) {
   });
   if (response) {
     yield put(response);
+    delete actions[messageId];
   }
 }
 
-function* sendToSocket(socket, sendch) {
+function* sendToSocket(socket, sendch, actions) {
   while (true) {
     var action = yield take(sendch);
     if (socket.readyState === 1) {
@@ -40,6 +42,7 @@ function* sendToSocket(socket, sendch) {
       });
       if (response) {
         yield put(response);
+        delete actions[action.messageId];
       }
     }
   }
@@ -54,7 +57,7 @@ function* tickMessages(socket) {
   }
 }
 
-function* startWS(url, count, sendch, receivech) {
+function* startWS(url, count, sendch, receivech, actions) {
   var socket = new WebSocket(url);
 
   var onerrors = [];
@@ -106,7 +109,7 @@ function* startWS(url, count, sendch, receivech) {
 
   var waiter = yield call(channel);
   var ticker = yield fork(tickMessages, w);
-  var sender = yield fork(sendToSocket, w, sendch);
+  var sender = yield fork(sendToSocket, w, sendch, actions);
 
   oncloses.push(() => {
     waiter.put(END);
@@ -172,7 +175,7 @@ function* processWsSend(commandch, sendch, actions) {
     var messageId = uuidv4();
     var normalised = normalise(messageId, payload);
     actions[messageId] = normalised;
-    normalised.timeouter = yield spawn(maybeTimeoutMessage, normalised);
+    normalised.timeouter = yield spawn(maybeTimeoutMessage, actions, messageId);
     yield put(sendch, normalised);
   }
 }
@@ -270,7 +273,7 @@ export function* listen(url, delayMS) {
     messages[count] = actions;
     var sendprocess = yield fork(processWsSend, commandch, sendch, actions);
     var receiveprocess = yield fork(processWsReceive, receivech, actions);
-    yield call(startWS, url, count, sendch, receivech);
+    yield call(startWS, url, count, sendch, receivech, actions);
     yield cancel(sendprocess);
     yield cancel(receiveprocess);
 
