@@ -1,7 +1,6 @@
+import { call, spawn, cancel, fork, put, take, race } from "redux-saga/effects";
 import { eventChannel, channel, END, delay } from "redux-saga";
 import { createAction } from "redux-act";
-import { call, spawn, cancel, fork, put, take, race } from "redux-saga/effects";
-
 import uuidv4 from "uuid/v4";
 
 export const WSCommand = createAction(

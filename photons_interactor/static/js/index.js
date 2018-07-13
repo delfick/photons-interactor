@@ -1,20 +1,16 @@
-import React from "react";
-import ReactDOM from "react-dom";
-
-import { fork } from "redux-saga/effects";
-
-import "babel-core/register";
-import "babel-polyfill";
-
-import "typeface-roboto";
-
+import { store, sagaMiddleware } from "./store.js";
 import { routerFork, Routes } from "./router.js";
-
 import { listen } from "./wsclient.js";
 
-import { store, sagaMiddleware } from "./store.js";
-
+import { fork } from "redux-saga/effects";
 import { Provider } from "react-redux";
+import ReactDOM from "react-dom";
+import React from "react";
+import "typeface-roboto";
+
+// Do polyfills
+import "babel-core/register";
+import "babel-polyfill";
 
 window.ReactDOM = ReactDOM;
 window.Page = (

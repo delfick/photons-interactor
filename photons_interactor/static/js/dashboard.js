@@ -1,17 +1,18 @@
-import React from "react";
+import { DevicesState } from "./devices.js";
+
+import { connect } from "react-redux";
 import PropTypes from "prop-types";
+import React from "react";
+
+import CircularProgress from "@material-ui/core/CircularProgress";
+import CardContent from "@material-ui/core/CardContent";
 import { withStyles } from "@material-ui/core/styles";
+import IconButton from "@material-ui/core/IconButton";
+import Typography from "@material-ui/core/Typography";
+import Snackbar from "@material-ui/core/Snackbar";
+import CloseIcon from "@material-ui/icons/Close";
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
-import CardContent from "@material-ui/core/CardContent";
-import Typography from "@material-ui/core/Typography";
-import CircularProgress from "@material-ui/core/CircularProgress";
-import { connect } from "react-redux";
-import Snackbar from "@material-ui/core/Snackbar";
-import IconButton from "@material-ui/core/IconButton";
-import CloseIcon from "@material-ui/icons/Close";
-
-import { DevicesState } from "./devices.js";
 
 const styles = theme => ({
   devices: {

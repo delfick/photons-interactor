@@ -1,7 +1,7 @@
-import { createAction, createReducer } from "redux-act";
-import { take, put, takeLatest } from "redux-saga/effects";
-
 import { WSCommand } from "./wsclient.js";
+
+import { take, put, takeLatest } from "redux-saga/effects";
+import { createAction, createReducer } from "redux-act";
 
 class DevicesStateKls {
   GetSerials = createAction("Get serials", refresh => ({

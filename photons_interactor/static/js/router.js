@@ -1,12 +1,11 @@
-import { router } from "redux-saga-router";
+import { DevicesState } from "./devices.js";
+import { history } from "./history.js";
+import Dashboard from "./dashboard.js";
+import Page from "./page.js";
+
 import { Router, Route, Switch } from "react-router";
 import { fork, put } from "redux-saga/effects";
-
-import { history } from "./history.js";
-import Page from "./page.js";
-import Dashboard from "./dashboard.js";
-
-import { DevicesState } from "./devices.js";
+import { router } from "redux-saga-router";
 
 const routes = {
   "/": function* indexSaga() {
