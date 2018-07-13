@@ -274,6 +274,8 @@ export function* listen(url, delayMS) {
   var receivech = yield call(channel);
   var commandch = yield call(channel);
 
+  // This is outside the while true so that we don't miss messages
+  // when the server goes away and before we've started processWsSend again
   yield fork(getWSCommands, commandch);
 
   while (true) {
