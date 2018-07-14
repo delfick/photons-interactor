@@ -40,11 +40,17 @@ class MemoryTargetRunner:
         self.devices = devices
 
     async def __aenter__(self):
+        await self.start()
+
+    async def start(self):
         for device in self.devices:
             await device.start()
             self.target.add_device(device)
 
     async def __aexit__(self, typ, exc, tb):
+        await self.close()
+
+    async def close(self):
         for device in self.target.devices.values():
             await device.finish()
 

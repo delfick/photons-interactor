@@ -60,7 +60,22 @@ class Server(object):
             ]
 
     async def extra_futures(self):
-        self.finder = DeviceFinder(self.target_register.resolve("lan")
+        test_devices = None
+        if self.server_options.fake_devices:
+            from photons_interactor.commander import test_helpers as cthp
+            test_devices = cthp.fake_devices(self.protocol_register)
+            target = cthp.make_memory_target(self.final_future)
+
+            runner = cthp.MemoryTargetRunner(target, test_devices["devices"])
+            await runner.start()
+
+            async def clean_memory_target():
+                await runner.close()
+            self.cleaners.append(clean_memory_target)
+        else:
+            target = self.target_register.resolve("lan")
+
+        self.finder = DeviceFinder(target
             , **self.server_options.device_finder_options
             )
 

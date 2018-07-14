@@ -57,6 +57,12 @@ class App(App):
             , **defaults["--port"]
             )
 
+        parser.add_argument("--fake-devices"
+            , help = "Use fake devices instead of the actual network"
+            , dest = "interactor_fake_devices"
+            , action = "store_true"
+            )
+
         return parser
 
 main = App.main

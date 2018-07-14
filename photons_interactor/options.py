@@ -31,6 +31,14 @@ class Options(dictobj.Spec):
         , help = "Options for where assets can be found"
         )
 
+    fake_devices = dictobj.Field(sb.boolean, default=False
+        , help = """"
+            Whether to look at the lan or use fake devices
+
+            This is useful for integration tests
+          """
+        )
+
     @property
     def static_dest(self):
         return self.assets.assets_folder
