@@ -85,4 +85,4 @@ class Server(object):
             await self.finder.finish()
         self.cleaners.append(clean_finder)
 
-        self.commander = Commander(self.finder, self.target_register, self.protocol_register)
+        self.commander = Commander(self.finder, self.target_register, self.protocol_register, test_devices)

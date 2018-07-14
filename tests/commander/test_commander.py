@@ -1,6 +1,7 @@
 # coding: spec
 
 from photons_interactor.commander.decorator import command_spec, command
+from photons_interactor.commander import test_helpers as cthp
 from photons_interactor.commander import default_fields as df
 from photons_interactor.commander.commands import Command
 from photons_interactor.commander import Commander
@@ -18,10 +19,23 @@ describe AsyncTestCase, "Commander":
         target_register = mock.Mock(name="target_register")
         protocol_register = mock.Mock(name="protocol_register")
 
-        commander = Commander(finder, target_register, protocol_register)
+        device = cthp.Device("d073d5000001", None
+            , label = "kitchen"
+            , power = 0
+            , group = cthp.Group("one", "one", 0)
+            , location = cthp.Group("one", "one", 0)
+            , color = cthp.Color(0, 1, 1, 2500)
+            , vendor_id = 1
+            , product_id = 31
+            , firmware = cthp.Firmware("2.75", 1521690429)
+            )
+        test_devices = {"devices": [device]}
+
+        commander = Commander(finder, target_register, protocol_register, test_devices)
 
         meta_everything = commander.meta.everything
         self.assertIs(meta_everything["finder"], finder)
+        self.assertEqual(meta_everything["test_devices"]["devices"], test_devices["devices"])
         self.assertIs(meta_everything["target_register"], target_register)
         self.assertIs(meta_everything["protocol_register"], protocol_register)
 

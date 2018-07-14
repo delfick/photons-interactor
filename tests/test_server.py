@@ -103,7 +103,7 @@ describe AsyncTestCase, "Server":
             self.assertIs(server.commander, commander)
             self.assertIs(server.finder, finder)
 
-            FakeCommander.assert_called_once_with(finder, self.target_register, self.protocol_register)
+            FakeCommander.assert_called_once_with(finder, self.target_register, self.protocol_register, None)
             FakeDeviceFinder.assert_called_once_with(lan_target, arg1=0.1, arg2=True)
             self.target_register.resolve.assert_called_once_with("lan")
             finder.start.assert_called_once_with()

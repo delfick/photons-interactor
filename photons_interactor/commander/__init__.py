@@ -10,12 +10,13 @@ class Commander:
 
     .. automethod:: photons_interactor.commander.Commander.execute
     """
-    def __init__(self, finder, target_register, protocol_register):
+    def __init__(self, finder, target_register, protocol_register, test_devices=None):
         self.command_spec = command_spec()
 
         self.meta = Meta(
               MergedOptions.using(
                 { "finder": finder
+                , "test_devices": test_devices
                 , "target_register": target_register
                 , "protocol_register": protocol_register
                 }
