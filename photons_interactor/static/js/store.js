@@ -1,4 +1,4 @@
-import { DevicesState, deviceSaga } from "./devices.js";
+import { DevicesState, deviceSaga } from "./device/state.js";
 
 import { devToolsEnhancer } from "redux-devtools-extension";
 import { applyMiddleware, createStore } from "redux";

@@ -1,4 +1,4 @@
-import { WSCommand } from "./wsclient.js";
+import { WSCommand } from "../wsclient.js";
 
 import { take, put, takeLatest } from "redux-saga/effects";
 import { createAction, createReducer } from "redux-act";

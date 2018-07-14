@@ -1,4 +1,4 @@
-import { DevicesState } from "./devices.js";
+import { DevicesState } from "./device/state.js";
 import Dashboard from "./dashboard.js";
 import Page from "./page.js";
 
