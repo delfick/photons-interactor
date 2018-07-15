@@ -1,0 +1,17 @@
+language: python
+
+python: 3.6
+
+install:
+  - pip install pip --upgrade
+  - pip install -e .
+  - pip install -e '.[tests]'
+
+before_script:
+  - npm install -g npm
+  - photons-interactor npm run -- ci
+
+script:
+  - ./test.sh
+  - photons-interactor npm test --silent
+  - ./integrationjstest.sh
