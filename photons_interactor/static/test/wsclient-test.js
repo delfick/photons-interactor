@@ -1,12 +1,12 @@
-import { createAction, createReducer } from "redux-act";
-import { assert } from "chai";
-import { listen } from "../js/wsclient.js";
-import WebSocket from "ws";
-import { END } from "redux-saga";
-import { put } from "redux-saga/effects";
-
 import { freePort, waitFor, makeTestStore, lineInfo } from "./helpers.js";
 import { WSCommand } from "../js/wsclient.js";
+import { listen } from "../js/wsclient.js";
+
+import { createAction, createReducer } from "redux-act";
+import { put } from "redux-saga/effects";
+import { END } from "redux-saga";
+import { assert } from "chai";
+import WebSocket from "ws";
 
 describe("WSClient", function() {
   var deferred = () => {

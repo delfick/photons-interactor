@@ -4,13 +4,13 @@ import { take, put, takeLatest } from "redux-saga/effects";
 import { createAction, createReducer } from "redux-act";
 
 class DevicesStateKls {
-  GetSerials = createAction("Get serials", refresh => ({
-    args: { just_serials: true, refresh: refresh || false }
+  GetSerials = createAction("Get serials", (refresh, other_args) => ({
+    args: { ...other_args, just_serials: true, refresh: refresh || false }
   }));
   GotSerials = createAction("Got serials");
 
-  GetDetails = createAction("Get details", refresh => ({
-    args: { refresh: refresh || false }
+  GetDetails = createAction("Get details", (refresh, other_args) => ({
+    args: { ...other_args, refresh: refresh || false }
   }));
   GotDetails = createAction("Got details");
 
@@ -88,3 +88,5 @@ export function* deviceSaga() {
   yield takeLatest(DevicesState.GetSerials, getSerialsSaga);
   yield takeLatest(DevicesState.GetDetails, getDetailsSaga);
 }
+
+export const fortests = { getDetailsSaga, getSerialsSaga };

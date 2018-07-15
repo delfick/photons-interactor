@@ -6,8 +6,8 @@
   "scripts": {
     "build": "webpack",
     "generate": "webpack -w",
-    "test": "mocha test/.setup.js test/**/*-test.js -t 5000 --reporter './test/reporter.js'",
-    "test:watch": "mocha test/.setup.js test/**/*-test.js -t 5000 -w --reporter 'progress'",
+    "test": "mocha test/.setup.js $(find . -name '*-test.js' -not -path './node_modules/*') -t 5000 --reporter './test/reporter.js'",
+    "test:watch": "mocha test/.setup.js $(find . -name '*-test.js' -not -path './node_modules/*') -t 5000 -w --reporter 'progress'",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
   },

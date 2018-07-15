@@ -1,12 +1,11 @@
+import { makeSagaMiddleware, makeStore } from "../js/store.js";
+
 import http from "http";
 import path from "path";
-import { applyMiddleware, createStore } from "redux";
-import createSagaMiddleware from "redux-saga";
 
 export const makeTestStore = reducer => {
-  var sagaMiddleware = createSagaMiddleware();
-  var creator = applyMiddleware(sagaMiddleware)(createStore);
-  var store = creator(reducer);
+  const sagaMiddleware = makeSagaMiddleware();
+  const store = makeStore(reducer, sagaMiddleware);
   return { store, sagaMiddleware };
 };
 
