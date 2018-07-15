@@ -65,23 +65,12 @@ async def npm(collector, reference, **kwargs):
 
         final_future = collector.configuration["photons_app"].final_future
 
-        server = {"t": None}
-        async def wait_for_server():
-            if server["t"]:
-                try:
-                    await server["t"]
-                    server["t"] = None
-                except asyncio.CancelledError:
-                    pass
-                finally:
-                    final_future = collector.configuration["photons_app"].final_future
-                    if not final_future.done():
-                        final_future.set_result(None)
-
+        t = None
         try:
             collector.configuration["interactor"].port = port
             collector.configuration["interactor"].fake_devices = True
-            server["t"] = hp.async_as_background(serve(collector))
+
+            t = hp.async_as_background(serve(collector))
 
             start = time.time()
             while time.time() - start < 5:
@@ -102,11 +91,11 @@ async def npm(collector, reference, **kwargs):
         except Exception as error:
             if not final_future.done():
                 final_future.set_exception(error)
-            await wait_for_server()
         finally:
             if not final_future.done():
                 final_future.set_result(None)
-            await wait_for_server()
+            if t:
+                await t
 
     try:
         if reference == "install":
