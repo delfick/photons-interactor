@@ -158,7 +158,7 @@ describe AsyncTestCase, "run":
                 self.kwargs = kwargs
                 run_with(*args, **kwargs)
 
-            async def __aiter__(self):
+            def __aiter__(self):
                 return self
 
             async def __anext__(self):
@@ -214,7 +214,7 @@ describe AsyncTestCase, "run":
                 self.kwargs = kwargs
                 run_with(*args, **kwargs)
 
-            async def __aiter__(self):
+            def __aiter__(self):
                 return self
 
             async def __anext__(self):
