@@ -16,7 +16,7 @@ var bulbconnector = connect((state, ownProps) => ({
   data: state.devices.devices[ownProps.serial]
 }));
 const Bulb = bulbconnector(({ serial, data }) =>
-  <Card>
+  <Card data-cy="bulb">
     <CardContent>
       <Typography component="p">
         {serial}
@@ -29,7 +29,7 @@ const Bulb = bulbconnector(({ serial, data }) =>
 );
 
 const BulbData = ({ serial, data }) =>
-  <Typography component="p">
+  <Typography component="p" data-cy="bulb-label">
     {data.label}
   </Typography>;
 

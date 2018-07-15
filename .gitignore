@@ -7,3 +7,4 @@ __pycache__/
 interactor.yml
 assets/
 photons_interactor/static/node_modules/
+photons_interactor/static/cypress/videos/

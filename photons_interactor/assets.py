@@ -23,5 +23,8 @@ class Assets(dictobj.Spec):
     def needs_install(self):
         return not os.path.exists(os.path.join(self.src, "node_modules")) or os.environ.get("REBUILD") == 1
 
-    def run(self, *args):
-        subprocess.check_call(["npm", *args], cwd=self.src)
+    def run(self, *args, extra_env=None):
+        env = dict(os.environ)
+        if extra_env:
+            env.update(extra_env)
+        subprocess.check_call(["npm", *args], cwd=self.src, env=env)
