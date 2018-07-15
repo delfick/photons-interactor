@@ -7,6 +7,9 @@ install:
   - pip install -e .
   - pip install -e '.[tests]'
 
+env:
+  - CYPRESS_VIDEO=false
+
 before_script:
   - npm install -g npm
   - photons-interactor npm run -- ci
