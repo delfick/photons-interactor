@@ -7,7 +7,9 @@
     "build": "webpack",
     "generate": "webpack -w",
     "test": "mocha test/.setup.js test/**/*-test.js -t 5000 --reporter './test/reporter.js'",
-    "test:watch": "mocha test/.setup.js test/**/*-test.js -t 5000 -w --reporter 'progress'"
+    "test:watch": "mocha test/.setup.js test/**/*-test.js -t 5000 -w --reporter 'progress'",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
   },
   "author": "Stephen Moore",
   "license": "MIT",
@@ -26,6 +28,7 @@
     "babel-preset-stage-0": "^6.24.1",
     "chai": "^4.1.2",
     "css-loader": "^0.28.11",
+    "cypress": "^3.0.2",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "mocha": "^5.2.0",
     "mocha-cli": "^1.0.1",
