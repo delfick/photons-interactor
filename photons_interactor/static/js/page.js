@@ -1,3 +1,5 @@
+import { ControlPane } from "./control/component.js";
+
 import PropTypes from "prop-types";
 import React from "react";
 
@@ -10,39 +12,38 @@ import MenuIcon from "@material-ui/icons/Menu";
 import AppBar from "@material-ui/core/AppBar";
 import Grid from "@material-ui/core/Grid";
 
-const styles = {
+const styles = theme => ({
   root: {
-    flexGrow: 1
+    flexGrow: 1,
+    height: 430,
+    zIndex: 1,
+    overflow: "hidden",
+    position: "relative",
+    display: "flex",
+    height: "100vh"
   },
-  flex: {
-    flex: 1
+  content: {
+    flexGrow: 1,
+    height: "100vh",
+    backgroundColor: theme.palette.background.default,
+    padding: theme.spacing.unit * 3,
+    minWidth: 0 // So the Typography noWrap works
   },
   menuButton: {
     marginLeft: -12,
     marginRight: 20
+  },
+  toolbar: theme.mixins.toolbar,
+  appBar: {
+    zIndex: theme.zIndex.drawer + 1
   }
-};
+});
 
 const Page = ({ width, children, classes }) => {
-  var padding = {
-    xs: "10px",
-    sm: "20px",
-    md: "30px",
-    lg: "50px",
-    xl: "80px"
-  };
-
-  var rootStyle = {
-    marginTop: "80px",
-    marginBottom: "15px",
-    paddingLeft: padding[width] || "80px",
-    paddingRight: padding[width] || "80px"
-  };
-
   return (
     <div>
       <div className={classes.root}>
-        <AppBar>
+        <AppBar position="absolute" className={classes.appBar}>
           <Toolbar>
             <IconButton
               className={classes.menuButton}
@@ -51,18 +52,16 @@ const Page = ({ width, children, classes }) => {
             >
               <MenuIcon />
             </IconButton>
-            <Typography
-              variant="title"
-              color="inherit"
-              className={classes.flex}
-            >
+            <Typography variant="title" color="inherit" noWrap>
               Interactor
             </Typography>
           </Toolbar>
         </AppBar>
-        <Grid container style={rootStyle}>
+        <main className={classes.content}>
+          <div className={classes.toolbar} />
           {children}
-        </Grid>
+        </main>
+        <ControlPane />
       </div>
     </div>
   );

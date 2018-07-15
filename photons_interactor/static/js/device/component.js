@@ -1,3 +1,5 @@
+import { SelectionState } from "../selection/state.js";
+
 import { connect } from "react-redux";
 
 import CircularProgress from "@material-ui/core/CircularProgress";
@@ -13,10 +15,17 @@ const styles = theme => ({
 });
 
 var bulbconnector = connect((state, ownProps) => ({
-  data: state.devices.devices[ownProps.serial]
+  data: state.devices.devices[ownProps.serial],
+  selected: state.selection.selection[ownProps.serial]
 }));
-const Bulb = bulbconnector(({ serial, data }) =>
-  <Card data-cy="bulb">
+const Bulb = bulbconnector(({ dispatch, serial, data, selected }) =>
+  <Card
+    data-cy="bulb"
+    style={selected ? { backgroundColor: "#0000ff14" } : undefined}
+    onClick={() => {
+      dispatch(SelectionState.ToggleSelection({ serial }));
+    }}
+  >
     <CardContent>
       <Typography component="p">
         {serial}
