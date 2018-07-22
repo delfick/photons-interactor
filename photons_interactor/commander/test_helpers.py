@@ -103,7 +103,7 @@ def fake_devices(protocol_register):
         , color = Color(100, 0, 1, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCMV4_A19_COLOR.value
-        , firmware = Firmware("1.10", 1530327089)
+        , firmware = Firmware("1.1", 1530327089)
         )
 
     white800 = Device("d073d5000004", protocol_register
@@ -114,7 +114,7 @@ def fake_devices(protocol_register):
         , color = Color(100, 0, 1, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCMV4_A19_WHITE_LV.value
-        , firmware = Firmware("1.10", 1530327089)
+        , firmware = Firmware("1.1", 1530327089)
         )
 
     strip1 = Device("d073d5000005", protocol_register
@@ -136,7 +136,7 @@ def fake_devices(protocol_register):
         , color = Color(200, 0.5, 0.5, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCM1_Z.value
-        , firmware = Firmware("1.10", 1530327089)
+        , firmware = Firmware("1.1", 1530327089)
         )
 
     return {
@@ -350,7 +350,7 @@ discovery_response = {
             "not_multizone",
             "variable_color_temp"
         ],
-        "firmware_version": 2.75,
+        "firmware_version": "2.75",
         "group_id": mock.ANY,
         "group_name": "Living Room",
         "hue": 0.0,
@@ -373,7 +373,7 @@ discovery_response = {
             "not_multizone",
             "variable_color_temp"
         ],
-        "firmware_version": 2.75,
+        "firmware_version": "2.75",
         "group_id": mock.ANY,
         "group_name": "Bathroom",
         "hue": Around(100),
@@ -396,7 +396,7 @@ discovery_response = {
             "not_multizone",
             "variable_color_temp"
         ],
-        "firmware_version": 1.1,
+        "firmware_version": "1.1",
         "group_id": mock.ANY,
         "group_name": "desk",
         "hue": Around(100),
@@ -419,7 +419,7 @@ discovery_response = {
             "not_multizone",
             "variable_color_temp"
         ],
-        "firmware_version": 1.1,
+        "firmware_version": "1.1",
         "group_id": mock.ANY,
         "group_name": "desk",
         "hue": Around(100),
@@ -442,7 +442,7 @@ discovery_response = {
             "not_ir",
             "variable_color_temp"
         ],
-        "firmware_version": 2.75,
+        "firmware_version": "2.75",
         "group_id": mock.ANY,
         "group_name": "Living Room",
         "hue": Around(200),
@@ -465,7 +465,7 @@ discovery_response = {
             "not_ir",
             "variable_color_temp"
         ],
-        "firmware_version": 1.1,
+        "firmware_version": "1.1",
         "group_id": mock.ANY,
         "group_name": "desk",
         "hue": Around(200),
