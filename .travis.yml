@@ -12,6 +12,8 @@ env:
 
 before_script:
   - npm install -g npm
+  - |
+    echo '{"interactor": {"database": {"uri": "sqlite:///:memory:"}}}' > interactor.yml
   - photons-interactor npm run -- ci
 
 script:
