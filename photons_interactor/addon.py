@@ -94,6 +94,7 @@ async def npm(collector, reference, **kwargs):
         try:
             collector.configuration["interactor"].port = port
             collector.configuration["interactor"].fake_devices = True
+            collector.configuration["interactor"].database.uri = "sqlite:///:memory:"
 
             t = hp.async_as_background(serve(collector))
 
