@@ -342,6 +342,10 @@ class SceneCapture(Command):
         , help = "The uuid of the scene to change, if None we create a new scene"
         )
 
+    just_return = dictobj.Field(sb.boolean, default=False
+        , help = "Just return the scene rather than storing it in the database"
+        )
+
     async def execute(self):
         fltr = chp.filter_from_matcher(self.matcher, self.refresh)
         details = await self.finder.info_for(filtr=fltr)
@@ -385,6 +389,9 @@ class SceneCapture(Command):
                 info["chain"] = [hsbks for _, hsbks in sorted(info["chain"])]
 
             scene.append({"matcher": {"serial": serial}, **info})
+
+        if self.just_return:
+            return scene
 
         args = {
               "uuid": self.uuid
