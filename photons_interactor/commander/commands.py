@@ -279,9 +279,15 @@ class SceneApply(Command):
                 multizonefltr = self.clone_fltr_with_cap(fltr, "multizone")
                 ts.append(hp.async_as_background(self.apply_zones(multizonefltr, scene, result)))
 
+                notmultizonefltr = self.clone_fltr_with_no_cap(fltr, "multizone")
+                ts.append(hp.async_as_background(self.transform(notmultizonefltr, scene, result)))
+
             elif scene.chain:
                 chainfltr = self.clone_fltr_with_cap(fltr, "chain")
                 ts.append(hp.async_as_background(self.apply_chain(chainfltr, scene, result)))
+
+                notchainfltr = self.clone_fltr_with_no_cap(fltr, "chain")
+                ts.append(hp.async_as_background(self.transform(notchainfltr, scene, result)))
 
             else:
                 ts.append(hp.async_as_background(self.transform(fltr, scene, result)))
@@ -301,7 +307,10 @@ class SceneApply(Command):
 
         msg = Transformer.using(options)
         script = self.target.script(msg)
-        await chp.run(script, fltr, self.finder, add_replies=False, timeout=self.timeout, result=result)
+        try:
+            await chp.run(script, fltr, self.finder, add_replies=False, timeout=self.timeout, result=result)
+        except FoundNoDevices:
+            pass
 
     async def apply_zones(self, fltr, scene, result):
         script = self.target.script(list(scene.zone_msgs(self.overrides)))
@@ -316,6 +325,15 @@ class SceneApply(Command):
             await chp.run(script, fltr, self.finder, add_replies=False, timeout=self.timeout, result=result)
         except FoundNoDevices:
             pass
+
+    def clone_fltr_with_no_cap(self, fltr, cap):
+        clone = fltr.clone()
+        if clone.cap is sb.NotSpecified:
+            clone.cap = [f"not_{cap}"]
+        else:
+            clone.cap.append(cap)
+            clone.cap = [c for c in multizonefltr.cap if c != cap]
+        return clone
 
     def clone_fltr_with_cap(self, fltr, cap):
         clone = fltr.clone()
