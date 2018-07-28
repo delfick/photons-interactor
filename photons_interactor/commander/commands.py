@@ -231,7 +231,7 @@ class SceneChange(Command):
 @command(name="scene_delete")
 class SceneDelete(Command):
     """
-    Set all the options for a scene
+    Delete a scene
     """
     db_queue = df.db_queue_field
 
