@@ -37,6 +37,7 @@ describe TestCase, "fields_description":
               "finder_field": None
             , "target_field": None
             , "db_queue_field": None
+            , "commander_field": None
             , "protocol_register_field": None
             , "refresh_field": "boolean"
             , "timeout_field": "float (default 20)"

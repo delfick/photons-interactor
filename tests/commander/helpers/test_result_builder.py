@@ -13,6 +13,13 @@ describe TestCase, "ResultBuilder":
         self.assertEqual(builder.serials, ["one", "two"])
         self.assertEqual(builder.result, {"results": {}})
 
+    it "can add serials":
+        builder = chp.ResultBuilder(["one", "two"])
+        self.assertEqual(builder.serials, ["one", "two"])
+
+        builder.add_serials(["three", "two", "four"])
+        self.assertEqual(builder.serials, ["one", "two", "three", "four"])
+
     describe "as_dict":
         it "returns results but with ok for devices":
             builder = chp.ResultBuilder(["one", "two"])

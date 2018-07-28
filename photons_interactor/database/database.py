@@ -1,5 +1,9 @@
 from photons_interactor.database.connection import Base, DatabaseConnection
 
+from photons_device_messages import DeviceMessages
+from photons_multizone import MultiZoneMessages
+from photons_tile_messages import TileMessages
+
 from alembic.config import CommandLine as AlembicCommandLine, Config as AlembicConfig
 from sqlalchemy import Column, Integer, String, Text, Boolean
 from input_algorithms.errors import BadSpecValue
@@ -63,12 +67,13 @@ async def migrate(database, extra=""):
         commandline.run_cmd(cfg, options)
 
 class range_spec(sb.Spec):
-    def __init__(self, minimum, maximum):
+    def __init__(self, minimum, maximum, spec=None):
         self.minimum = minimum
         self.maximum = maximum
+        self.spec = spec or sb.float_spec()
 
     def normalise_filled(self, meta, val):
-        val = sb.float_spec().normalise(meta, val)
+        val = self.spec.normalise(meta, val)
         if val < self.minimum or val > self.maximum:
             raise BadSpecValue("Number must be between min and max", minimum=self.minimum, maximum=self.maximum, got=val, meta=meta)
         return val
@@ -90,7 +95,7 @@ class hsbk(sb.Spec):
               range_spec(0, 360)
             , range_spec(0, 1)
             , range_spec(0, 1)
-            , range_spec(2500, 9000)
+            , range_spec(2500, 9000, spec=sb.integer_spec())
             ]
 
     def normalise_filled(self, meta, val):
@@ -161,6 +166,57 @@ class Scene(Base):
             zones = dictobj.NullableField(json_string_spec(sb.listof(hsbk()), storing))
             chain = dictobj.NullableField(json_string_spec(sb.listof(chain_spec), storing))
             duration = dictobj.NullableField(sb.integer_spec)
+
+            @property
+            def transform_options(self):
+                return {"power": "on" if self.power else "off", "color": self.color, "duration": self.duration}
+
+            def zone_msgs(self, overrides):
+                power = overrides.get("power", self.power)
+                duration = overrides.get("duration", self.duration) or 0
+
+                if power is not None:
+                    level = 0 if power not in (True, "on") else 65535
+                    yield DeviceMessages.SetLightPower(level=level, duration=duration)
+
+                colors = [{"hue": h, "saturation": s, "brightness": b, "kelvin": k} for h, s, b, k in self.zones]
+
+                groups = []
+
+                start = 0
+                color = None
+                i = -1
+                while i < len(colors) - 1:
+                    i += 1
+                    if color is None:
+                        color = colors[i]
+                        continue
+                    if colors[i] != color:
+                        color = colors[i]
+                        yield MultiZoneMessages.SetMultiZoneColorZones(start_index=start, end_index=i - 1, **color, duration=duration
+                            , res_required = False
+                            )
+                        start = i
+
+                color = colors[i]
+                yield MultiZoneMessages.SetMultiZoneColorZones(start_index=start, end_index=i, **color, duration=duration
+                    , res_required = False
+                    )
+
+            def chain_msgs(self, overrides):
+                power = overrides.get("power", self.power)
+                duration = overrides.get("duration", self.duration) or 0
+
+                if power is not None:
+                    level = 0 if power not in (True, "on") else 65535
+                    yield DeviceMessages.SetLightPower(level=level, duration=duration)
+
+                for i, lst in enumerate(self.chain):
+                    colors = [{"hue": h, "saturation": s, "brightness": b, "kelvin": k} for h, s, b, k in lst]
+                    yield TileMessages.SetTileState64(tile_index=i, length=1, x=0, y=0, width=8, duration=duration, colors=colors
+                        , res_required = False
+                        )
+
         return Fields.FieldSpec
 
     @classmethod

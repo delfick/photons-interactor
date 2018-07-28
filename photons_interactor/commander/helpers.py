@@ -71,7 +71,7 @@ def make_message(protocol_register, pkt_type, pkt_args):
     else:
         return kls()
 
-async def run(script, fltr, finder, add_replies=True, **kwargs):
+async def run(script, fltr, finder, add_replies=True, result=None, **kwargs):
     """
     Create a ResultBuilder, run the script with the serials found from this fltr
     and return the ResultBuilder after adding packets/errors/confirmation to it
@@ -84,7 +84,9 @@ async def run(script, fltr, finder, add_replies=True, **kwargs):
     serials = await finder.serials(filtr=fltr)
     find_fltr = clone_filter(fltr, force_refresh=False)
 
-    result = ResultBuilder(serials)
+    if result is None:
+        result = ResultBuilder()
+    result.add_serials(serials)
 
     async for pkt, _, _ in script.run_with(finder.find(filtr=find_fltr), afr, error_catcher=result.error, **kwargs):
         if add_replies:
@@ -136,9 +138,14 @@ class ResultBuilder:
     error(e)
         Record an error in the result
     """
-    def __init__(self, serials):
-        self.serials = serials
+    def __init__(self, serials=None):
+        self.serials = [] if serials is None else serials
         self.result = {"results": {}}
+
+    def add_serials(self, serials):
+        for serial in serials:
+            if serial not in self.serials:
+                self.serials.append(serial)
 
     def as_dict(self):
         res = dict(self.result)

@@ -20,6 +20,7 @@ event loop.
 """
 from photons_interactor.database.connection import DatabaseConnection
 
+from photons_app.errors import PhotonsAppError
 from photons_app import helpers as hp
 
 from sqlalchemy.pool import StaticPool
@@ -58,7 +59,6 @@ class DBQueue(hp.ThreadToAsyncQueue):
 
                     except sqlalchemy.exc.OperationalError as error:
                         database.rollback()
-                        exc_info = sys.exc_info()
                         log.error(hp.lc("Failed to use database, will rollback and maybe try again", error=error))
                         tries += 1
 
@@ -67,14 +67,18 @@ class DBQueue(hp.ThreadToAsyncQueue):
 
                     except sqlalchemy.exc.InvalidRequestError as error:
                         database.rollback()
-                        exc_info = sys.exc_info()
                         log.error(hp.lc("Failed to perform database operation", error=error))
+                        raise
+
+                    except PhotonsAppError as error:
+                        database.rollback()
+                        log.error(hp.lc("Failed to use database", error=error))
                         raise
 
                     except:
                         database.rollback()
                         exc_info = sys.exc_info()
-                        log.error(hp.lc("Unexpected failure when using database....", error=exc_info[1]), exc_info=exc_info)
+                        log.exception(hp.lc("Unexpected failure when using database", error=exc_info[1]))
                         raise
 
         return ret

@@ -10,6 +10,8 @@ class Commander:
 
     .. automethod:: photons_interactor.commander.Commander.execute
     """
+    _merged_options_formattable = True
+
     def __init__(self, finder, target_register, protocol_register, db_queue, test_devices=None):
         self.command_spec = command_spec()
 
@@ -20,6 +22,7 @@ class Commander:
                 , "test_devices": test_devices
                 , "target_register": target_register
                 , "protocol_register": protocol_register
+                , "commander": self
                 }
               )
             , []

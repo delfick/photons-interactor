@@ -5,3 +5,6 @@ class NoSuchCommand(PhotonsAppError):
 
 class NoSuchPacket(PhotonsAppError):
     desc = "no such packet"
+
+class NoSuchScene(PhotonsAppError):
+    desc = "no such scene"

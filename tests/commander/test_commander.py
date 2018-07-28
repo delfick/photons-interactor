@@ -40,6 +40,7 @@ describe AsyncTestCase, "Commander":
         self.assertIs(meta_everything["db_queue"], db_queue)
         self.assertIs(meta_everything["target_register"], target_register)
         self.assertIs(meta_everything["protocol_register"], protocol_register)
+        self.assertIs(meta_everything["commander"], commander)
 
         self.assertIs(type(commander.command_spec), command_spec)
 
@@ -71,6 +72,7 @@ describe AsyncTestCase, "Commander":
                 target = df.target_field
                 protocol_register = df.protocol_register_field
                 db_queue = df.db_queue_field
+                commander = df.commander_field
                 one = dictobj.Field(sb.integer_spec)
 
                 async def execute(self):
@@ -88,5 +90,6 @@ describe AsyncTestCase, "Commander":
             self.assertIs(cmd.protocol_register, self.protocol_register)
             self.assertIs(cmd.db_queue, self.db_queue)
             self.assertIs(cmd.one, 1)
+            self.assertIs(cmd.commander, self.commander)
 
             self.target_register.resolve.assert_called_once_with("lan")

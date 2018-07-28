@@ -307,6 +307,8 @@ describe AsyncTestCase, "Commands":
                     [ "discover"
                     , "help"
                     , "query"
+                    , "scene_apply"
+                    , "scene_capture"
                     , "scene_change"
                     , "scene_delete"
                     , "scene_info"

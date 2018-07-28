@@ -4,6 +4,7 @@ from input_algorithms import spec_base as sb
 finder_field = dictobj.Field(sb.overridden("{finder}"), formatted=True)
 target_field = dictobj.Field(sb.overridden("{targets.lan}"), formatted=True)
 db_queue_field = dictobj.Field(sb.overridden("{db_queue}"), formatted=True)
+commander_field = dictobj.Field(sb.overridden("{commander}"), formatted=True)
 protocol_register_field = dictobj.Field(sb.overridden("{protocol_register}"), formatted=True)
 
 refresh_field = dictobj.NullableField(sb.boolean
