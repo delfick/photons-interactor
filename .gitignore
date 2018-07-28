@@ -5,6 +5,7 @@ __pycache__/
 .tox/
 ./dist/
 interactor.yml
+interactor.db
 assets/
 photons_interactor/static/node_modules/
 photons_interactor/static/cypress/videos/

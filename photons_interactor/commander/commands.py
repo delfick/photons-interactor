@@ -2,12 +2,15 @@ from photons_interactor.commander.errors import NoSuchCommand
 from photons_interactor.commander import default_fields as df
 from photons_interactor.commander.decorator import command
 from photons_interactor.commander import helpers as chp
+from photons_interactor.database.database import Scene
 
 from photons_transform.transformer import Transformer
 
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
+from collections import defaultdict
 from textwrap import dedent
+import uuid
 
 class Command(dictobj.Spec):
     async def execute(self):
@@ -159,3 +162,74 @@ class SetCommand(Command):
         msg.res_required = False
         script = self.target.script(msg)
         return await chp.run(script, fltr, self.finder, timeout=self.timeout)
+
+@command(name="scene_info")
+class SceneInfo(Command):
+    """
+    Retrieve information about scenes in the database
+    """
+    db_queue = df.db_queue_field
+
+    uuids = dictobj.NullableField(sb.listof(sb.string_spec())
+        , help = "Only get information for scene with these uuids"
+        )
+
+    async def execute(self):
+        def get(db):
+            info = defaultdict(list)
+            fs = []
+            if self.uuids:
+                fs.append(Scene.uuid.in_(self.uuids))
+            for scene in db.query(Scene).filter(*fs):
+                dct = scene.as_dict()
+                del dct["uuid"]
+                info[scene.uuid].append(dct)
+            return dict(info)
+        return await self.db_queue.request(get)
+
+@command(name="scene_change")
+class SceneChange(Command):
+    """
+    Set all the options for a scene
+    """
+    db_queue = df.db_queue_field
+
+    uuid = dictobj.NullableField(sb.string_spec
+        , help = "The uuid of the scene to change, if None we create a new scene"
+        )
+
+    scene = dictobj.Field(sb.listof(Scene.DelayedSpec(storing=True))
+        , help = "The options for the scene"
+        )
+
+    async def execute(self):
+        def make(db):
+            scene_uuid = self.uuid or str(uuid.uuid4())
+            for thing in db.queries.get_scenes(uuid=scene_uuid):
+                db.delete(thing)
+
+            for part in self.scene:
+                made = db.queries.create_scene(**part(scene_uuid).as_dict())
+                db.add(made)
+
+            return scene_uuid
+        return await self.db_queue.request(make)
+
+@command(name="scene_delete")
+class SceneDelete(Command):
+    """
+    Set all the options for a scene
+    """
+    db_queue = df.db_queue_field
+
+    uuid = dictobj.Field(sb.string_spec, wrapper=sb.required
+        , help = "The uuid of the scene to delete"
+        )
+
+    async def execute(self):
+        def delete(db):
+            for thing in db.queries.get_scenes(uuid=self.uuid):
+                db.delete(thing)
+
+            return {"deleted": True}
+        return await self.db_queue.request(delete)

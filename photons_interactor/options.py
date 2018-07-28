@@ -1,3 +1,4 @@
+from photons_interactor.database.database import Database
 from photons_interactor.assets import Assets
 
 from photons_app.formatter import MergedOptionStringFormatter
@@ -37,6 +38,10 @@ class Options(dictobj.Spec):
 
             This is useful for integration tests
           """
+        )
+
+    database = dictobj.Field(Database.FieldSpec(formatter=MergedOptionStringFormatter), wrapper=sb.required
+        , help = "Database options"
         )
 
     @property

@@ -37,10 +37,42 @@ class App(App):
             , "interactor": dict((k, v) for k, v in args_dict["interactor"].items() if v is not sb.NotSpecified)
             }
 
+        self.ensure_config(args_obj.photons_app_config)
+
         with hp.a_temp_file() as fle:
             fle.write(json.dumps(data).encode())
             fle.flush()
             return super(App, self).execute(args_obj, args_dict, extra_args, logging_handler, extra_files=[fle.name])
+
+    def ensure_config(self, config):
+        """Make sure we have a config file so that we have database options"""
+        try:
+            config()
+            return
+        except ArgumentError as error:
+            filename = error.kwargs["location"]
+
+        print(dedent(f"""
+            Photons interactor needs a configuration file. This can be specified with
+            the --config cli option or the LIFX_CONFIG environment variable.
+
+            We tried looking at {filename} but didn't see a config file.
+
+            By pressing enter we will create a config file at {filename} for you.
+
+            Press ctrl-c to not go forward with this.
+            """))
+
+        input()
+
+        with open(filename, 'w') as fle:
+            fle.write(dedent("""
+                ---
+
+                interactor:
+                  database:
+                    uri: "sqlite:///{config_root}/interactor.db"
+            """))
 
     def specify_other_args(self, parser, defaults):
         parser = super(App, self).specify_other_args(parser, defaults)

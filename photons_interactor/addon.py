@@ -1,3 +1,4 @@
+from photons_interactor.database import database
 from photons_interactor.options import Options
 from photons_interactor.server import Server
 
@@ -31,6 +32,7 @@ def __lifx__(collector, *args, **kwargs):
 @an_action(label="Interactor")
 async def serve(collector, **kwargs):
     conf = collector.configuration
+    await migrate(collector, extra="upgrade head")
     await Server(
           conf["photons_app"].final_future
         , conf["interactor"]
@@ -38,6 +40,29 @@ async def serve(collector, **kwargs):
         , conf["target_register"]
         , conf["protocol_register"]
         ).serve()
+
+@an_action(label="Interactor")
+async def migrate(collector, extra=None, **kwargs):
+    """
+    Migrate a database
+
+    This task will use `Alembic <http://alembic.zzzcomputing.com>`_ to perform
+    database migration tasks.
+
+    Usage looks like:
+
+    ``migrate -- revision --autogenerate  -m doing_some_change``
+
+    Or
+
+    ``migrate -- upgrade head``
+
+    Basically, everything after the ``--`` is passed as commandline arguments
+    to alembic.
+    """
+    if extra is None:
+        extra = collector.configuration["photons_app"].extra
+    await database.migrate(collector.configuration["interactor"].database, extra)
 
 @an_action(label="Interactor")
 async def npm(collector, reference, **kwargs):

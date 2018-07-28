@@ -1,5 +1,6 @@
 from photons_interactor.request_handlers.command import CommandHandler, WSHandler
 from photons_interactor.request_handlers.index import Index
+from photons_interactor.database.db_queue import DBQueue
 from photons_interactor.commander import Commander
 
 from photons_device_finder import DeviceFinder
@@ -75,6 +76,10 @@ class Server(object):
         else:
             target = self.target_register.resolve("lan")
 
+        self.db_queue = DBQueue(self.final_future, 5, lambda exc: 1, self.server_options.database.uri)
+        self.cleaners.append(self.db_queue.finish)
+        self.db_queue.start()
+
         self.finder = DeviceFinder(target
             , **self.server_options.device_finder_options
             )
@@ -85,4 +90,4 @@ class Server(object):
             await self.finder.finish()
         self.cleaners.append(clean_finder)
 
-        self.commander = Commander(self.finder, self.target_register, self.protocol_register, test_devices)
+        self.commander = Commander(self.finder, self.target_register, self.protocol_register, self.db_queue, test_devices)
