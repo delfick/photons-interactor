@@ -303,7 +303,17 @@ describe AsyncTestCase, "Commands":
                   { "message": 'Bad value. Unknown command'
                   , "wanted": "nope"
                   , "meta": '{path=<input>}'
-                  , "available": ["discover", "help", "query", "set", "test", "transform"]
+                  , "available":
+                    [ "discover"
+                    , "help"
+                    , "query"
+                    , "scene_change"
+                    , "scene_delete"
+                    , "scene_info"
+                    , "set"
+                    , "test"
+                    , "transform"
+                    ]
                   }
                 , "error_code": "BadSpecValue"
                 , "status": 400
@@ -347,6 +357,7 @@ describe AsyncTestCase, "Commands":
               host = "127.0.0.1"
             , port = thp.free_port()
             , device_finder_options = {"repeat_spread": 0.01}
+            , database = {"uri": "sqlite:///:memory:"}
             )
 
         protocol_register = cthp.make_protocol_register()

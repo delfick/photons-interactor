@@ -24,6 +24,7 @@ class WSServer(thp.ServerRunner):
         self.options = Options.FieldSpec().empty_normalise(
               host = "127.0.0.1"
             , port = thp.free_port()
+            , database = {"uri": "sqlite:///:memory:"}
             )
 
         class WSS(Server):

@@ -74,6 +74,7 @@ describe AsyncTestCase, "Server":
                   host = "127.0.0.1"
                 , port = thp.free_port()
                 , device_finder_options = {"arg1": 0.1, "arg2": True}
+                , database = {"uri": "sqlite:memory:"}
                 )
 
             lan_target = mock.Mock(name="lan_target")
@@ -83,6 +84,9 @@ describe AsyncTestCase, "Server":
             finder.start = asynctest.mock.CoroutineMock(name="start")
             finder.finish = asynctest.mock.CoroutineMock(name="finish")
             FakeDeviceFinder = mock.Mock(name="DeviceFinder", return_value=finder)
+
+            db_queue = mock.Mock(name="db_queue")
+            FakeDBQueue = mock.Mock(name="DBQueue", return_value=db_queue)
 
             commander = mock.Mock(name="commander")
             FakeCommander = mock.Mock(name="Commander", return_value=commander)
@@ -94,7 +98,8 @@ describe AsyncTestCase, "Server":
             def wrapper():
                 with mock.patch("photons_interactor.server.Commander", FakeCommander):
                     with mock.patch("photons_interactor.server.DeviceFinder", FakeDeviceFinder):
-                        yield
+                        with mock.patch("photons_interactor.server.DBQueue", FakeDBQueue):
+                            yield
 
             async with thp.ServerRunner(self.final_future, server, options, wrapper()):
                 await self.assertPUTCommand(options, commander)
@@ -103,7 +108,10 @@ describe AsyncTestCase, "Server":
             self.assertIs(server.commander, commander)
             self.assertIs(server.finder, finder)
 
-            FakeCommander.assert_called_once_with(finder, self.target_register, self.protocol_register, None)
+            FakeCommander.assert_called_once_with(finder, self.target_register, self.protocol_register, db_queue, None)
             FakeDeviceFinder.assert_called_once_with(lan_target, arg1=0.1, arg2=True)
+            FakeDBQueue.assert_called_once_with(self.final_future, 5, mock.ANY, "sqlite:memory:")
+
             self.target_register.resolve.assert_called_once_with("lan")
             finder.start.assert_called_once_with()
+            db_queue.start.assert_called_once_with()

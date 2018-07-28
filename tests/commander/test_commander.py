@@ -16,6 +16,7 @@ from unittest import mock
 describe AsyncTestCase, "Commander":
     async it "takes in some things":
         finder = mock.Mock(nme="finder")
+        db_queue = mock.Mock(name="db_queue")
         target_register = mock.Mock(name="target_register")
         protocol_register = mock.Mock(name="protocol_register")
 
@@ -31,11 +32,12 @@ describe AsyncTestCase, "Commander":
             )
         test_devices = {"devices": [device]}
 
-        commander = Commander(finder, target_register, protocol_register, test_devices)
+        commander = Commander(finder, target_register, protocol_register, db_queue, test_devices)
 
         meta_everything = commander.meta.everything
         self.assertIs(meta_everything["finder"], finder)
         self.assertEqual(meta_everything["test_devices"]["devices"], test_devices["devices"])
+        self.assertIs(meta_everything["db_queue"], db_queue)
         self.assertIs(meta_everything["target_register"], target_register)
         self.assertIs(meta_everything["protocol_register"], protocol_register)
 
@@ -44,10 +46,11 @@ describe AsyncTestCase, "Commander":
     describe "execute":
         async before_each:
             self.finder = mock.Mock(name="finder")
+            self.db_queue = mock.Mock(name="db_queue")
             self.target_register = mock.Mock(name="target_register")
             self.protocol_register = mock.Mock(name="protocol_register")
 
-            self.commander = Commander(self.finder, self.target_register, self.protocol_register)
+            self.commander = Commander(self.finder, self.target_register, self.protocol_register, self.db_queue)
 
         async it "can execute a command":
             res = mock.Mock(name="res")
@@ -67,6 +70,7 @@ describe AsyncTestCase, "Commander":
                 finder = df.finder_field
                 target = df.target_field
                 protocol_register = df.protocol_register_field
+                db_queue = df.db_queue_field
                 one = dictobj.Field(sb.integer_spec)
 
                 async def execute(self):
@@ -82,6 +86,7 @@ describe AsyncTestCase, "Commander":
             self.assertIs(cmd.finder, self.finder)
             self.assertIs(cmd.target, target)
             self.assertIs(cmd.protocol_register, self.protocol_register)
+            self.assertIs(cmd.db_queue, self.db_queue)
             self.assertIs(cmd.one, 1)
 
             self.target_register.resolve.assert_called_once_with("lan")
