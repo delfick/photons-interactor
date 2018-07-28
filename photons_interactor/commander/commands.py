@@ -181,6 +181,10 @@ class SceneInfo(Command):
         , help = "Only get information for scene with these uuids"
         )
 
+    no_details = dictobj.Field(sb.boolean, default=False
+        , help = "Just return the uuids and labels"
+        )
+
     async def execute(self):
         def get(db):
             info = defaultdict(list)
@@ -191,6 +195,8 @@ class SceneInfo(Command):
                 dct = scene.as_dict()
                 del dct["uuid"]
                 info[scene.uuid].append(dct)
+            if self.no_details:
+                return sorted(info)
             return dict(info)
         return await self.db_queue.request(get)
 
