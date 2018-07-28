@@ -33,7 +33,7 @@ class App(App):
 
     def execute(self, args_obj, args_dict, extra_args, logging_handler):
         data = {
-              "photons_app": { "addons": {"lifx.photons": "interactor"} }
+              "photons_app": {"use_uvloop": False, "addons": {"lifx.photons": "interactor"} }
             , "interactor": dict((k, v) for k, v in args_dict["interactor"].items() if v is not sb.NotSpecified)
             }
 
