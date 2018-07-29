@@ -139,4 +139,4 @@ def make_spec(storing=True):
                     , res_required = False
                     )
 
-    return Fields.FieldSpec
+    return Fields.FieldSpec()

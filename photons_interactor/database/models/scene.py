@@ -32,7 +32,7 @@ class Scene(Base):
 
     @classmethod
     def Spec(kls, storing=True):
-        return make_spec(storing=storing)()
+        return make_spec(storing=storing)
 
     @classmethod
     def DelayedSpec(kls, storing=True):
