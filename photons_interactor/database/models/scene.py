@@ -25,18 +25,18 @@ class Scene(Base):
             , "chain": self.chain
             , "duration": self.duration
             }
-        return self.Spec(storing=False)().empty_normalise(**dct)
+        return self.Spec(storing=False).empty_normalise(**dct)
 
     def as_dict(self, ignore=None):
         return {k: v for k, v in self.as_object().as_dict().items() if v is not None and (ignore is None or k not in ignore)}
 
     @classmethod
     def Spec(kls, storing=True):
-        return make_spec(storing=storing)
+        return make_spec(storing=storing)()
 
     @classmethod
     def DelayedSpec(kls, storing=True):
-        spec = kls.Spec(storing=storing)()
+        spec = kls.Spec(storing=storing)
 
         class delayed(sb.Spec):
             def normalise_filled(self, meta, val):
