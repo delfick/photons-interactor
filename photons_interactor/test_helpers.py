@@ -78,6 +78,9 @@ class ServerRunner:
             except:
                 pass
 
+        # Prevent coroutine not awaited error
+        await asyncio.sleep(0.01)
+
         if hasattr(self.server.finder.finish, "mock_calls"):
             self.server.finder.finish.assert_called_once_with()
 
