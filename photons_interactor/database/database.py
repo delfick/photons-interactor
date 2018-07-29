@@ -171,6 +171,15 @@ class Scene(Base):
             def transform_options(self):
                 return {"power": "on" if self.power else "off", "color": self.color, "duration": self.duration}
 
+            def colors_from_hsbks(self, hsbks, overrides):
+                return [
+                      { "hue": overrides.get("hue", h)
+                      , "saturation": overrides.get("saturation", s)
+                      , "brightness": overrides.get("brightness", b)
+                      , "kelvin": overrides.get("kelvin", k)
+                      } for h, s, b, k in hsbks
+                    ]
+
             def zone_msgs(self, overrides):
                 power = overrides.get("power", self.power)
                 duration = overrides.get("duration", self.duration) or 0
@@ -179,8 +188,7 @@ class Scene(Base):
                     level = 0 if power not in (True, "on") else 65535
                     yield DeviceMessages.SetLightPower(level=level, duration=duration)
 
-                colors = [{"hue": h, "saturation": s, "brightness": b, "kelvin": k} for h, s, b, k in self.zones]
-
+                colors = self.colors_from_hsbks(self.zones, overrides)
                 groups = []
 
                 start = 0
@@ -212,7 +220,7 @@ class Scene(Base):
                     yield DeviceMessages.SetLightPower(level=level, duration=duration)
 
                 for i, lst in enumerate(self.chain):
-                    colors = [{"hue": h, "saturation": s, "brightness": b, "kelvin": k} for h, s, b, k in lst]
+                    colors = self.colors_from_hsbks(lst, overrides)
                     yield TileMessages.SetTileState64(tile_index=i, length=1, x=0, y=0, width=8, duration=duration, colors=colors
                         , res_required = False
                         )
