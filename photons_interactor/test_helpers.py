@@ -1,6 +1,14 @@
+from photons_interactor.commander import test_helpers as cthp
+from photons_interactor import test_helpers as thp
+from photons_interactor.options import Options
+from photons_interactor.server import Server
+
+from photons_app.test_helpers import AsyncTestCase
 from photons_app import helpers as hp
 
 from tornado.websocket import websocket_connect
+from unittest import mock
+import http.client
 import asyncio
 import socket
 import time
@@ -83,3 +91,54 @@ class ServerRunner:
         if res is None:
             return res
         return json.loads(res)
+
+class CommandCase(AsyncTestCase):
+    async def assertCommand(self, options, command, status=200, json_output=None, text_output=None, timeout=None):
+        def doit():
+            conn = http.client.HTTPConnection("127.0.0.1", options.port, timeout=timeout)
+            conn.request("PUT", "/v1/lifx/command", body=json.dumps(command).encode())
+            res = conn.getresponse()
+
+            body = res.read()
+
+            self.assertEqual(res.status, status, body)
+            if json_output is None and text_output is None:
+                return body
+            else:
+                if json_output is not None:
+                    self.maxDiff = None
+                    try:
+                        self.assertEqual(json.loads(body.decode()), json_output)
+                    except AssertionError:
+                        print(json.dumps(json.loads(body.decode()), sort_keys=True, indent="    "))
+                        raise
+                else:
+                    self.assertEqual(body, text_output)
+        return await self.wait_for(self.loop.run_in_executor(None, doit), timeout=timeout)
+
+    async def run_server(self, wrapper, runner):
+        final_future = asyncio.Future()
+
+        options = Options.FieldSpec().empty_normalise(
+              host = "127.0.0.1"
+            , port = thp.free_port()
+            , device_finder_options = {"repeat_spread": 0.01}
+            , database = {"uri": "sqlite:///:memory:"}
+            )
+
+        protocol_register = cthp.make_protocol_register()
+        lan_target = cthp.make_memory_target(final_future)
+
+        target_register = mock.Mock(name="target_register")
+        target_register.resolve.return_value = lan_target
+
+        fake = cthp.fake_devices(protocol_register)
+
+        cleaners = []
+        server = Server(final_future, options, cleaners, target_register, protocol_register)
+
+        self.maxDiff = None
+
+        async with cthp.MemoryTargetRunner(lan_target, fake["devices"]):
+            async with thp.ServerRunner(final_future, server, options, wrapper()) as s:
+                await runner(options, fake, s)

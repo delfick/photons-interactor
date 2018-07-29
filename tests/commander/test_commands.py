@@ -7,8 +7,6 @@ from photons_interactor import test_helpers as thp
 from photons_interactor.options import Options
 from photons_interactor.server import Server
 
-from photons_app.test_helpers import AsyncTestCase
-
 from photons_device_messages import DeviceMessages
 from photons_colour import Parser
 
@@ -43,30 +41,7 @@ class TestCommand(Command):
     async def execute(self):
         return self.as_dict()
 
-describe AsyncTestCase, "Commands":
-    async def assertCommand(self, options, command, status=200, json_output=None, text_output=None, timeout=None):
-        def doit():
-            conn = http.client.HTTPConnection("127.0.0.1", options.port, timeout=timeout)
-            conn.request("PUT", "/v1/lifx/command", body=json.dumps(command).encode())
-            res = conn.getresponse()
-
-            body = res.read()
-
-            self.assertEqual(res.status, status, body)
-            if json_output is None and text_output is None:
-                return body
-            else:
-                if json_output is not None:
-                    self.maxDiff = None
-                    try:
-                        self.assertEqual(json.loads(body.decode()), json_output)
-                    except AssertionError:
-                        print(json.dumps(json.loads(body.decode()), sort_keys=True, indent="    "))
-                        raise
-                else:
-                    self.assertEqual(body, text_output)
-        return await self.wait_for(self.loop.run_in_executor(None, doit), timeout=timeout)
-
+describe thp.CommandCase, "Commands":
     async def assertHelpCommand(self, options, devices):
         want = dedent("""
         Command test
@@ -353,47 +328,23 @@ describe AsyncTestCase, "Commands":
         self.assertIs(await server.ws_read(connection), None)
 
     async it "works":
-        final_future = asyncio.Future()
+        @contextmanager
+        def wrapper():
+            try:
+                command(name="test")(TestCommand)
+                yield
+            finally:
+                if "test" in command.available_commands:
+                    del command.available_commands["test"]
 
-        options = Options.FieldSpec().empty_normalise(
-              host = "127.0.0.1"
-            , port = thp.free_port()
-            , device_finder_options = {"repeat_spread": 0.01}
-            , database = {"uri": "sqlite:///:memory:"}
-            )
+        async def runner(options, fake, server):
+            for test in ("Help", "Test", "Discover", "Query", "Set", "Transform"):
+                for device in fake["devices"]:
+                    device.reset()
+                await getattr(self, f"assert{test}Command")(options, fake)
 
-        protocol_register = cthp.make_protocol_register()
-        lan_target = cthp.make_memory_target(final_future)
+            for device in fake["devices"]:
+                device.reset()
+            await self.assertWS(options, fake, server)
 
-        target_register = mock.Mock(name="target_register")
-        target_register.resolve.return_value = lan_target
-
-        fake = cthp.fake_devices(protocol_register)
-
-        cleaners = []
-        server = Server(final_future, options, cleaners, target_register, protocol_register)
-
-        async def doit():
-            @contextmanager
-            def wrapper():
-                try:
-                    command(name="test")(TestCommand)
-                    yield
-                finally:
-                    if "test" in command.available_commands:
-                        del command.available_commands["test"]
-
-            self.maxDiff = None
-
-            async with cthp.MemoryTargetRunner(lan_target, fake["devices"]):
-                async with thp.ServerRunner(final_future, server, options, wrapper()) as s:
-                    for test in ("Help", "Test", "Discover", "Query", "Set", "Transform"):
-                        for device in fake["devices"]:
-                            device.reset()
-                        await getattr(self, f"assert{test}Command")(options, fake)
-
-                    for device in fake["devices"]:
-                        device.reset()
-                    await self.assertWS(options, fake, s)
-
-        await self.wait_for(doit(), timeout=6)
+        await self.wait_for(self.run_server(wrapper, runner), timeout=6)
