@@ -327,24 +327,35 @@ describe thp.CommandCase, "Commands":
         connection.close()
         self.assertIs(await server.ws_read(connection), None)
 
-    async it "works":
-        @contextmanager
-        def wrapper():
-            try:
-                command(name="test")(TestCommand)
-                yield
-            finally:
-                if "test" in command.available_commands:
-                    del command.available_commands["test"]
+    @contextmanager
+    def register_test_command(self):
+        try:
+            command(name="test")(TestCommand)
+            yield
+        finally:
+            if "test" in command.available_commands:
+                del command.available_commands["test"]
 
+    async it "has base commands":
         async def runner(options, fake, server):
-            for test in ("Help", "Test", "Discover", "Query", "Set", "Transform"):
+            for test in ("Help", "Test"):
                 for device in fake["devices"]:
                     device.reset()
                 await getattr(self, f"assert{test}Command")(options, fake)
 
-            for device in fake["devices"]:
-                device.reset()
+        await self.wait_for(self.run_server(self.register_test_command(), runner))
+
+    async it "has control commands":
+        async def runner(options, fake, server):
+            for test in ("Discover", "Query", "Set", "Transform"):
+                for device in fake["devices"]:
+                    device.reset()
+                await getattr(self, f"assert{test}Command")(options, fake)
+
+        await self.wait_for(self.run_server(None, runner), timeout=6)
+
+    async it "has websocket commands":
+        async def runner(options, fake, server):
             await self.assertWS(options, fake, server)
 
-        await self.wait_for(self.run_server(wrapper, runner), timeout=6)
+        await self.wait_for(self.run_server(self.register_test_command(), runner), timeout=6)

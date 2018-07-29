@@ -7,6 +7,7 @@ from photons_app.test_helpers import AsyncTestCase
 from photons_app import helpers as hp
 
 from tornado.websocket import websocket_connect
+from contextlib import contextmanager
 from unittest import mock
 import http.client
 import asyncio
@@ -31,6 +32,12 @@ def port_connected(port):
 
 class ServerRunner:
     def __init__(self, final_future, server, options, wrapper):
+        if wrapper is None:
+            @contextmanager
+            def wrapper():
+                yield
+            wrapper = wrapper()
+
         self.server = server
         self.options = options
         self.wrapper = wrapper
@@ -140,5 +147,5 @@ class CommandCase(AsyncTestCase):
         self.maxDiff = None
 
         async with cthp.MemoryTargetRunner(lan_target, fake["devices"]):
-            async with thp.ServerRunner(final_future, server, options, wrapper()) as s:
+            async with thp.ServerRunner(final_future, server, options, wrapper) as s:
                 await runner(options, fake, s)
