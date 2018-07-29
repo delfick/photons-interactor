@@ -8,3 +8,6 @@ class NoSuchPacket(PhotonsAppError):
 
 class NoSuchScene(PhotonsAppError):
     desc = "no such scene"
+
+class InvalidArgs(PhotonsAppError):
+    desc = "Invalid arguments"

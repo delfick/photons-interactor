@@ -153,8 +153,8 @@ class Scene(Base):
             }
         return self.Spec(storing=False)().empty_normalise(**dct)
 
-    def as_dict(self):
-        return {k: v for k, v in self.as_object().as_dict().items() if v is not None}
+    def as_dict(self, ignore=None):
+        return {k: v for k, v in self.as_object().as_dict().items() if v is not None and (ignore is None or k not in ignore)}
 
     @classmethod
     def Spec(kls, storing=True):
@@ -235,3 +235,12 @@ class Scene(Base):
                 return normalise
 
         return delayed()
+
+class SceneInfo(Base):
+    uuid = Column(String(64), nullable=True, index=True, unique=True)
+    label = Column(Text(), nullable=True)
+    description = Column(Text(), nullable=True)
+
+    def as_dict(self, ignore=None):
+        dct = {"uuid": self.uuid, "label": self.label, "description": self.description}
+        return {k: v for k, v in dct.items() if v is not None and (ignore is None or k not in ignore)}
