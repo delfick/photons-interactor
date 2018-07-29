@@ -1,5 +1,4 @@
 from photons_interactor.commander import test_helpers as cthp
-from photons_interactor import test_helpers as thp
 from photons_interactor.options import Options
 from photons_interactor.server import Server
 
@@ -131,7 +130,7 @@ class CommandCase(AsyncTestCase):
 
         options = Options.FieldSpec().empty_normalise(
               host = "127.0.0.1"
-            , port = thp.free_port()
+            , port = free_port()
             , device_finder_options = {"repeat_spread": 0.01}
             , database = {"uri": "sqlite:///:memory:"}
             )
@@ -150,5 +149,5 @@ class CommandCase(AsyncTestCase):
         self.maxDiff = None
 
         async with cthp.MemoryTargetRunner(lan_target, fake["devices"]):
-            async with thp.ServerRunner(final_future, server, options, wrapper) as s:
+            async with ServerRunner(final_future, server, options, wrapper) as s:
                 await runner(options, fake, s)
