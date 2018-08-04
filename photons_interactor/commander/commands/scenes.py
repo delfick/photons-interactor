@@ -90,7 +90,7 @@ class SceneChangeCommand(Command):
             scene_uuid = self.uuid or str(uuid.uuid4())
 
             if self.scene is not None:
-                for thing in db.queries.get_scenes(uuid=scene_uuid):
+                for thing in db.queries.get_scenes(uuid=scene_uuid).all():
                     db.delete(thing)
 
                 for part in self.scene:
@@ -120,7 +120,7 @@ class SceneDeleteCommand(Command):
 
     async def execute(self):
         def delete(db):
-            for thing in db.queries.get_scenes(uuid=self.uuid):
+            for thing in db.queries.get_scenes(uuid=self.uuid).all():
                 db.delete(thing)
 
             return {"deleted": True}
@@ -151,7 +151,7 @@ class SceneApplyCommand(Command):
 
         def get(db):
             info = []
-            for scene in db.queries.get_scenes(uuid=self.uuid):
+            for scene in db.queries.get_scenes(uuid=self.uuid).all():
                 info.append(scene.as_object())
             if not info:
                 raise NoSuchScene(uuid=self.uuid)

@@ -25,7 +25,6 @@ from photons_app import helpers as hp
 
 from sqlalchemy.pool import StaticPool
 import sqlalchemy
-import traceback
 import logging
 import sys
 
@@ -50,35 +49,40 @@ class DBQueue(hp.ThreadToAsyncQueue):
             while True:
                 db, = args
 
+                # Clone our database with a new session
+                database = db.new_session()
+
                 # Do the work
-                with db.new_session() as database:
-                    try:
-                        res = proc(database)
-                        database.commit()
-                        return res
+                try:
+                    res = proc(database)
+                    database.commit()
+                    return res
 
-                    except sqlalchemy.exc.OperationalError as error:
-                        database.rollback()
-                        log.error(hp.lc("Failed to use database, will rollback and maybe try again", error=error))
-                        tries += 1
+                except sqlalchemy.exc.OperationalError as error:
+                    database.rollback()
+                    log.error(hp.lc("Failed to use database, will rollback and maybe try again", error=error))
+                    tries += 1
 
-                        if tries > 1:
-                            raise
-
-                    except sqlalchemy.exc.InvalidRequestError as error:
-                        database.rollback()
-                        log.error(hp.lc("Failed to perform database operation", error=error))
+                    if tries > 1:
                         raise
 
-                    except PhotonsAppError as error:
-                        database.rollback()
-                        log.error(hp.lc("Failed to use database", error=error))
-                        raise
+                except sqlalchemy.exc.InvalidRequestError as error:
+                    database.rollback()
+                    log.error(hp.lc("Failed to perform database operation", error=error))
+                    raise
 
-                    except:
-                        database.rollback()
-                        exc_info = sys.exc_info()
-                        log.exception(hp.lc("Unexpected failure when using database", error=exc_info[1]))
-                        raise
+                except PhotonsAppError as error:
+                    database.rollback()
+                    log.error(hp.lc("Failed to use database", error=error))
+                    raise
+
+                except:
+                    database.rollback()
+                    exc_info = sys.exc_info()
+                    log.exception(hp.lc("Unexpected failure when using database", error=exc_info[1]))
+                    raise
+
+                finally:
+                    database.close()
 
         return ret

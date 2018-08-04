@@ -1,8 +1,10 @@
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy import create_engine, orm
 from sqlalchemy import Column, Integer
-from contextlib import contextmanager
 import sqlalchemy
+import logging
+
+log = logging.getLogger("photons_interactor.database.connection")
 
 class Base(object):
     # Metadata gets set by Sqlalchemy
@@ -79,11 +81,10 @@ class DatabaseConnection(object):
 
         return create_engine(database, **engine_kwargs)
 
-    @contextmanager
     def new_session(self):
         dc = self.__class__(database=self.database, engine=self.engine, **self.engine_kwargs)
         dc.session = dc.make_session()
-        yield dc
+        return dc
 
     ########################
     ###   SESSION
@@ -141,12 +142,6 @@ class DatabaseConnection(object):
     ########################
     ###   SESSION USAGE
     ########################
-
-    @property
-    @contextmanager
-    def transaction(self):
-        with self.session.begin():
-            yield
 
     def expire_all(self):
         self.session.expire_all()
@@ -253,7 +248,7 @@ class QueryHelper(object):
         fltrd = self.filtered(model, attrs, **kwargs)
         if limit:
             fltrd = fltrd.limit(limit)
-        return fltrd.all()
+        return fltrd
 
     def get_one_model(self, model, attrs, **kwargs):
         return self.filtered(model, attrs, **kwargs).one()
