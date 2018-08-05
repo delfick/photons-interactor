@@ -188,7 +188,6 @@ class SceneApplyCommand(Command):
     async def transform(self, fltr, scene, result):
         options = scene.transform_options
         options.update(self.overrides)
-        options["duration"] = options["duration"] or 0
 
         msg = Transformer.using(options)
         script = self.target.script(msg)
