@@ -1,18 +1,17 @@
 # coding: spec
 
-from photons_interactor.database.connection import DatabaseConnection, Base
+from photons_interactor.database.test_helpers import DBTestRunner
+from photons_interactor.database.connection import Base
 
-from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import TestCase
 from photons_app import helpers as hp
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp, noy_sup_tearDown
 from sqlalchemy import Column, String, Boolean
 import sqlalchemy.exc
-import tempfile
-import os
 
 Test = None
+test_runner = DBTestRunner()
 
 def setUp():
     global Test
@@ -34,19 +33,11 @@ def tearDown():
 
 describe TestCase, "DatabaseConnection":
     before_each:
-        self.tmpfile = tempfile.NamedTemporaryFile(delete=False)
-        self.filename = self.tmpfile.name
-        self.database = DatabaseConnection(database=f"sqlite:///{self.filename}").new_session()
-        self.database.create_tables()
+        test_runner.before_each(start_db_queue=True)
+        self.database = test_runner.database
 
     after_each:
-        # Cleanup
-        if hasattr(self, "tmpfile") and self.tmpfile is not None:
-            self.tmpfile.close()
-        if hasattr(self, "filename") and self.filename and os.path.exists(self.filename):
-            os.remove(self.filename)
-        if hasattr(self, "database"):
-            self.database.close()
+        test_runner.after_each()
 
     describe "actions":
         it "can create and query the database and delete from the database":

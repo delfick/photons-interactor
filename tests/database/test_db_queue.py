@@ -1,21 +1,17 @@
 # coding: spec
 
-from photons_interactor.database.connection import DatabaseConnection, Base
-from photons_interactor.database.db_queue import DBQueue
+from photons_interactor.database.test_helpers import DBTestRunner
+from photons_interactor.database.connection import Base
 
-from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import AsyncTestCase
 from photons_app.errors import PhotonsAppError
-from photons_app import helpers as hp
 
 from noseOfYeti.tokeniser.async_support import async_noy_sup_setUp, async_noy_sup_tearDown
 from sqlalchemy import Column, String, Boolean
 import sqlalchemy.exc
-import tempfile
-import asyncio
-import os
 
 Test = None
+test_runner = DBTestRunner()
 
 def setUp():
     global Test
@@ -37,32 +33,12 @@ def tearDown():
 
 describe AsyncTestCase, "DatabaseConnection":
     async before_each:
-        self.tmpfile = tempfile.NamedTemporaryFile(delete=False)
-        self.filename = self.tmpfile.name
-        uri = f"sqlite:///{self.filename}"
-        self.database = DatabaseConnection(database=uri).new_session()
-        self.database.create_tables()
-        self.final_future = asyncio.Future()
-        self.db_queue = DBQueue(self.final_future, 5, lambda exc: 1, uri)
-        self.db_queue.start()
+        test_runner.before_each(start_db_queue=True)
+        self.db_queue = test_runner.db_queue
 
     async after_each:
-        # Cleanup
-        if hasattr(self, "final_future"):
-            self.final_future.cancel()
-        if hasattr(self, "tmpfile") and self.tmpfile is not None:
-            self.tmpfile.close()
-        if hasattr(self, "filename") and self.filename and os.path.exists(self.filename):
-            os.remove(self.filename)
-        if hasattr(self, "database"):
-            self.database.close()
-        if hasattr(self, "db_queue"):
-            await self.db_queue.finish()
-
-            # Stop annoying loop was closed warnings
-            import threading
-            for thread in threading.enumerate()[1:]:
-                thread.join()
+        test_runner.after_each()
+        await test_runner.after_each_db_queue()
 
     async it "can execute queries":
         def do_set(db):
