@@ -34,6 +34,6 @@ setup(
     , author = "Stephen Moore"
     , author_email = "delfick755@gmail.com"
     , description = "A server for interacting with LIFX lights over the LAN"
-    , license = "MIT"
+    , license = "cc-by-nc-sa-4.0"
     , keywords = "lifx photons"
     )
