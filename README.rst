@@ -26,6 +26,6 @@ Submit enquiries to business@lifx.com
 
 References:
 
-https://creativecommons.org/licenses/by-nc-sa/4.0/
-https://www.lifx.com/pages/legals
-https://www.lifx.com/pages/developer-terms-of-use
+* https://creativecommons.org/licenses/by-nc-sa/4.0/
+* https://www.lifx.com/pages/legals
+* https://www.lifx.com/pages/developer-terms-of-use
