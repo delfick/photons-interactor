@@ -281,22 +281,22 @@ class SceneCaptureCommand(Command):
                 state[pkt.serial]["color"] = hsbk
             elif pkt | MultiZoneMessages.StateMultiZoneStateMultiZones:
                 if "zones" not in state[pkt.serial]:
-                    state[pkt.serial]["zones"] = []
+                    state[pkt.serial]["zones"] = {}
                 for i, zi in enumerate(range(pkt.zone_index, pkt.zone_index + 8)):
                     c = pkt.colors[i]
-                    state[pkt.serial]["zones"].append((zi, [c.hue, c.saturation, c.brightness, c.kelvin]))
+                    state[pkt.serial]["zones"][zi] = [c.hue, c.saturation, c.brightness, c.kelvin]
             elif pkt | TileMessages.StateTileState64:
                 if "chain" not in state[pkt.serial]:
-                    state[pkt.serial]["chain"] = []
+                    state[pkt.serial]["chain"] = {}
                 colors = [[c.hue, c.saturation, c.brightness, c.kelvin] for c in pkt.colors]
-                state[pkt.serial]["chain"].append((pkt.tile_index, colors))
+                state[pkt.serial]["chain"][pkt.tile_index] = colors
 
         scene = []
         for serial, info in sorted(state.items()):
             if "zones" in info:
-                info["zones"] = [hsbk for _, hsbk in sorted(info["zones"])]
+                info["zones"] = [hsbk for _, hsbk in sorted(info["zones"].items())]
             if "chain" in info:
-                info["chain"] = [hsbks for _, hsbks in sorted(info["chain"])]
+                info["chain"] = [hsbks for _, hsbks in sorted(info["chain"].items())]
 
             scene.append({"matcher": {"serial": serial}, **info})
 
