@@ -2,8 +2,8 @@ from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import print_packet_difference
 from photons_app.registers import ProtocolRegister
 
+from photons_socket.fake import FakeDevice, MemorySocketTarget, MemorySocketBridge
 from photons_products_registry import LIFIProductRegistry, capability_for_ids
-from photons_socket.fake import FakeDevice, MemorySocketTarget
 from photons_socket.messages import DiscoveryMessages
 from photons_device_messages import DeviceMessages
 from photons_multizone import MultiZoneMessages
@@ -25,6 +25,21 @@ def make_protocol_register():
     protocol_register.message_register(1024).add(DeviceMessages)
     protocol_register.message_register(1024).add(ColourMessages)
     return protocol_register
+
+class MemorySocketBridge(MemorySocketBridge):
+    def make_waiter(self, writer, **kwargs):
+        """
+        Make first_wait and first_resend a bit more generous
+
+        This is to avoid messages being resent in tests causing flaky tests
+        """
+        for attr in ("first_wait", "first_resend"):
+            if attr not in kwargs or kwargs.get(attr) < 0.2:
+                kwargs[attr] = 0.2
+        return super(MemorySocketBridge, self).make_waiter(writer, **kwargs)
+
+class MemoRySocketTarget(MemorySocketTarget):
+    bridge_kls = lambda s: MemorySocketBridge
 
 def make_memory_target(final_future):
     everything = {
