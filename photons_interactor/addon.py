@@ -92,6 +92,7 @@ async def npm(collector, reference, **kwargs):
 
         t = None
         try:
+            collector.configuration["interactor"].host = "127.0.0.1"
             collector.configuration["interactor"].port = port
             collector.configuration["interactor"].fake_devices = True
             collector.configuration["interactor"].database.uri = "sqlite:///:memory:"
@@ -135,7 +136,7 @@ async def npm(collector, reference, **kwargs):
         if assets.needs_install:
             assets.run("install")
 
-        elif reference == "static":
+        if reference == "static":
             assets.run("run-script", "build")
 
         elif reference == "watch":
