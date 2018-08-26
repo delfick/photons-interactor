@@ -67,7 +67,7 @@ describe AsyncTestCase, "Server":
                 self.assertEqual(res.read(), b"{}")
             await self.wait_for(self.loop.run_in_executor(None, doit))
 
-            commander.execute.assert_called_once_with({"command": "wat"})
+            commander.execute.assert_called_once_with({"command": "wat"}, mock.ANY)
 
         async it "works":
             options = Options.FieldSpec().empty_normalise(
@@ -108,7 +108,13 @@ describe AsyncTestCase, "Server":
             self.assertIs(server.commander, commander)
             self.assertIs(server.finder, finder)
 
-            FakeCommander.assert_called_once_with(finder, self.target_register, self.protocol_register, db_queue, None)
+            FakeCommander.assert_called_once_with(
+                  finder = finder
+                , db_queue = db_queue
+                , test_devices = None
+                , target_register = self.target_register
+                , protocol_register = self.protocol_register
+                )
             FakeDeviceFinder.assert_called_once_with(lan_target, arg1=0.1, arg2=True)
             FakeDBQueue.assert_called_once_with(self.final_future, 5, mock.ANY, "sqlite:memory:")
 

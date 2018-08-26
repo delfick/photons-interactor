@@ -239,6 +239,7 @@ class SceneCaptureCommand(Command):
     refresh = df.refresh_field
     db_queue = df.db_queue_field
     commander = df.commander_field
+    progress_cb = df.progress_cb_field
 
     uuid = dictobj.NullableField(sb.string_spec
         , help = "The uuid of the scene to change, if None we create a new scene"
@@ -309,4 +310,4 @@ class SceneCaptureCommand(Command):
             , "label": self.label
             , "description": self.description
             }
-        return await self.commander.execute({"command": "scene_change", "args": args})
+        return await self.commander.execute({"command": "scene_change", "args": args}, self.progress_cb)

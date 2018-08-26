@@ -38,7 +38,10 @@ describe TestCase, "fields_description":
             , "target_field": None
             , "db_queue_field": None
             , "commander_field": None
+            , "progress_cb_field": None
+            , "request_future_field": None
             , "protocol_register_field": None
+
             , "refresh_field": "boolean"
             , "timeout_field": "float (default 20)"
             , "matcher_field": "string or dictionary"
