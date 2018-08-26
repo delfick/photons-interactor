@@ -66,27 +66,9 @@ describe thp.CommandCase, "Control Commands":
                 { "pkt_type": 502
                 , "pkt_args": {"start_index": 0, "end_index": 255}
                 , "matcher": "cap=multizone"
-                , "multiple": True
                 }
               }
             , json_output=cthp.multizone_state_responses
-            )
-
-        # and without multiple
-        results = {}
-        for serial, payloads in cthp.multizone_state_responses["results"].items():
-            results[serial] = payloads[0]
-
-        await self.assertCommand(options
-            , { "command": "query"
-              , "args":
-                { "pkt_type": 502
-                , "pkt_args": {"start_index": 0, "end_index": 255}
-                , "matcher": "cap=multizone"
-                , "multiple": False
-                }
-              }
-            , json_output = {'results': results}
             )
 
     async def assertSetCommand(self, options, devices):

@@ -26,24 +26,9 @@ def make_protocol_register():
     protocol_register.message_register(1024).add(ColourMessages)
     return protocol_register
 
-class MemorySocketBridge(MemorySocketBridge):
-    def make_waiter(self, writer, **kwargs):
-        """
-        Make first_wait and first_resend a bit more generous
-
-        This is to avoid messages being resent in tests causing flaky tests
-        """
-        for attr in ("first_wait", "first_resend"):
-            if attr not in kwargs or kwargs.get(attr) < 0.2:
-                kwargs[attr] = 0.2
-        return super(MemorySocketBridge, self).make_waiter(writer, **kwargs)
-
-class MemoRySocketTarget(MemorySocketTarget):
-    bridge_kls = lambda s: MemorySocketBridge
-
 def make_memory_target(final_future):
     everything = {
-          "final_future": lambda: final_future
+          "final_future": final_future
         , "protocol_register": make_protocol_register()
         }
     meta = Meta(everything, []).at("target")
@@ -340,8 +325,8 @@ class Device(FakeDevice):
                 colors.append(Color(i * 10, 1, 1, 2500).as_dict())
 
             return [
-                  MultiZoneMessages.StateMultiZoneStateMultiZones(num_zones=8, zone_index=0, colors=colors[:8])
-                , MultiZoneMessages.StateMultiZoneStateMultiZones(num_zones=8, zone_index=8, colors=colors[8:])
+                  MultiZoneMessages.StateMultiZoneStateMultiZones(num_zones=16, zone_index=0, colors=colors[:8])
+                , MultiZoneMessages.StateMultiZoneStateMultiZones(num_zones=16, zone_index=8, colors=colors[8:])
                 ]
 
 class Around:
@@ -675,7 +660,7 @@ multizone_state_responses = {
                             "saturation": 1.0
                         }
                     ],
-                    "num_zones": 8,
+                    "num_zones": 16,
                     "zone_index": 0
                 },
                 "pkt_name": "StateMultiZoneStateMultiZones",
@@ -733,7 +718,7 @@ multizone_state_responses = {
                             "saturation": 1.0
                         }
                     ],
-                    "num_zones": 8,
+                    "num_zones": 16,
                     "zone_index": 8
                 },
                 "pkt_name": "StateMultiZoneStateMultiZones",
@@ -793,7 +778,7 @@ multizone_state_responses = {
                             "saturation": 1.0
                         },
                     ],
-                    "num_zones": 8,
+                    "num_zones": 16,
                     "zone_index": 0
                 },
                 "pkt_name": "StateMultiZoneStateMultiZones",
@@ -851,7 +836,7 @@ multizone_state_responses = {
                             "saturation": 1.0
                         }
                     ],
-                    "num_zones": 8,
+                    "num_zones": 16,
                     "zone_index": 8
                 },
                 "pkt_name": "StateMultiZoneStateMultiZones",

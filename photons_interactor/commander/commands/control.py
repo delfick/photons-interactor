@@ -44,10 +44,6 @@ class QueryCommand(Command):
     refresh = df.refresh_field
     protocol_register = df.protocol_register_field
 
-    multiple = dictobj.Field(sb.boolean, default=False
-        , help = "Whether to expect multiple replies to our packet"
-        )
-
     pkt_type = df.pkt_type_field
     pkt_args = df.pkt_args_field
 
@@ -55,11 +51,7 @@ class QueryCommand(Command):
         fltr = chp.filter_from_matcher(self.matcher, self.refresh)
         msg = chp.make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         script = self.target.script(msg)
-        kwargs = {}
-        if self.multiple:
-            kwargs["multiple_replies"] = True
-            kwargs["first_wait"] = 0.5
-        return await chp.run(script, fltr, self.finder, timeout=self.timeout, **kwargs)
+        return await chp.run(script, fltr, self.finder, timeout=self.timeout)
 
 @command(name="transform")
 class TransformCommand(Command):
