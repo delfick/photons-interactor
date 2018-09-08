@@ -1374,9 +1374,10 @@ var SelectionStateKls = function () {
           waiting: false
         });
       }), _defineProperty(_createReducer, this.StateChangeError, function (state, _ref5) {
-        var error = _ref5.error;
+        var error = _ref5.error,
+            error_code = _ref5.error_code;
 
-        var errormsg = error.error_code + ": " + JSON.stringify(error.error);
+        var errormsg = error_code + ": " + JSON.stringify(error);
         return _extends({}, state, { error: errormsg });
       }), _defineProperty(_createReducer, this.ClearError, function (state, payload) {
         return _extends({}, state, { error: undefined });

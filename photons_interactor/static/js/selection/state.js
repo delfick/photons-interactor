@@ -82,8 +82,8 @@ class SelectionStateKls {
             waiting: false
           };
         },
-        [this.StateChangeError]: (state, { error }) => {
-          var errormsg = `${error.error_code}: ${JSON.stringify(error.error)}`;
+        [this.StateChangeError]: (state, { error, error_code }) => {
+          var errormsg = `${error_code}: ${JSON.stringify(error)}`;
           return { ...state, error: errormsg };
         },
         [this.ClearError]: (state, payload) => {
