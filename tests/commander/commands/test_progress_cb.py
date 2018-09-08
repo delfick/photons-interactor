@@ -6,13 +6,21 @@ from photons_interactor.commander.commands import Command
 from photons_interactor.errors import InteractorError
 from photons_interactor import test_helpers as thp
 
-from input_algorithms import spec_base as sb
 from input_algorithms.dictobj import dictobj
+from input_algorithms import spec_base as sb
 from contextlib import contextmanager
 import random
 import uuid
 
 serial_field = dictobj.Field(sb.string_spec, wrapper=sb.required)
+
+class TestDoneProgress(Command):
+    serial = serial_field
+    progress_cb = df.progress_cb_field
+
+    async def execute(self):
+        self.progress_cb(None, serial=self.serial)
+        return {"serial": self.serial}
 
 class TestNoError(Command):
     serial = serial_field
@@ -53,8 +61,32 @@ describe thp.CommandCase, "Commands":
             , json_output = {"serial": serial}
             )
 
+        command, serial = self.command("test_done_progress")
+        await self.assertCommand(options, command, status=200
+            , json_output = {"serial": serial}
+            )
+
     async def assertWS(self, options, server):
         connection = await server.ws_connect()
+
+        # Done progress
+        command, serial = self.command("test_done_progress")
+        msg_id = str(uuid.uuid1())
+        await server.ws_write(connection
+            , {"path": "/v1/lifx/command", "body": command, "message_id": msg_id}
+            )
+
+        self.assertEqual(await server.ws_read(connection)
+            , { "message_id": msg_id
+              , "reply": {"progress": {"done": True, "serial": serial}}
+              }
+            )
+
+        self.assertEqual(await server.ws_read(connection)
+            , { "message_id": msg_id
+              , "reply": {"serial": serial}
+              }
+            )
 
         # No error
         command, serial = self.command("test_no_error")
@@ -126,6 +158,7 @@ describe thp.CommandCase, "Commands":
         try:
             command(name="test_error")(TestError)
             command(name="test_no_error")(TestNoError)
+            command(name="test_done_progress")(TestDoneProgress)
             yield
         finally:
             for attr in ('test_error', 'test_no_error'):

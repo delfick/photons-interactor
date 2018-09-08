@@ -1,10 +1,14 @@
 from photons_interactor.request_handlers.base import Simple, SimpleWebSocketBase, Finished
 
+from photons_app.errors import PhotonsAppError
 from photons_app import helpers as hp
+
 import logging
 import inspect
 
-def progress(body, logger_name, message, **kwargs):
+log = logging.getLogger("photons_interactor.request_handlers.command")
+
+def progress(body, logger_name, message, do_log=True, **kwargs):
     command_name = "Command"
     if body and type(body) is dict and "command" in body:
         command_name = body["command"]
@@ -12,20 +16,23 @@ def progress(body, logger_name, message, **kwargs):
     info = {}
 
     if isinstance(message, Exception):
-        info["error_code"] =  message.__class__.__name__
+        info["error_code"] = message.__class__.__name__
         if hasattr(message, "as_dict"):
             info["error"] = message.as_dict()
         else:
             info["error"] = str(message)
+    elif message is None:
+        info["done"] = True
     else:
         info["info"] = message
 
     info.update(kwargs)
 
-    if "error" in info:
-        logging.getLogger(logger_name).error(hp.lc(f"{command_name} progress", **info))
-    else:
-        logging.getLogger(logger_name).info(hp.lc(f"{command_name} progress", **info))
+    if do_log:
+        if "error" in info:
+            logging.getLogger(logger_name).error(hp.lc(f"{command_name} progress", **info))
+        else:
+            logging.getLogger(logger_name).info(hp.lc(f"{command_name} progress", **info))
 
     return info
 
