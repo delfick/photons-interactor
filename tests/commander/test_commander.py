@@ -12,11 +12,24 @@ from noseOfYeti.tokeniser.async_support import async_noy_sup_setUp
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 from unittest import mock
+import asyncio
+import uuid
 
 describe AsyncTestCase, "Commander":
     async it "takes in some things":
         finder = mock.Mock(nme="finder")
         db_queue = mock.Mock(name="db_queue")
+
+        class AFR(dictobj):
+            """Make sure we can get dictobj without it turning into a MergedOptions"""
+            fields = []
+
+            def thing(self):
+                return True
+
+        afr = AFR()
+
+        final_future = asyncio.Future()
         target_register = mock.Mock(name="target_register")
         protocol_register = mock.Mock(name="protocol_register")
 
@@ -33,20 +46,27 @@ describe AsyncTestCase, "Commander":
         test_devices = {"devices": [device]}
 
         commander = Commander(
-              finder = finder
-            , target_register = target_register
-            , protocol_register = protocol_register
+              afr = afr
+            , finder = finder
             , db_queue = db_queue
             , test_devices = test_devices
+            , final_future = final_future
+            , target_register = target_register
+            , protocol_register = protocol_register
             )
 
         meta_everything = commander.meta.everything
         self.assertIs(meta_everything["finder"], finder)
+        self.assertIs(meta_everything["afr"], afr)
+        self.assertIs(meta_everything["afr"].thing(), True)
+
         self.assertEqual(meta_everything["test_devices"]["devices"], test_devices["devices"])
         self.assertIs(meta_everything["db_queue"], db_queue)
+
         self.assertIs(meta_everything["target_register"], target_register)
         self.assertIs(meta_everything["protocol_register"], protocol_register)
         self.assertIs(meta_everything["commander"], commander)
+        self.assertIs(meta_everything["final_future"], final_future)
 
         self.assertIs(type(commander.command_spec), command_spec)
 
@@ -54,11 +74,15 @@ describe AsyncTestCase, "Commander":
         async before_each:
             self.finder = mock.Mock(name="finder")
             self.db_queue = mock.Mock(name="db_queue")
+            self.final_future = mock.Mock(name="final_future")
+            self.server_options = mock.Mock(name="server_options")
             self.target_register = mock.Mock(name="target_register")
             self.protocol_register = mock.Mock(name="protocol_register")
 
             self.commander = Commander(
                   finder = self.finder
+                , final_future = self.final_future
+                , server_options = self.server_options
                 , target_register = self.target_register
                 , protocol_register = self.protocol_register
                 , db_queue = self.db_queue
@@ -139,8 +163,11 @@ describe AsyncTestCase, "Commander":
                 db_queue = df.db_queue_field
                 commander = df.commander_field
                 progress_cb = df.progress_cb_field
+                final_future = df.final_future_field
                 request_future = df.request_future_field
+                server_options = df.server_options_field
                 protocol_register = df.protocol_register_field
+
                 one = dictobj.Field(sb.integer_spec)
 
                 async def execute(s):
@@ -148,11 +175,21 @@ describe AsyncTestCase, "Commander":
                     s.progress_cb("hello")
                     return s, res
 
+            self.assertEqual(self.progress_messages, [])
+
             with mock.patch.object(command, "available_commands", {}):
                 command(name="thing")(Cmd)
-                cmd, r = await self.wait_for(self.commander.execute({"command": "thing", "args": {"one": 1}}, self.progress))
+                cmd, r = await self.wait_for(
+                      self.commander.execute(
+                          {"command": "thing", "args": {"one": 1}}
+                        , self.progress
+                        )
+                    )
 
             self.assertIs(r, res)
+
+            assert cmd.request_future.cancelled()
+            self.assertEqual(self.progress_messages, ["hello"])
 
             self.assertIs(type(cmd), Cmd)
             self.assertIs(cmd.finder, self.finder)

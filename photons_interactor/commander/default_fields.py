@@ -6,7 +6,9 @@ target_field = dictobj.Field(sb.overridden("{targets.lan}"), formatted=True)
 db_queue_field = dictobj.Field(sb.overridden("{db_queue}"), formatted=True)
 commander_field = dictobj.Field(sb.overridden("{commander}"), formatted=True)
 progress_cb_field = dictobj.Field(sb.overridden("{progress_cb}"), formatted=True)
+final_future_field = dictobj.Field(sb.overridden("{final_future}"), formatted=True)
 request_future_field = dictobj.Field(sb.overridden("{request_future}"), formatted=True)
+server_options_field = dictobj.Field(sb.overridden("{server_options}"), formatted=True)
 protocol_register_field = dictobj.Field(sb.overridden("{protocol_register}"), formatted=True)
 
 refresh_field = dictobj.NullableField(sb.boolean

@@ -105,6 +105,8 @@ class Server(object):
               finder = self.finder
             , db_queue = self.db_queue
             , test_devices = test_devices
+            , final_future = self.final_future
+            , server_options = self.server_options
             , target_register = self.target_register
             , protocol_register = self.protocol_register
             )

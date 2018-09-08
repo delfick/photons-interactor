@@ -112,6 +112,8 @@ describe AsyncTestCase, "Server":
                   finder = finder
                 , db_queue = db_queue
                 , test_devices = None
+                , final_future = self.final_future
+                , server_options = options
                 , target_register = self.target_register
                 , protocol_register = self.protocol_register
                 )

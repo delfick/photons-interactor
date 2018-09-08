@@ -39,7 +39,9 @@ describe TestCase, "fields_description":
             , "db_queue_field": None
             , "commander_field": None
             , "progress_cb_field": None
+            , "final_future_field": None
             , "request_future_field": None
+            , "server_options_field": None
             , "protocol_register_field": None
 
             , "refresh_field": "boolean"
