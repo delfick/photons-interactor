@@ -1,4 +1,4 @@
-import { freePort, waitFor, makeTestStore, lineInfo } from "./helpers.js";
+import { freePort, waitFor, makeTestStore } from "./helpers.js";
 import { WSCommand } from "../js/wsclient.js";
 import { listen } from "../js/wsclient.js";
 
@@ -36,6 +36,7 @@ describe("WSClient", function() {
   var GotData = createAction("Got data");
   var GotProgress = createAction("Got progress");
   var GotError = createAction("Got error");
+  var DefaultError = createAction("Default error");
 
   var reducer = function() {
     return createReducer(
@@ -44,16 +45,21 @@ describe("WSClient", function() {
           original.payload.promise.resolve({ data });
           return { ...state, datas: [...state.datas, data] };
         },
-        [GotError]: (state, { error, original }) => {
+        [GotError]: (state, { error, error_code, original }) => {
+          var error = { error, error_code };
           original.payload.promise.resolve({ error });
           return { ...state, errors: [...state.errors, error] };
         },
         [GotProgress]: (state, { progress, original }) => {
           original.payload.progress.push(progress);
           return { ...state, progresses: [...state.progresses, progress] };
+        },
+        [DefaultError]: (state, { error, error_code }) => {
+          var error = { error, error_code };
+          return { ...state, defaulterror: [...state.defaulterror, error] };
         }
       },
-      { datas: [], errors: [], progresses: [] }
+      { datas: [], errors: [], progresses: [], defaulterror: [] }
     );
   };
 
@@ -69,7 +75,7 @@ describe("WSClient", function() {
       url = `ws://127.0.0.1:${port}`;
       info = makeTestStore(reducer());
       store = info.store;
-      wstask = info.sagaMiddleware.run(listen, url);
+      wstask = info.sagaMiddleware.run(listen, url, DefaultError);
     });
 
     after(async () => {
@@ -193,7 +199,7 @@ describe("WSClient", function() {
       url = `ws://127.0.0.1:${port}`;
       info = makeTestStore(reducer());
       store = info.store;
-      wstask = info.sagaMiddleware.run(listen, url, 100);
+      wstask = info.sagaMiddleware.run(listen, url, DefaultError, 100);
     });
 
     after(async () => {
@@ -217,6 +223,88 @@ describe("WSClient", function() {
       var res = await waitFor(original.payload.promise);
       assert.deepEqual(res, { data: { one: "two" } });
       assertActions("open", "message");
+    });
+
+    it("does default error if onsuccess throws an error", async () => {
+      var error = new Error("NOPE");
+
+      var original = GetData();
+
+      var onsuccess = ({ data, original }) => {
+        original.payload.promise.resolve({ data });
+        throw error;
+      };
+
+      var wscommand = WSCommand(
+        "/v1/test",
+        { one: "two" },
+        { original, onerror: GotError, onsuccess }
+      );
+      store.dispatch(wscommand);
+      await waitFor(original.payload.promise);
+      assertActions("message");
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      var defaulterror = store.getState().defaulterror;
+      assert.lengthOf(defaulterror, 1);
+      assert.deepEqual(defaulterror[0].error_code, "INTERNAL_ERROR");
+      assert.deepEqual(String(defaulterror[0].error), String(error));
+    });
+
+    it("does default error if onerror throws an error", async () => {
+      var error = new Error("BIG FAIL");
+
+      var original = GetData();
+
+      var onerror = () => {
+        original.payload.promise.resolve({});
+        throw error;
+      };
+
+      var wscommand = WSCommand(
+        "/v1/test",
+        { error: "fail" },
+        { original, onerror }
+      );
+      store.dispatch(wscommand);
+      await waitFor(original.payload.promise);
+      assertActions("message");
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      var defaulterror = store.getState().defaulterror;
+      assert.lengthOf(defaulterror, 2);
+      assert.deepEqual(defaulterror[1].error_code, "INTERNAL_ERROR");
+      assert.deepEqual(String(defaulterror[1].error), String(error));
+    });
+
+    it("does default error if onprogress throws an error", async () => {
+      var error = new Error("BAD TIMES");
+
+      var original = GetData();
+
+      var onprogress = () => {
+        throw error;
+      };
+
+      var wscommand = WSCommand(
+        "/v1/test",
+        {
+          multiple: [{ reply: { progress: "one" } }, { reply: "three" }]
+        },
+        { original, onprogress, onsuccess: GotData }
+      );
+      store.dispatch(wscommand);
+      await waitFor(original.payload.promise);
+      assertActions("message", "multi", "multi");
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      var defaulterror = store.getState().defaulterror;
+      assert.lengthOf(defaulterror, 3);
+      assert.deepEqual(defaulterror[2].error_code, "INTERNAL_ERROR");
+      assert.deepEqual(String(defaulterror[2].error), String(error));
     });
 
     it("a message can timeout", async () => {
@@ -245,8 +333,8 @@ describe("WSClient", function() {
         "/v1/test",
         {
           multiple: [
-            { progress: "one" },
-            { progress: "two" },
+            { reply: { progress: "one" } },
+            { reply: { progress: "two" } },
             { reply: "three" }
           ]
         },
@@ -272,8 +360,8 @@ describe("WSClient", function() {
         "/v1/test",
         {
           multiple: [
-            { progress: "one" },
-            { progress: "two" },
+            { reply: { progress: "one" } },
+            { reply: { progress: "two" } },
             { reply: "three" }
           ]
         },

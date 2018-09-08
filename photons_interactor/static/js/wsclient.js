@@ -178,12 +178,28 @@ function* startWS(url, count, sendch, receivech, actions) {
   }
 }
 
-function* processWsSend(commandch, sendch, actions) {
+function* processWsSend(commandch, sendch, actions, defaultonerror) {
   var normalise = (
     messageId,
     { path, body, onerror, onsuccess, onprogress, original, timeout }
   ) => {
     var done = false;
+
+    var create = (cb, msg) => {
+      try {
+        return cb(msg);
+      } catch (e) {
+        console.error(e);
+        try {
+          return defaultonerror({
+            error_code: "INTERNAL_ERROR",
+            error: e.toString()
+          });
+        } catch (e2) {
+          console.error(e2);
+        }
+      }
+    };
 
     var data = { path, body, message_id: messageId };
     var doerror = error => {
@@ -193,7 +209,7 @@ function* processWsSend(commandch, sendch, actions) {
 
       done = true;
       if (onerror) {
-        return onerror({ messageId, error, original });
+        return create(onerror, { ...error, messageId, original });
       }
     };
 
@@ -204,13 +220,13 @@ function* processWsSend(commandch, sendch, actions) {
 
       done = true;
       if (onsuccess) {
-        return onsuccess({ messageId, data, original });
+        return create(onsuccess, { messageId, data, original });
       }
     };
 
     var doprogress = progress => {
       if (onprogress) {
-        return onprogress({ messageId, progress, original });
+        return create(onprogress, { messageId, progress, original });
       }
     };
 
@@ -236,12 +252,10 @@ function* processWsSend(commandch, sendch, actions) {
 
 function* processWsReceive(receivech, actions) {
   var makeResponse = (action, data) => {
-    if (data.progress) {
-      return action.onprogress(data.progress);
-    }
-
     if (data.reply) {
-      if (data.reply.error) {
+      if (data.reply.progress) {
+        return action.onprogress(data.reply.progress);
+      } else if (data.reply.error) {
         return action.onerror(data.reply);
       } else {
         return action.onsuccess(data.reply, data.message_id);
@@ -304,7 +318,7 @@ function* processWsReceive(receivech, actions) {
     }
 
     // Finished with this message if not a progress message
-    if (response && !data.progress) {
+    if (response && (!data.reply || !data.reply.progress)) {
       delete actions[data.message_id];
     }
   }
@@ -317,12 +331,16 @@ export function* getWSCommands(commandch) {
   }
 }
 
-export function* listen(url, delayMS) {
+export function* listen(url, defaultonerror, delayMS) {
   var count = 0;
   var messages = {};
   var sendch = yield call(channel);
   var receivech = yield call(channel);
   var commandch = yield call(channel);
+
+  if (defaultonerror === undefined) {
+    defaultonerror = e => console.error(e);
+  }
 
   // This is outside the while true so that we don't miss messages
   // when the server goes away and before we've started processWsSend again
@@ -334,7 +352,13 @@ export function* listen(url, delayMS) {
     count += 1;
     var actions = {};
     messages[count] = actions;
-    var sendprocess = yield fork(processWsSend, commandch, sendch, actions);
+    var sendprocess = yield fork(
+      processWsSend,
+      commandch,
+      sendch,
+      actions,
+      defaultonerror
+    );
     var receiveprocess = yield fork(processWsReceive, receivech, actions);
     yield call(startWS, url, count, sendch, receivech, actions);
     yield cancel(sendprocess);
