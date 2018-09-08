@@ -161,6 +161,8 @@ class CommandCase(AsyncTestCase):
         final_future = asyncio.Future()
 
         protocol_register = cthp.make_protocol_register()
+        if "device_finder_options" not in kwargs:
+            kwargs["device_finder_options"] = {"repeat_spread": 0.01}
         options = make_options("127.0.0.1", free_port(), **kwargs)
 
         lan_target = cthp.make_memory_target(final_future)

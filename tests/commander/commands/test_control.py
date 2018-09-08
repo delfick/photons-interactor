@@ -170,4 +170,4 @@ describe thp.CommandCase, "Control Commands":
                     device.reset()
                 await getattr(self, f"assert{test}Command")(options, fake)
 
-        await self.wait_for(self.run_server(None, runner), timeout=8)
+        await self.wait_for(self.run_server(None, runner), timeout=6)
