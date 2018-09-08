@@ -29,6 +29,21 @@ def reprer(o):
         return binascii.hexlify(o.tobytes()).decode()
     return repr(o)
 
+def message_from_exc(exc):
+    as_dct = None
+
+    if hasattr(exc, "as_dict") and as_dct is None:
+        as_dct = exc.as_dict()
+        if "error" in as_dct and "status" in as_dct:
+            return as_dct
+
+    if isinstance(exc, Finished):
+        return exc.kwargs
+    elif isinstance(exc, DelfickError):
+        return {"status": 400, "error": as_dct, "error_code": exc.__class__.__name__}
+    else:
+        return {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"}
+
 class AsyncCatcher(object):
     def __init__(self, request, info, final=None):
         self.info = info
@@ -46,41 +61,31 @@ class AsyncCatcher(object):
         exc.__traceback__ = tb
         if not isinstance(exc, DelfickError):
             log.exception(exc)
+        elif not hasattr(exc, "_do_not_log"):
+            log.error(exc)
 
-        msg = self.message_from_exc(exc)
-        self.complete(msg, status=500)
+        msg = message_from_exc(exc)
+        self.complete(msg, status=500, exc_info=(exc_type, exc, tb))
 
         # And don't reraise the exception
         return True
 
-    def message_from_exc(self, exc):
-        as_dct = None
-
-        if hasattr(exc, "as_dict") and as_dct is None:
-            as_dct = exc.as_dict()
-            if "error" in as_dct and "status" in as_dct:
-                return as_dct
-
-        if isinstance(exc, Finished):
-            return exc.kwargs
-        elif isinstance(exc, DelfickError):
-            return {"status": 400, "error": as_dct, "error_code": exc.__class__.__name__}
-        else:
-            return {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"}
-
-    def send_msg(self, msg, status=200):
+    def send_msg(self, msg, status=200, exc_info=None):
         if self.request._finished and not hasattr(self.request, "ws_connection"):
             if type(msg) is dict:
                 msg = json.dumps(msg, default=reprer, sort_keys=True, indent="    ")
                 log.warning(hp.lc("Request already finished!", would_have_sent=msg))
             return
 
-        if self.final is None:
-            self.request.send_msg(msg, status)
-        else:
-            self.final(msg)
+        if hasattr(msg, "exc_info") and exc_info is None:
+            exc_info = msg.exc_info
 
-    def complete(self, msg, status=200):
+        if self.final is None:
+            self.request.send_msg(msg, status, exc_info=exc_info)
+        else:
+            self.final(msg, exc_info=exc_info)
+
+    def complete(self, msg, status=200, exc_info=None):
         if type(msg) is dict:
             result = json.loads(json.dumps(msg, default=reprer, indent="    "))
         else:
@@ -89,7 +94,7 @@ class AsyncCatcher(object):
         if type(result) is dict:
             status = result.get("status", status)
 
-        self.send_msg(result, status=status)
+        self.send_msg(result, status=status, exc_info=exc_info)
 
 class RequestsMixin:
     """
@@ -113,7 +118,7 @@ class RequestsMixin:
 
         return body
 
-    def send_msg(self, msg, status=200):
+    def send_msg(self, msg, status=200, exc_info=None):
         """
         This determines what content-type and exact body to write to the response
 
@@ -131,6 +136,9 @@ class RequestsMixin:
           as html content
         * Otherwise we write ``msg`` as ``text/plain``
         """
+        if hasattr(msg, "exc_info") and exc_info is None:
+            exc_info = msg.exc_info
+
         if hasattr(msg, "as_dict"):
             msg = msg.as_dict()
 
@@ -263,7 +271,7 @@ class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
         log.info(hp.lc("WebSocket opened", key=self.key))
         self.reply(self.server_time, message_id="__server_time__")
 
-    def reply(self, msg, message_id=None):
+    def reply(self, msg, message_id=None, exc_info=None):
         # I bypass tornado converting the dictionary so that non jsonable things can be repr'd
         if hasattr(msg, "as_dict"):
             msg = msg.as_dict()
@@ -304,13 +312,13 @@ class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
                 self.reply({"ok": "thankyou"}, message_id=message_id)
                 return
 
-            def on_processed(msg):
+            def on_processed(msg, exc_info=None):
                 if msg is self.Closing:
-                    self.reply({"closing": "goodbye"}, message_id = message_id)
+                    self.reply({"closing": "goodbye"}, message_id=message_id)
                     self.close()
                     return
 
-                self.reply(msg, message_id=message_id)
+                self.reply(msg, message_id=message_id, exc_info=exc_info)
 
             async def doit():
                 info = {}

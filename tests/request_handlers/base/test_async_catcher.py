@@ -1,6 +1,6 @@
 # coding: spec
 
-from photons_interactor.request_handlers.base import AsyncCatcher, Finished
+from photons_interactor.request_handlers.base import AsyncCatcher, Finished, message_from_exc
 
 from photons_app.errors import PhotonsAppError
 
@@ -11,7 +11,12 @@ from unittest import mock
 import binascii
 import bitarray
 import asyncio
+import types
 import uuid
+
+class ATraceback:
+    def __eq__(self, other):
+        return isinstance(other, types.TracebackType)
 
 describe AsyncTestCase, "AsyncCatcher":
     async it "takes in the request, info and final":
@@ -56,13 +61,13 @@ describe AsyncTestCase, "AsyncCatcher":
             fake_message_from_exc = mock.Mock(name="message_from_exc", return_value=msg)
 
             with mock.patch.object(self.catcher, "complete", fake_complete):
-                with mock.patch.object(self.catcher, "message_from_exc", fake_message_from_exc):
+                with mock.patch("photons_interactor.request_handlers.base.message_from_exc", fake_message_from_exc):
                     async with self.catcher:
                         self.assertEqual(len(fake_complete.mock_calls), 0)
                         self.assertEqual(len(fake_message_from_exc.mock_calls), 0)
                         raise error
 
-            fake_complete.assert_called_once_with(msg, status=500)
+            fake_complete.assert_called_once_with(msg, status=500, exc_info=(PhotonsAppError, error, ATraceback()))
             fake_message_from_exc.assert_called_once_with(error)
 
         describe "message_from_exc":
@@ -74,7 +79,7 @@ describe AsyncTestCase, "AsyncCatcher":
                     def as_dict(self):
                         return {"error": error_message, "status": status}
 
-                result = self.catcher.message_from_exc(MyError())
+                result = message_from_exc(MyError())
                 self.assertEqual(result, {"error": error_message, "status": status})
 
             async it "returns internal server error if result if error or status not in result of exc.as_dict":
@@ -85,54 +90,57 @@ describe AsyncTestCase, "AsyncCatcher":
                     def as_dict(self):
                         return {"error": error_message}
 
-                result = self.catcher.message_from_exc(MyError())
+                result = message_from_exc(MyError())
                 self.assertEqual(result, {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"})
 
                 class MyError2:
                     def as_dict(self):
                         return {"status": status}
 
-                result = self.catcher.message_from_exc(MyError2())
+                result = message_from_exc(MyError2())
                 self.assertEqual(result, {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"})
 
             async it "returns internal server error if exc has no as_dict":
                 class MyError:
                     pass
 
-                result = self.catcher.message_from_exc(MyError())
+                result = message_from_exc(MyError())
                 self.assertEqual(result, {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"})
 
             async it "returns kwargs if the error is a Finished":
                 exc = Finished(status=408, reason="I'm a teapot")
 
-                result = self.catcher.message_from_exc(exc)
+                result = message_from_exc(exc)
                 self.assertEqual(result, {"status": 408, "reason": "I'm a teapot"})
 
             async it "converts any other DelfickError into dict with status 400 and error as the exc.as_dict":
                 class BadError(DelfickError):
                     pass
                 exc = BadError(wat=1, blah=2)
-                result = self.catcher.message_from_exc(exc)
+                result = message_from_exc(exc)
                 self.assertEqual(result, {"status": 400, "error": {"wat": 1, "blah": 2}, "error_code": "BadError"})
 
                 exc = PhotonsAppError(other=3, meh=3)
-                result = self.catcher.message_from_exc(exc)
+                result = message_from_exc(exc)
                 self.assertEqual(result, {"status": 400, "error": {"other": 3, "meh": 3}, "error_code": "PhotonsAppError"})
 
             async it "converts everything else into internal server error":
                 exc = ValueError("WRONG!")
-                result = self.catcher.message_from_exc(exc)
+                result = message_from_exc(exc)
                 self.assertEqual(result, {"status": 500, "error": "Internal Server Error", "error_code": "InternalServerError"})
 
         describe "complete":
+            async before_each:
+                self.exc_info = mock.Mock(name="exc_info")
+
             async it "calls send_msg with the msg if it's not a dictionary":
                 kls = type("kls", (object, ), {})
                 for thing in (0, 1, [], [1], True, False, None, lambda: 1, kls, kls()):
                     status = mock.Mock(name="status")
                     send_msg = mock.Mock(name="send_msg")
                     with mock.patch.object(self.catcher, "send_msg", send_msg):
-                        self.catcher.complete(thing, status=status)
-                    send_msg.assert_called_once_with(thing, status=status)
+                        self.catcher.complete(thing, status=status, exc_info=self.exc_info)
+                    send_msg.assert_called_once_with(thing, status=status, exc_info=self.exc_info)
 
             async it "overrides status with what is found in the dict msg":
                 status = mock.Mock(name="status")
@@ -140,7 +148,7 @@ describe AsyncTestCase, "AsyncCatcher":
                 send_msg = mock.Mock(name="send_msg")
                 with mock.patch.object(self.catcher, "send_msg", send_msg):
                     self.catcher.complete(thing, status=status)
-                send_msg.assert_called_once_with(thing, status=300)
+                send_msg.assert_called_once_with(thing, status=300, exc_info=None)
 
             async it "reprs random objects":
                 class Other:
@@ -154,7 +162,7 @@ describe AsyncTestCase, "AsyncCatcher":
                 send_msg = mock.Mock(name="send_msg")
                 with mock.patch.object(self.catcher, "send_msg", send_msg):
                     self.catcher.complete(thing, status=status)
-                send_msg.assert_called_once_with(expected, status=301)
+                send_msg.assert_called_once_with(expected, status=301, exc_info=None)
 
             async it "hexlifies bytes objects":
                 val = str(uuid.uuid1()).replace("-", "")
@@ -167,7 +175,7 @@ describe AsyncTestCase, "AsyncCatcher":
                 send_msg = mock.Mock(name="send_msg")
                 with mock.patch.object(self.catcher, "send_msg", send_msg):
                     self.catcher.complete(thing, status=status)
-                send_msg.assert_called_once_with(expected, status=302)
+                send_msg.assert_called_once_with(expected, status=302, exc_info=None)
 
             async it "converts bitarrays into hexlified data":
                 val = str(uuid.uuid1()).replace("-", "")
@@ -183,12 +191,13 @@ describe AsyncTestCase, "AsyncCatcher":
                 send_msg = mock.Mock(name="send_msg")
                 with mock.patch.object(self.catcher, "send_msg", send_msg):
                     self.catcher.complete(thing, status=status)
-                send_msg.assert_called_once_with(expected, status=302)
+                send_msg.assert_called_once_with(expected, status=302, exc_info=None)
 
         describe "send_msg":
             async before_each:
                 self.request = mock.Mock(name='request', spec=["_finished", "send_msg"])
                 self.catcher = AsyncCatcher(self.request, self.info)
+                self.exc_info = mock.Mock(name="exc_info")
 
             async it "does nothing if the request is already finished and ws_connection object":
                 msg = mock.Mock(name="msg")
@@ -201,8 +210,8 @@ describe AsyncTestCase, "AsyncCatcher":
                 status = mock.Mock(name="status")
                 self.request._finished = False
                 self.catcher.final = None
-                self.catcher.send_msg(msg, status=status)
-                self.request.send_msg.assert_called_once_with(msg, status)
+                self.catcher.send_msg(msg, status=status, exc_info=self.exc_info)
+                self.request.send_msg.assert_called_once_with(msg, status, exc_info=self.exc_info)
 
             async it "uses final if it was specified":
                 msg = mock.Mock(name="msg")
@@ -211,6 +220,6 @@ describe AsyncTestCase, "AsyncCatcher":
                 final = mock.Mock(name="final")
                 self.catcher.final = final
 
-                self.catcher.send_msg(msg)
+                self.catcher.send_msg(msg, exc_info=self.exc_info)
                 self.assertEqual(len(self.request.send_msg.mock_calls), 0)
-                final.assert_called_once_with(msg)
+                final.assert_called_once_with(msg, exc_info=self.exc_info)
