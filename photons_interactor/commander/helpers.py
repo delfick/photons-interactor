@@ -1,3 +1,4 @@
+from photons_interactor.request_handlers.base import message_from_exc
 from photons_interactor.commander.spec_description import signature
 from photons_interactor.commander.errors import NoSuchPacket
 
@@ -137,10 +138,15 @@ class ResultBuilder:
 
     error(e)
         Record an error in the result
+
+    exc_info on this is a dictionary of {<serial>: (<error_type>, <error>, <traceback)}
+    with an additional ``None`` key holding a list of ``(<error_type>, <error>, <traceback>)`` for errors
+    that couldn't be associated with a serial
     """
     def __init__(self, serials=None):
         self.serials = [] if serials is None else serials
         self.result = {"results": {}}
+        self.exc_info = {}
 
     def add_serials(self, serials):
         for serial in serials:
@@ -172,17 +178,26 @@ class ResultBuilder:
             self.result["results"][pkt.serial] = info
 
     def error(self, e):
-        if hasattr(e, "as_dict"):
-            err = {k: v for k, v in e.as_dict().items() if k != "serial"}
-        else:
-            err = str(e)
+        msg = message_from_exc(e)
 
+        serial = None
         if hasattr(e, "kwargs") and "serial" in e.kwargs:
-            self.result["results"][e.kwargs["serial"]] = {"error": err, "error_code": e.__class__.__name__}
+            serial = e.kwargs["serial"]
+
+        if type(msg["error"]) is dict and "serial" in msg["error"]:
+            del msg['error']['serial']
+
+        if serial:
+            self.result["results"][serial] = msg
+            self.exc_info[serial] = (type(e), e, e.__traceback__)
         else:
             if "errors" not in self.result:
                 self.result["errors"] = []
-            self.result["errors"].append({"error": err, "error_code": e.__class__.__name__})
+            self.result["errors"].append(msg)
+
+            if None not in self.exc_info:
+                self.exc_info[None] = []
+            self.exc_info[None].append((type(e), e, e.__traceback__))
 
 def fields_description(kls):
     """

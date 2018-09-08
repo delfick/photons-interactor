@@ -50,7 +50,7 @@ describe thp.CommandCase, "Control Commands":
 
         bathroom_light = devices["devices"][1]
         with bathroom_light.offline():
-            expected["d073d5000002"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut"}
+            expected["d073d5000002"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut", "status": 400}
             await self.assertCommand(options
                 , {"command": "query", "args": {"pkt_type": 101, "matcher": "power=on", "timeout": 0.1}}
                 , json_output = {"results": expected}
@@ -87,6 +87,7 @@ describe thp.CommandCase, "Control Commands":
             expected["results"]["d073d5000002"] = {
                   'error': {'message': 'Timed out. Waiting for reply to a packet'}
                 , "error_code": "TimedOut"
+                , "status": 400
                 }
 
             await self.assertCommand(options
@@ -142,7 +143,7 @@ describe thp.CommandCase, "Control Commands":
         tv_light = devices["devices"][5]
         self.assertEqual(tv_light.label, "tv")
         with tv_light.offline():
-            expected["results"]["d073d5000006"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut"}
+            expected["results"]["d073d5000006"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut", "status": 400}
             await self.assertCommand(options
                 , {"command": "transform", "args": {"transform": {"power": "on", "color": "blue"}, "timeout": 0.2}}
                 , json_output = expected

@@ -406,7 +406,7 @@ describe AsyncTestCase, "SimpleWebSocketBase":
     async it "can handle a ResultBuilder":
         class Handler(SimpleWebSocketBase):
             async def process_message(s, path, body, message_id, progress_cb):
-                return chp.ResultBuilder(["d073d5000001", "d073d5000002"])
+                return chp.ResultBuilder(serials=["d073d5000001"])
 
         async def doit():
             async with WSServer(Handler) as server:
@@ -418,7 +418,7 @@ describe AsyncTestCase, "SimpleWebSocketBase":
                     )
                 self.assertEqual(await server.ws_read(connection)
                     , { "message_id": msg_id
-                      , "reply": {"results": {"d073d5000001": "ok", "d073d5000002": "ok"}}
+                        , "reply": {"results": {"d073d5000001": "ok"}}
                       }
                     )
 

@@ -7,11 +7,18 @@ from photons_app.test_helpers import TestCase
 
 from photons_device_messages import DeviceMessages
 
+import types
+
+class ATraceback:
+    def __eq__(self, other):
+        return isinstance(other, types.TracebackType)
+
 describe TestCase, "ResultBuilder":
     it "initializes itself":
         builder = chp.ResultBuilder(["one", "two"])
         self.assertEqual(builder.serials, ["one", "two"])
         self.assertEqual(builder.result, {"results": {}})
+        self.assertEqual(builder.exc_info, {})
 
     it "can add serials":
         builder = chp.ResultBuilder(["one", "two"])
@@ -78,58 +85,89 @@ describe TestCase, "ResultBuilder":
 
             class BadError(PhotonsAppError):
                 pass
-            builder.error(BadError("blah", serial="d073d5000001"))
+            error = BadError("blah", serial="d073d5000001")
+            builder.error(error)
             self.assertEqual(builder.as_dict()
                 , { "results":
-                    { "d073d5000001": {"error": {"message": "blah"}, "error_code": "BadError"}
+                    { "d073d5000001": {"error": {"message": "blah"}, "error_code": "BadError", "status": 400}
                     }
                   }
                 )
+            self.assertEqual(builder.exc_info, {"d073d5000001": (BadError, error, None)})
 
             class Error(PhotonsAppError):
                 desc = "an error"
-            builder.error(Error("wat", thing=1, serial="d073d5000001"))
+
+            error2 = None
+
+            try:
+                raise Error("wat", thing=1, serial="d073d5000001")
+            except Exception as error:
+                error2 = error
+
+            builder.error(error2)
             self.assertEqual(builder.as_dict()
                 , { "results":
                     { "d073d5000001":
-                      { "error": {"message": "an error. wat", "thing": 1}, "error_code": "Error"
+                      { "error": {"message": "an error. wat", "thing": 1}
+                      , "error_code": "Error"
+                      , "status": 400
                       }
                     }
                   }
                 )
+            self.assertEqual(builder.exc_info, {"d073d5000001": (Error, error2, ATraceback())})
 
         it "adds error to errors in result if no serial on the error":
             builder = chp.ResultBuilder(["d073d5000001"])
 
-            builder.error(PhotonsAppError("blah"))
+            error = PhotonsAppError("blah")
+            builder.error(error)
             self.assertEqual(builder.as_dict()
                 , { "results": {"d073d5000001": "ok"}
                   , "errors":
-                    [ {"error": {"message": "blah"}, "error_code": "PhotonsAppError"}
+                  [ {"error": {"message": "blah"}, "error_code": "PhotonsAppError", "status": 400}
                     ]
                   }
                 )
+            self.assertEqual(builder.exc_info, {None: [(PhotonsAppError, error, None)]})
 
             class Error(PhotonsAppError):
                 desc = "an error"
-            builder.error(Error("wat", thing=1))
+
+            error2 = None
+            try:
+                raise Error("wat", thing=1)
+            except Exception as e:
+                error2 = e
+
+            builder.error(error2)
             self.assertEqual(builder.as_dict()
                 , { "results":
                     { "d073d5000001": "ok"
                     }
                   , "errors":
-                    [ {"error": {"message": "blah"}, "error_code": "PhotonsAppError"}
-                    , {"error": {"message": "an error. wat", "thing": 1}, "error_code": "Error"}
+                  [ {"error": {"message": "blah"}, "error_code": "PhotonsAppError", "status": 400}
+                      , {"error": {"message": "an error. wat", "thing": 1}, "error_code": "Error", "status": 400}
+                    ]
+                  }
+                )
+            self.assertEqual(builder.exc_info
+                , { None:
+                    [ (PhotonsAppError, error, None)
+                    , (Error, error2, ATraceback())
                     ]
                   }
                 )
 
             builder = chp.ResultBuilder(["d073d5000001"])
-            builder.error(ValueError("nope"))
+            error3 = ValueError("nope")
+            builder.error(error3)
             self.assertEqual(builder.as_dict()
                 , { "results": {"d073d5000001": "ok"}
                   , "errors":
-                    [ {"error": "nope", "error_code": "ValueError"}
+                  [ {"error": "Internal Server Error", "error_code": "InternalServerError", "status": 500}
                     ]
                   }
                 )
+            self.assertEqual(builder.exc_info, {None: [(ValueError, error3, None)]})

@@ -176,7 +176,7 @@ describe AsyncTestCase, "run":
         self.assertEqual(result.as_dict()
             , { "results":
                 { "d073d5000001": {"pkt_type": 22, "pkt_name": "StatePower", "payload": {"level": 0}}
-                , "d073d5000002": {"error": {"message": "failure"}, "error_code": "PhotonsAppError"}
+                , "d073d5000002": {"error": {"message": "failure"}, "error_code": "PhotonsAppError", "status": 400}
                 , "d073d5000003": "ok"
                 }
               }
