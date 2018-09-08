@@ -91,7 +91,12 @@ describe thp.CommandCase, "Commands":
             , {"path": "/v1/lifx/command", "body": {"command": "nope"}, "message_id": msg_id}
             )
 
-        self.assertEqual(await server.ws_read(connection)
+        reply = await server.ws_read(connection)
+
+        assert "test" in reply["reply"]["error"]["available"]
+        reply["reply"]["error"]["available"] = ["test"]
+
+        self.assertEqual(reply
             , { "message_id": msg_id
               , "reply":
                 { "error":
@@ -99,17 +104,7 @@ describe thp.CommandCase, "Commands":
                   , "wanted": "nope"
                   , "meta": '{path=<input>}'
                   , "available":
-                    [ "discover"
-                    , "help"
-                    , "query"
-                    , "scene_apply"
-                    , "scene_capture"
-                    , "scene_change"
-                    , "scene_delete"
-                    , "scene_info"
-                    , "set"
-                    , "test"
-                    , "transform"
+                    [ "test"
                     ]
                   }
                 , "error_code": "BadSpecValue"
