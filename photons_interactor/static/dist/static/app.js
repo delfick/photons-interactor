@@ -2608,7 +2608,12 @@ var ColourPicker = exports.ColourPicker = function (_React$Component5) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.WSCommand = undefined;
+exports.WSCommand = exports.WSState = undefined;
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 exports.getWSCommands = getWSCommands;
 exports.listen = listen;
 
@@ -2633,12 +2638,56 @@ var _marked = /*#__PURE__*/regeneratorRuntime.mark(maybeTimeoutMessage),
     _marked7 = /*#__PURE__*/regeneratorRuntime.mark(getWSCommands),
     _marked8 = /*#__PURE__*/regeneratorRuntime.mark(listen);
 
-var WSCommand = exports.WSCommand = (0, _reduxAct.createAction)("Command to the websocket server", function (path, body, _ref) {
-  var onsuccess = _ref.onsuccess,
-      onerror = _ref.onerror,
-      onprogress = _ref.onprogress,
-      timeout = _ref.timeout,
-      original = _ref.original;
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var WSStateKls = function () {
+  function WSStateKls() {
+    _classCallCheck(this, WSStateKls);
+
+    this.Loading = (0, _reduxAct.createAction)("Starting to open connection");
+    this.Error = (0, _reduxAct.createAction)("Got an error connecting to the websocket");
+    this.Connected = (0, _reduxAct.createAction)("Successfully connected to the websocket");
+    this.ServerTime = (0, _reduxAct.createAction)("Got a new server time from the server", function (time) {
+      return {
+        time: time
+      };
+    });
+  }
+
+  _createClass(WSStateKls, [{
+    key: "reducer",
+    value: function reducer() {
+      var _createReducer;
+
+      return (0, _reduxAct.createReducer)((_createReducer = {}, _defineProperty(_createReducer, this.Loading, function (state, payload) {
+        return _extends({}, state, { loading: true });
+      }), _defineProperty(_createReducer, this.Error, function (state, _ref) {
+        var error = _ref.error;
+
+        return _extends({}, state, { error: error, loading: true });
+      }), _defineProperty(_createReducer, this.Connected, function (state, payload) {
+        return _extends({}, state, { error: undefined, loading: false });
+      }), _createReducer), {
+        error: undefined,
+        devices: {},
+        loading: true
+      });
+    }
+  }]);
+
+  return WSStateKls;
+}();
+
+var WSState = exports.WSState = new WSStateKls();
+
+var WSCommand = exports.WSCommand = (0, _reduxAct.createAction)("Command to the websocket server", function (path, body, _ref2) {
+  var onsuccess = _ref2.onsuccess,
+      onerror = _ref2.onerror,
+      onprogress = _ref2.onprogress,
+      timeout = _ref2.timeout,
+      original = _ref2.original;
   return {
     path: path,
     body: body,
@@ -2777,7 +2826,7 @@ function tickMessages(socket) {
 }
 
 function startWS(url, count, sendch, receivech, actions) {
-  var socket, onerrors, oncloses, ws, start, _ref2, timeout, w, diff, waiter, ticker, sender;
+  var socket, onerrors, oncloses, ws, start, _ref3, timeout, w, diff, waiter, ticker, sender;
 
   return regeneratorRuntime.wrap(function startWS$(_context4) {
     while (1) {
@@ -2818,10 +2867,10 @@ function startWS(url, count, sendch, receivech, actions) {
           return (0, _effects.race)({ timeout: (0, _effects.call)(_reduxSaga.delay, 2000), w: ws });
 
         case 8:
-          _ref2 = _context4.sent;
-          timeout = _ref2.timeout;
-          w = _ref2.w;
-          _context4.next = 21;
+          _ref3 = _context4.sent;
+          timeout = _ref3.timeout;
+          w = _ref3.w;
+          _context4.next = 23;
           break;
 
         case 13:
@@ -2829,22 +2878,31 @@ function startWS(url, count, sendch, receivech, actions) {
           _context4.t0 = _context4["catch"](5);
 
           console.error("Failed to start websocket connection", _context4.t0);
+          _context4.next = 18;
+          return (0, _effects.put)(WSState.Error({
+            error: {
+              error: "Could not connect to server",
+              error_code: "FailedToConnected"
+            }
+          }));
+
+        case 18:
           diff = Date.now() - start;
 
           if (!(diff < 1000)) {
-            _context4.next = 20;
+            _context4.next = 22;
             break;
           }
 
-          _context4.next = 20;
+          _context4.next = 22;
           return (0, _effects.call)(_reduxSaga.delay, 1000 - diff);
 
-        case 20:
+        case 22:
           return _context4.abrupt("return");
 
-        case 21:
+        case 23:
           if (!timeout) {
-            _context4.next = 25;
+            _context4.next = 27;
             break;
           }
 
@@ -2852,21 +2910,21 @@ function startWS(url, count, sendch, receivech, actions) {
           socket.close();
           return _context4.abrupt("return", false);
 
-        case 25:
-          _context4.next = 27;
+        case 27:
+          _context4.next = 29;
           return (0, _effects.call)(_reduxSaga.channel);
 
-        case 27:
+        case 29:
           waiter = _context4.sent;
-          _context4.next = 30;
+          _context4.next = 32;
           return (0, _effects.fork)(tickMessages, w);
 
-        case 30:
+        case 32:
           ticker = _context4.sent;
-          _context4.next = 33;
+          _context4.next = 35;
           return (0, _effects.fork)(sendToSocket, w, sendch, actions);
 
-        case 33:
+        case 35:
           sender = _context4.sent;
 
 
@@ -2874,49 +2932,74 @@ function startWS(url, count, sendch, receivech, actions) {
             waiter.put(_reduxSaga.END);
           });
 
-          _context4.prev = 35;
-          _context4.next = 38;
+          _context4.prev = 37;
+          _context4.next = 40;
+          return (0, _effects.put)(WSState.Connected());
+
+        case 40:
+          _context4.next = 42;
           return (0, _effects.take)(waiter);
 
-        case 38:
-          _context4.prev = 38;
-
-          waiter.close();
-          _context4.next = 42;
-          return (0, _effects.cancel)(ticker);
-
         case 42:
-          _context4.next = 44;
-          return (0, _effects.cancel)(sender);
-
-        case 44:
-          return _context4.finish(38);
+          _context4.prev = 42;
+          _context4.next = 45;
+          return (0, _effects.put)(WSState.Error({
+            error: { error: "Server went away", error_code: "ServerWentAway" }
+          }));
 
         case 45:
+          waiter.close();
+          _context4.next = 48;
+          return (0, _effects.cancel)(ticker);
+
+        case 48:
+          _context4.next = 50;
+          return (0, _effects.cancel)(sender);
+
+        case 50:
+          return _context4.finish(42);
+
+        case 51:
         case "end":
           return _context4.stop();
       }
     }
-  }, _marked4, this, [[5, 13], [35,, 38, 45]]);
+  }, _marked4, this, [[5, 13], [37,, 42, 51]]);
 }
 
-function processWsSend(commandch, sendch, actions) {
-  var normalise, _ref4, payload, messageId, normalised;
+function processWsSend(commandch, sendch, actions, defaultonerror) {
+  var normalise, _ref5, payload, messageId, normalised;
 
   return regeneratorRuntime.wrap(function processWsSend$(_context5) {
     while (1) {
       switch (_context5.prev = _context5.next) {
         case 0:
-          normalise = function normalise(messageId, _ref3) {
-            var path = _ref3.path,
-                body = _ref3.body,
-                onerror = _ref3.onerror,
-                onsuccess = _ref3.onsuccess,
-                onprogress = _ref3.onprogress,
-                original = _ref3.original,
-                timeout = _ref3.timeout;
+          normalise = function normalise(messageId, _ref4) {
+            var path = _ref4.path,
+                body = _ref4.body,
+                onerror = _ref4.onerror,
+                onsuccess = _ref4.onsuccess,
+                onprogress = _ref4.onprogress,
+                original = _ref4.original,
+                timeout = _ref4.timeout;
 
             var done = false;
+
+            var create = function create(cb, msg) {
+              try {
+                return cb(msg);
+              } catch (e) {
+                console.error(e);
+                try {
+                  return defaultonerror({
+                    error_code: "INTERNAL_ERROR",
+                    error: e.toString()
+                  });
+                } catch (e2) {
+                  console.error(e2);
+                }
+              }
+            };
 
             var data = { path: path, body: body, message_id: messageId };
             var doerror = function doerror(error) {
@@ -2926,7 +3009,7 @@ function processWsSend(commandch, sendch, actions) {
 
               done = true;
               if (onerror) {
-                return onerror({ messageId: messageId, error: error, original: original });
+                return create(onerror, _extends({}, error, { messageId: messageId, original: original }));
               }
             };
 
@@ -2937,13 +3020,13 @@ function processWsSend(commandch, sendch, actions) {
 
               done = true;
               if (onsuccess) {
-                return onsuccess({ messageId: messageId, data: data, original: original });
+                return create(onsuccess, { messageId: messageId, data: data, original: original });
               }
             };
 
             var doprogress = function doprogress(progress) {
               if (onprogress) {
-                return onprogress({ messageId: messageId, progress: progress, original: original });
+                return create(onprogress, { messageId: messageId, progress: progress, original: original });
               }
             };
 
@@ -2964,8 +3047,8 @@ function processWsSend(commandch, sendch, actions) {
           return (0, _effects.take)(commandch);
 
         case 4:
-          _ref4 = _context5.sent;
-          payload = _ref4.payload;
+          _ref5 = _context5.sent;
+          payload = _ref5.payload;
           messageId = (0, _v2.default)();
           normalised = normalise(messageId, payload);
 
@@ -2991,19 +3074,17 @@ function processWsSend(commandch, sendch, actions) {
 }
 
 function processWsReceive(receivech, actions) {
-  var makeResponse, _ref5, data, action, response;
+  var makeResponse, _ref6, data, action, response;
 
   return regeneratorRuntime.wrap(function processWsReceive$(_context6) {
     while (1) {
       switch (_context6.prev = _context6.next) {
         case 0:
           makeResponse = function makeResponse(action, data) {
-            if (data.progress) {
-              return action.onprogress(data.progress);
-            }
-
             if (data.reply) {
-              if (data.reply.error) {
+              if (data.reply.progress) {
+                return action.onprogress(data.reply.progress);
+              } else if (data.reply.error) {
                 return action.onerror(data.reply);
               } else {
                 return action.onsuccess(data.reply, data.message_id);
@@ -3022,8 +3103,8 @@ function processWsReceive(receivech, actions) {
           return (0, _effects.take)(receivech);
 
         case 4:
-          _ref5 = _context6.sent;
-          data = _ref5.data;
+          _ref6 = _context6.sent;
+          data = _ref6.data;
           _context6.prev = 6;
 
           data = JSON.parse(data);
@@ -3055,60 +3136,72 @@ function processWsReceive(receivech, actions) {
           return _context6.abrupt("continue", 1);
 
         case 19:
+          if (!(data.message_id == "__server_time__")) {
+            _context6.next = 23;
+            break;
+          }
+
+          _context6.next = 22;
+          return (0, _effects.put)(WSState.ServerTime(data.reply));
+
+        case 22:
+          return _context6.abrupt("continue", 1);
+
+        case 23:
           action = actions[data.message_id];
 
           if (action) {
-            _context6.next = 23;
+            _context6.next = 27;
             break;
           }
 
           console.error("Got a message from the server with unknown message id", data.message_id, data);
           return _context6.abrupt("continue", 1);
 
-        case 23:
+        case 27:
           if (!action.timeouter) {
-            _context6.next = 26;
+            _context6.next = 30;
             break;
           }
 
-          _context6.next = 26;
+          _context6.next = 30;
           return (0, _effects.cancel)(action.timeouter);
 
-        case 26:
+        case 30:
           response = undefined;
-          _context6.prev = 27;
+          _context6.prev = 31;
 
           response = makeResponse(action, data);
 
-        case 29:
-          _context6.prev = 29;
+        case 33:
+          _context6.prev = 33;
 
           if (!response) {
-            _context6.next = 33;
+            _context6.next = 37;
             break;
           }
 
-          _context6.next = 33;
+          _context6.next = 37;
           return (0, _effects.put)(response);
 
-        case 33:
-          return _context6.finish(29);
+        case 37:
+          return _context6.finish(33);
 
-        case 34:
+        case 38:
 
           // Finished with this message if not a progress message
-          if (response && !data.progress) {
+          if (response && (!data.reply || !data.reply.progress)) {
             delete actions[data.message_id];
           }
           _context6.next = 1;
           break;
 
-        case 37:
+        case 41:
         case "end":
           return _context6.stop();
       }
     }
-  }, _marked6, this, [[6, 10], [27,, 29, 34]]);
+  }, _marked6, this, [[6, 10], [31,, 33, 38]]);
 }
 
 function getWSCommands(commandch) {
@@ -3139,7 +3232,7 @@ function getWSCommands(commandch) {
   }, _marked7, this);
 }
 
-function listen(url, delayMS) {
+function listen(url, defaultonerror, delayMS) {
   var count, messages, sendch, receivech, commandch, actions, sendprocess, receiveprocess, ids, i, action, response;
   return regeneratorRuntime.wrap(function listen$(_context8) {
     while (1) {
@@ -3162,87 +3255,102 @@ function listen(url, delayMS) {
 
         case 10:
           commandch = _context8.sent;
-          _context8.next = 13;
+
+
+          if (defaultonerror === undefined) {
+            defaultonerror = function defaultonerror(e) {
+              return console.error(e);
+            };
+          }
+
+          // This is outside the while true so that we don't miss messages
+          // when the server goes away and before we've started processWsSend again
+          _context8.next = 14;
           return (0, _effects.fork)(getWSCommands, commandch);
 
-        case 13:
+        case 14:
           if (false) {}
+
+          _context8.next = 17;
+          return (0, _effects.put)(WSState.Loading());
+
+        case 17:
 
           count += 1;
           actions = {};
 
           messages[count] = actions;
-          _context8.next = 19;
-          return (0, _effects.fork)(processWsSend, commandch, sendch, actions);
-
-        case 19:
-          sendprocess = _context8.sent;
           _context8.next = 22;
-          return (0, _effects.fork)(processWsReceive, receivech, actions);
+          return (0, _effects.fork)(processWsSend, commandch, sendch, actions, defaultonerror);
 
         case 22:
-          receiveprocess = _context8.sent;
+          sendprocess = _context8.sent;
           _context8.next = 25;
-          return (0, _effects.call)(startWS, url, count, sendch, receivech, actions);
+          return (0, _effects.fork)(processWsReceive, receivech, actions);
 
         case 25:
-          _context8.next = 27;
+          receiveprocess = _context8.sent;
+          _context8.next = 28;
+          return (0, _effects.call)(startWS, url, count, sendch, receivech, actions);
+
+        case 28:
+          _context8.next = 30;
           return (0, _effects.cancel)(sendprocess);
 
-        case 27:
-          _context8.next = 29;
+        case 30:
+          _context8.next = 32;
           return (0, _effects.cancel)(receiveprocess);
 
-        case 29:
+        case 32:
           ids = Object.keys(actions);
           i = 0;
 
-        case 31:
+        case 34:
           if (!(i < ids.length)) {
-            _context8.next = 43;
+            _context8.next = 46;
             break;
           }
 
           action = actions[ids[i]];
 
           if (!action.timeouter) {
-            _context8.next = 36;
+            _context8.next = 39;
             break;
           }
 
-          _context8.next = 36;
+          _context8.next = 39;
           return (0, _effects.cancel)(action.timeouter);
 
-        case 36:
+        case 39:
           response = action.onerror({
             error: "Lost connection to the server",
             error_code: "LostConnection"
           });
 
           if (!response) {
-            _context8.next = 40;
+            _context8.next = 43;
             break;
           }
 
-          _context8.next = 40;
+          _context8.next = 43;
           return (0, _effects.put)(response);
 
-        case 40:
-          i++;
-          _context8.next = 31;
-          break;
-
         case 43:
-
-          delete messages[count];
-          _context8.next = 46;
-          return (0, _effects.call)(_reduxSaga.delay, delayMS || 5000);
+          i++;
+          _context8.next = 34;
+          break;
 
         case 46:
-          _context8.next = 13;
+
+          delete messages[count];
+          _context8.next = 49;
+          return (0, _effects.call)(_reduxSaga.delay, delayMS || 5000);
+
+        case 49:
+          _context8.next = 14;
           break;
 
-        case 48:
+        case 51:
         case "end":
           return _context8.stop();
       }
