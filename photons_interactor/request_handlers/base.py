@@ -227,6 +227,8 @@ json_spec = sb.match_spec(
     , fallback=lambda: sb.dictof(sb.string_spec(), json_spec)
     )
 
+wsconnections = {}
+
 class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
     """
     Used for websocket handlers
@@ -313,7 +315,13 @@ class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
                 async with self.async_catcher(info, on_processed):
                     info["result"] = await self.process_message(path, body, message_id, progress_cb)
 
-            hp.async_as_background(doit())
+            def done(*args):
+                if self.key in wsconnections:
+                    del wsconnections[self.key]
+
+            t = hp.async_as_background(doit())
+            t.add_done_callback(done)
+            wsconnections[self.key] = t
 
     async def process_message(self, path, body, message_id, progress_cb):
         """

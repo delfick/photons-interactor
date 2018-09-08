@@ -1,6 +1,6 @@
 # coding: spec
 
-from photons_interactor.request_handlers.base import SimpleWebSocketBase
+from photons_interactor.request_handlers.base import SimpleWebSocketBase, wsconnections
 from photons_interactor.commander import helpers as chp
 from photons_interactor import test_helpers as thp
 from photons_interactor.options import Options
@@ -53,6 +53,62 @@ class WSServer(thp.ServerRunner):
         super().__init__(self.final_future, self.server, self.options, wrapper())
 
 describe AsyncTestCase, "SimpleWebSocketBase":
+    async it "stores a task in wsconnections":
+        self.assertEqual(wsconnections, {})
+
+        class Handler(SimpleWebSocketBase):
+            async def process_message(s, path, body, message_id, progress_cb):
+                self.assertEqual(type(self.key), str)
+                self.assertEqual(len(self.key), 36)
+                assert self.key in wsconnections
+                return "blah"
+
+        async def doit():
+            message_id = str(uuid.uuid1())
+
+            async with WSServer(Handler) as server:
+                connection = await server.ws_connect()
+                await server.ws_write(connection
+                    , {"path": "/one/two", "body": {"hello": "there"}, "message_id": message_id}
+                    )
+                res = await server.ws_read(connection)
+                self.assertEqual(wsconnections, {})
+
+                connection.close()
+                self.assertIs(await server.ws_read(connection), None)
+
+        await self.wait_for(doit())
+
+    async it "waits for connections to close before ending server":
+        f1 = asyncio.Future()
+        f2 = asyncio.Future()
+
+        self.assertEqual(wsconnections, {})
+
+        class Handler(SimpleWebSocketBase):
+            async def process_message(s, path, body, message_id, progress_cb):
+                f1.set_result(True)
+                await asyncio.sleep(0.5)
+                f2.set_result(True)
+                return "blah"
+
+        async def doit():
+            message_id = str(uuid.uuid1())
+
+            async with WSServer(Handler) as server:
+                connection = await server.ws_connect()
+                await server.ws_write(connection
+                    , {"path": "/one/two", "body": {"hello": "there"}, "message_id": message_id}
+                    )
+                await self.wait_for(f1)
+                self.assertEqual(len(wsconnections), 1)
+                assert not f2.done()
+
+            self.assertEqual(len(wsconnections), 0)
+            self.assertEqual(f2.result(), True)
+
+        await self.wait_for(doit())
+
     async it "has ws_connection object":
         f = asyncio.Future()
 

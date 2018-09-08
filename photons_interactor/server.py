@@ -1,4 +1,5 @@
 from photons_interactor.request_handlers.command import CommandHandler, WSHandler
+from photons_interactor.request_handlers.base import wsconnections
 from photons_interactor.request_handlers.index import Index
 from photons_interactor.database.db_queue import DBQueue
 from photons_interactor.commander import Commander
@@ -89,6 +90,15 @@ class Server(object):
         async def clean_finder():
             await self.finder.finish()
         self.cleaners.append(clean_finder)
+
+        async def wait_for_ws():
+            for t in list(wsconnections.values()):
+                if not t.done():
+                    try:
+                        await t
+                    except:
+                        pass
+        self.cleaners.append(wait_for_ws)
 
         self.commander = Commander(
               finder = self.finder
