@@ -11,6 +11,7 @@ from tornado.httpserver import HTTPServer
 import tornado.web
 import tornado
 import logging
+import time
 
 log = logging.getLogger("photons_interactor.server")
 
@@ -50,7 +51,7 @@ class Server(object):
               )
             , ( "/v1/ws"
               , WSHandler
-              , {"commander": self.commander}
+              , {"commander": self.commander, "server_time": time.time()}
               )
             , ( r"/static/(.*)"
               , StaticFileHandler

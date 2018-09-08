@@ -245,6 +245,9 @@ class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
 
     It relies on the client side closing the connection when it's finished.
     """
+    def initialize(self, server_time):
+        self.server_time = server_time
+
     class WSMessage(dictobj.Spec):
         path = dictobj.Field(sb.string_spec, wrapper=sb.required)
         message_id = dictobj.Field(sb.string_spec, wrapper=sb.required)
@@ -258,6 +261,7 @@ class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
     def open(self):
         self.key = str(uuid.uuid1())
         log.info(hp.lc("WebSocket opened", key=self.key))
+        self.reply(self.server_time, message_id="__server_time__")
 
     def reply(self, msg, message_id=None):
         # I bypass tornado converting the dictionary so that non jsonable things can be repr'd

@@ -16,6 +16,7 @@ from unittest import mock
 import asynctest
 import asyncio
 import socket
+import time
 import uuid
 
 class WSServer(thp.ServerRunner):
@@ -29,7 +30,7 @@ class WSServer(thp.ServerRunner):
 
         class WSS(Server):
             def tornado_routes(self):
-                return [("/v1/ws", Handler, {} if handler_args is None else handler_args)]
+                return [("/v1/ws", Handler, {"server_time": time.time()} if handler_args is None else handler_args)]
 
         self.lan_target = mock.Mock(name="lan_target")
         self.target_register = mock.Mock(name="target_register")

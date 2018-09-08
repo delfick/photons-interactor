@@ -90,7 +90,16 @@ class ServerRunner:
         return f"ws://127.0.0.1:{self.options.port}/v1/ws"
 
     async def ws_connect(self):
-        return await websocket_connect(self.ws_url)
+        connection = await websocket_connect(self.ws_url)
+
+        class ATime:
+            def __eq__(self, other):
+                return type(other) is float
+
+        first = await self.ws_read(connection)
+        assert first == {"reply": ATime(), "message_id": "__server_time__"}, first
+
+        return connection
 
     async def ws_write(self, connection, message):
         return await connection.write_message(json.dumps(message))

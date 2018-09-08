@@ -44,8 +44,9 @@ class CommandHandler(Simple):
         return await self.commander.execute(j, progress_cb)
 
 class WSHandler(SimpleWebSocketBase):
-    def initialize(self, commander):
+    def initialize(self, commander, server_time):
         self.commander = commander
+        super().initialize(server_time)
 
     async def process_message(self, path, body, message_id, progress_cb):
         def cb(message, **kwargs):
