@@ -17,6 +17,6 @@ before_script:
   - photons-interactor npm run -- ci
 
 script:
-  - ./test.sh
+  - ./test.sh -v
   - photons-interactor npm test --silent
   - ./integrationjstest.sh
