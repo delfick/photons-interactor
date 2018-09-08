@@ -5,8 +5,10 @@ from photons_interactor.request_handlers.base import Simple
 from tornado.testing import AsyncHTTPTestCase
 from unittest import mock
 import tornado
+import types
 import uuid
 import json
+import sys
 
 describe AsyncHTTPTestCase, "RequestsMixin":
     def assertResponse(self, response, expected):
@@ -40,13 +42,23 @@ describe AsyncHTTPTestCase, "RequestsMixin":
     describe "send_msg":
         def get_app(self):
             self.path = "/blah"
+            self.replies = []
 
             class Handler(Simple):
+                def process_reply(s, msg, exc_info=None):
+                    return self.replies.append((msg, exc_info))
+
                 async def do_post(s):
                     body = s.body_as_json()
                     kwargs = {}
                     if "msg" in body:
                         kwargs = {"msg": body["msg"]}
+                    elif "error" in body:
+                        try:
+                            raise ValueError(body["error"])
+                        except ValueError as error:
+                            kwargs["msg"] = {"error": "error"}
+                            kwargs["exc_info"] = sys.exc_info()
                     else:
                         class Thing:
                             def as_dict(s2):
@@ -132,3 +144,26 @@ describe AsyncHTTPTestCase, "RequestsMixin":
             self.assertEqual(response.code, 403)
             self.assertEqual(response.body, msg.encode())
             self.assertEqual(response.headers.get("Content-Type"), 'text/plain; charset=UTF-8')
+
+        it "processes replies":
+            self.fetch(self.path, method="POST", body=json.dumps({"msg": "one"}))
+            self.assertEqual(self.replies.pop(0), ("one", None))
+
+            class ATraceback:
+                def __eq__(self, other):
+                    return isinstance(other, types.TracebackType)
+
+            class AValueError:
+                def __init__(self, msg):
+                    self.msg = msg
+
+                def __eq__(self, other):
+                    return isinstance(other, ValueError) and str(other) == self.msg
+
+            self.fetch(self.path, method="POST", body=json.dumps({"error": "wat"}))
+            self.assertEqual(self.replies.pop(0)
+                , ({"error": "error"}, (ValueError, AValueError("wat"), ATraceback()))
+                )
+
+            # Make sure we got all of them
+            self.assertEqual(self.replies, [])

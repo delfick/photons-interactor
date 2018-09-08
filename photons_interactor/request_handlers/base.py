@@ -101,6 +101,12 @@ class RequestsMixin:
     A mixin class you may use for your handler which provides some handy methods
     for dealing with data
     """
+
+    # This is not defined by default so that classes that inherit this can override with a Mixin
+    # def process_reply(self, msg, exc_info=None):
+    #     """A hook that provides the msg sent as reply or progress"""
+    #     pass
+
     def async_catcher(self, info, final=None):
         return AsyncCatcher(self, info, final=final)
 
@@ -141,6 +147,9 @@ class RequestsMixin:
 
         if hasattr(msg, "as_dict"):
             msg = msg.as_dict()
+
+        if hasattr(self, "process_reply"):
+            self.process_reply(msg, exc_info=exc_info)
 
         if type(msg) is dict:
             status = msg.get("status", status)
@@ -277,6 +286,9 @@ class SimpleWebSocketBase(RequestsMixin, websocket.WebSocketHandler):
             msg = msg.as_dict()
         reply = {"reply": msg, "message_id": message_id}
         reply = json.dumps(reply, default=lambda o: repr(o)).replace("</", "<\\/")
+
+        if message_id not in ("__tick__", "__server_time__") and hasattr(self, "process_reply"):
+            self.process_reply(msg, exc_info=exc_info)
 
         if self.ws_connection:
             self.write_message(reply)

@@ -25,6 +25,9 @@ class Commander:
 
         self.meta = Meta(everything, [])
 
+    def process_reply(self, msg, exc_info):
+        """Hook that looks at each reply/progress message that is sent out"""
+
     async def execute(self, command, progress_cb, extra_options=None):
         """
         Responsible for creating a command and calling execute on it.

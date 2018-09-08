@@ -29,7 +29,16 @@ def progress(body, logger_name, message, **kwargs):
 
     return info
 
-class CommandHandler(Simple):
+class ProcessReplyMixin:
+    def process_reply(self, msg, exc_info=None):
+        try:
+            self.commander.process_reply(msg, exc_info)
+        except KeyboardInterrupt:
+            raise
+        except Exception as error:
+            log.exception(error)
+
+class CommandHandler(Simple, ProcessReplyMixin):
     def initialize(self, commander):
         self.commander = commander
 
@@ -39,11 +48,12 @@ class CommandHandler(Simple):
         def progress_cb(message, **kwargs):
             frm = inspect.stack()[1]
             mod = inspect.getmodule(frm[0])
-            progress(j, mod.__name__, message, **kwargs)
+            info = progress(j, mod.__name__, message, **kwargs)
+            self.process_reply(info)
 
         return await self.commander.execute(j, progress_cb)
 
-class WSHandler(SimpleWebSocketBase):
+class WSHandler(SimpleWebSocketBase, ProcessReplyMixin):
     def initialize(self, commander, server_time):
         self.commander = commander
         super().initialize(server_time)
