@@ -2,10 +2,14 @@ from photons_interactor.commander import test_helpers as cthp
 from photons_interactor.options import Options
 from photons_interactor.server import Server
 
+from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import AsyncTestCase
 from photons_app import helpers as hp
 
 from tornado.websocket import websocket_connect
+from input_algorithms.dictobj import dictobj
+from input_algorithms.meta import Meta
+from option_merge import MergedOptions
 from contextlib import contextmanager
 from unittest import mock
 import http.client
@@ -28,6 +32,25 @@ def port_connected(port):
         return True
     except Exception:
         return False
+
+def make_options(host=None, port=None, device_finder_options=None, database=None, cookie_secret=None):
+    options = {
+          "database": database or {"uri": "sqlite:///:memory:"}
+        }
+
+    if device_finder_options is not None:
+        options["device_finder_options"] = device_finder_options
+
+    if cookie_secret is not None:
+        options["cookie_secret"] = cookie_secret
+
+    if host is not None:
+        options['host'] = host
+
+    if port is not None:
+        options['port'] = port
+
+    return Options.FieldSpec(formatter=MergedOptionStringFormatter).empty_normalise(**options)
 
 class ServerRunner:
     def __init__(self, final_future, server, options, wrapper):
@@ -134,17 +157,12 @@ class CommandCase(AsyncTestCase):
                     self.assertEqual(body, text_output)
         return await self.wait_for(self.loop.run_in_executor(None, doit), timeout=timeout)
 
-    async def run_server(self, wrapper, runner):
+    async def run_server(self, wrapper, runner, **kwargs):
         final_future = asyncio.Future()
 
-        options = Options.FieldSpec().empty_normalise(
-              host = "127.0.0.1"
-            , port = free_port()
-            , device_finder_options = {"repeat_spread": 0.01}
-            , database = {"uri": "sqlite:///:memory:"}
-            )
-
         protocol_register = cthp.make_protocol_register()
+        options = make_options("127.0.0.1", free_port(), **kwargs)
+
         lan_target = cthp.make_memory_target(final_future)
 
         target_register = mock.Mock(name="target_register")

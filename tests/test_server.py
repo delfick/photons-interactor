@@ -70,11 +70,8 @@ describe AsyncTestCase, "Server":
             commander.execute.assert_called_once_with({"command": "wat"}, mock.ANY)
 
         async it "works":
-            options = Options.FieldSpec().empty_normalise(
-                  host = "127.0.0.1"
-                , port = thp.free_port()
+            options = thp.make_options("127.0.0.1", thp.free_port()
                 , device_finder_options = {"arg1": 0.1, "arg2": True}
-                , database = {"uri": "sqlite:memory:"}
                 )
 
             lan_target = mock.Mock(name="lan_target")
@@ -118,7 +115,7 @@ describe AsyncTestCase, "Server":
                 , protocol_register = self.protocol_register
                 )
             FakeDeviceFinder.assert_called_once_with(lan_target, arg1=0.1, arg2=True)
-            FakeDBQueue.assert_called_once_with(self.final_future, 5, mock.ANY, "sqlite:memory:")
+            FakeDBQueue.assert_called_once_with(self.final_future, 5, mock.ANY, "sqlite:///:memory:")
 
             self.target_register.resolve.assert_called_once_with("lan")
             finder.start.assert_called_once_with()

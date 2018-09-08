@@ -3,10 +3,8 @@
 from photons_interactor.request_handlers.base import SimpleWebSocketBase, wsconnections
 from photons_interactor.commander import helpers as chp
 from photons_interactor import test_helpers as thp
-from photons_interactor.options import Options
 from photons_interactor.server import Server
 
-from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import AsyncTestCase
 from photons_app.errors import PhotonsAppError
 from photons_app import helpers as hp
@@ -23,11 +21,8 @@ import uuid
 class WSServer(thp.ServerRunner):
     def __init__(self, Handler, handler_args=None):
         self.final_future = asyncio.Future()
-        self.options = Options.FieldSpec().empty_normalise(
-              host = "127.0.0.1"
-            , port = thp.free_port()
-            , database = {"uri": "sqlite:///:memory:"}
-            )
+        self.protocol_register = mock.Mock(name="protocol_register")
+        self.options = thp.make_options("127.0.0.1", thp.free_port())
 
         class WSS(Server):
             def tornado_routes(self):
