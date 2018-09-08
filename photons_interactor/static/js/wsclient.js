@@ -1,7 +1,39 @@
 import { call, spawn, cancel, fork, put, take, race } from "redux-saga/effects";
 import { eventChannel, channel, END, delay } from "redux-saga";
-import { createAction } from "redux-act";
+import { createAction, createReducer } from "redux-act";
 import uuidv4 from "uuid/v4";
+
+class WSStateKls {
+  Loading = createAction("Starting to open connection");
+  Error = createAction("Got an error connecting to the websocket");
+  Connected = createAction("Successfully connected to the websocket");
+  ServerTime = createAction("Got a new server time from the server", time => ({
+    time
+  }));
+
+  reducer() {
+    return createReducer(
+      {
+        [this.Loading]: (state, payload) => {
+          return { ...state, loading: true };
+        },
+        [this.Error]: (state, { error }) => {
+          return { ...state, error, loading: true };
+        },
+        [this.Connected]: (state, payload) => {
+          return { ...state, error: undefined, loading: false };
+        }
+      },
+      {
+        error: undefined,
+        devices: {},
+        loading: true
+      }
+    );
+  }
+}
+
+export const WSState = new WSStateKls();
 
 export const WSCommand = createAction(
   "Command to the websocket server",
@@ -102,6 +134,14 @@ function* startWS(url, count, sendch, receivech, actions) {
     var { timeout, w } = yield race({ timeout: call(delay, 2000), w: ws });
   } catch (e) {
     console.error("Failed to start websocket connection", e);
+    yield put(
+      WSState.Error({
+        error: {
+          error: "Could not connect to server",
+          error_code: "FailedToConnected"
+        }
+      })
+    );
     var diff = Date.now() - start;
     if (diff < 1000) {
       yield call(delay, 1000 - diff);
@@ -124,8 +164,14 @@ function* startWS(url, count, sendch, receivech, actions) {
   });
 
   try {
+    yield put(WSState.Connected());
     yield take(waiter);
   } finally {
+    yield put(
+      WSState.Error({
+        error: { error: "Server went away", error_code: "ServerWentAway" }
+      })
+    );
     waiter.close();
     yield cancel(ticker);
     yield cancel(sender);
@@ -225,6 +271,11 @@ function* processWsReceive(receivech, actions) {
       continue;
     }
 
+    if (data.message_id == "__server_time__") {
+      yield put(WSState.ServerTime(data.reply));
+      continue;
+    }
+
     var action = actions[data.message_id];
 
     if (!action) {
@@ -278,6 +329,8 @@ export function* listen(url, delayMS) {
   yield fork(getWSCommands, commandch);
 
   while (true) {
+    yield put(WSState.Loading());
+
     count += 1;
     var actions = {};
     messages[count] = actions;
