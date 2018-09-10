@@ -15,7 +15,7 @@ var plugins = [
 module.exports = {
   entry: ["./js/index.js", "./css/app.scss"],
   mode: NODE_ENV,
-  devtool: "cheap-module-source-map",
+  devtool: "eval-source-map",
   output: { filename: "static/app.js", path: path.resolve(__dirname, "dist") },
   plugins: plugins,
   resolve: { symlinks: false },
