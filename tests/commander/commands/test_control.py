@@ -35,11 +35,11 @@ describe thp.CommandCase, "Control Commands":
 
         res = await self.assertCommand(options, {"command": "discover", "args": {"just_serials": True, "matcher": "label=kitchen"}})
         serials = json.loads(res.decode())
-        self.assertEqual(serials, [fake.devices[0].serial])
+        self.assertEqual(serials, [fake.for_attribute("label", "kitchen")[0].serial])
 
         res = await self.assertCommand(options, {"command": "discover", "args": {"just_serials": True, "matcher": "label=lamp"}})
         serials = json.loads(res.decode())
-        self.assertEqual(serials, [fake.devices[2].serial, fake.devices[3].serial])
+        self.assertEqual(serials, [d.serial for d in fake.for_attribute("label", "lamp", 2)])
 
         res = await self.assertCommand(options, {"command": "discover", "args": {"just_serials": True, "matcher": "label=blah"}}, status=400)
         j = json.loads(res.decode())
@@ -50,14 +50,13 @@ describe thp.CommandCase, "Control Commands":
         await self.assertCommand(options, {"command": "query", "args": {"pkt_type": 101}}, json_output=cthp.light_state_responses)
 
         results = cthp.light_state_responses["results"]
-        expected = {device.serial: results[device.serial] for device in fake.devices if device.power == 65535}
-        self.assertEqual(len(expected), 5)
+        expected = {device.serial: results[device.serial] for device in fake.for_attribute("power", 65535, expect=5)}
         await self.assertCommand(options
             , {"command": "query", "args": {"pkt_type": 101, "matcher": "power=on"}}
             , json_output = {"results": expected}
             )
 
-        bathroom_light = fake.devices[1]
+        bathroom_light = fake.for_serial("d073d5000002")
         with bathroom_light.offline():
             expected["d073d5000002"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut", "status": 400}
             await self.assertCommand(options
@@ -92,7 +91,7 @@ describe thp.CommandCase, "Control Commands":
             device.expectSetMessages(DeviceMessages.SetPower(level=0, res_required=False))
 
         # With an offline light
-        bathroom_light = fake.devices[1]
+        bathroom_light = fake.for_serial("d073d5000002")
         with bathroom_light.offline():
             expected["results"]["d073d5000002"] = {
                   'error': {'message': 'Timed out. Waiting for reply to a packet'}
@@ -110,8 +109,7 @@ describe thp.CommandCase, "Control Commands":
                     device.expectSetMessages(DeviceMessages.SetPower(level=65535, res_required=False))
 
         # With a matcher
-        kitchen_light = fake.devices[0]
-        self.assertEqual(kitchen_light.label, "kitchen")
+        kitchen_light = fake.for_attribute("label", "kitchen", expect=1)[0]
         expected = {"results": {kitchen_light.serial: "ok"}}
 
         await self.assertCommand(options
@@ -148,11 +146,10 @@ describe thp.CommandCase, "Control Commands":
         for device in fake.devices:
             device.change_power(0)
             device.brightness = 0.5
-        fake.devices[0].change_power(65535)
-        fake.devices[2].change_power(65535)
+        fake.for_serial("d073d5000001").change_power(65535)
+        fake.for_serial("d073d5000003").change_power(65535)
 
-        tv_light = fake.devices[5]
-        self.assertEqual(tv_light.label, "tv")
+        tv_light = fake.for_attribute("label", "tv", expect=1)[0]
         with tv_light.offline():
             expected["results"]["d073d5000006"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut", "status": 400}
             await self.assertCommand(options
@@ -160,10 +157,10 @@ describe thp.CommandCase, "Control Commands":
                 , json_output = expected
                 )
 
-        for i, device in enumerate(fake.devices):
-            if i == 5:
+        for device in fake.devices:
+            if device.label == "tv":
                 device.expectNoSetMessages()
-            elif i in (0, 2):
+            elif device.serial in ("d073d5000001", "d073d5000003"):
                 device.expectSetMessages(
                       Parser.color_to_msg("blue", overrides={"res_required": False})
                     )

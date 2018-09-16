@@ -74,13 +74,16 @@ class FakeDevices(dictobj.Spec):
     devices = dictobj.Field(sb.listof(sb.any_spec()))
 
     def for_serial(self, serial):
-        return self.for_attribute("serial", serial)
+        return self.for_attribute("serial", serial, expect=1)[0]
 
-    def for_attribute(self, attr, value):
+    def for_attribute(self, attr, value, expect=1):
+        found = []
         for d in self.devices:
             if getattr(d, attr) == value:
-                return d
-        raise NotFound(wanted=value)
+                found.append(d)
+        if len(found) != expect:
+            raise NotFound(wanted=(attr, value), found=found, expected=expect)
+        return found
 
     def reset_devices(self):
         for device in self.devices:
