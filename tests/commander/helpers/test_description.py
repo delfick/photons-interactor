@@ -42,6 +42,7 @@ describe TestCase, "fields_description":
             , "final_future_field": None
             , "request_future_field": None
             , "server_options_field": None
+            , "request_handler_field": None
             , "protocol_register_field": None
 
             , "refresh_field": "boolean"

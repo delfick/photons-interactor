@@ -28,7 +28,7 @@ class Commander:
     def process_reply(self, msg, exc_info):
         """Hook that looks at each reply/progress message that is sent out"""
 
-    async def execute(self, command, progress_cb, extra_options=None):
+    async def execute(self, command, progress_cb, request_handler, extra_options=None):
         """
         Responsible for creating a command and calling execute on it.
 
@@ -57,7 +57,10 @@ class Commander:
             if not isinstance(command, Command):
                 everything = MergedOptions.using(
                       self.meta.everything
-                    , {"progress_cb": progress_cb, "request_future": request_future}
+                    , { "progress_cb": progress_cb
+                      , "request_future": request_future
+                      , "request_handler": request_handler
+                      }
                     , extra_options or {}
                     , dont_prefix = [dictobj]
                     )

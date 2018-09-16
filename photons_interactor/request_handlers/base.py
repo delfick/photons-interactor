@@ -101,6 +101,7 @@ class RequestsMixin:
     A mixin class you may use for your handler which provides some handy methods
     for dealing with data
     """
+    _merged_options_formattable = True
 
     # This is not defined by default so that classes that inherit this can override with a Mixin
     # def process_reply(self, msg, exc_info=None):

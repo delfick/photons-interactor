@@ -67,7 +67,7 @@ describe AsyncTestCase, "Server":
                 self.assertEqual(res.read(), b"{}")
             await self.wait_for(self.loop.run_in_executor(None, doit))
 
-            commander.execute.assert_called_once_with({"command": "wat"}, mock.ANY)
+            commander.execute.assert_called_once_with({"command": "wat"}, mock.ANY, mock.ANY)
 
         async it "works":
             options = thp.make_options("127.0.0.1", thp.free_port()

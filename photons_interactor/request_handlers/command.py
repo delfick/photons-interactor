@@ -1,6 +1,5 @@
 from photons_interactor.request_handlers.base import Simple, SimpleWebSocketBase, Finished
 
-from photons_app.errors import PhotonsAppError
 from photons_app import helpers as hp
 
 import logging
@@ -58,7 +57,7 @@ class CommandHandler(Simple, ProcessReplyMixin):
             info = progress(j, mod.__name__, message, **kwargs)
             self.process_reply(info)
 
-        return await self.commander.execute(j, progress_cb)
+        return await self.commander.execute(j, progress_cb, self)
 
 class WSHandler(SimpleWebSocketBase, ProcessReplyMixin):
     def initialize(self, commander, server_time):
@@ -73,6 +72,6 @@ class WSHandler(SimpleWebSocketBase, ProcessReplyMixin):
             progress_cb(info)
 
         if path == "/v1/lifx/command":
-            return await self.commander.execute(body, cb)
+            return await self.commander.execute(body, cb, self)
         else:
             raise Finished(status=404, error=f"Specified path is invalid: {path}")
