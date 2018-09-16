@@ -98,7 +98,7 @@ describe AsyncTestCase, "Server":
                         with mock.patch("photons_interactor.server.DBQueue", FakeDBQueue):
                             yield
 
-            async with thp.ServerRunner(self.final_future, server, options, wrapper()):
+            async with thp.ServerRunner(self.final_future, server, None, options, wrapper()):
                 await self.assertPUTCommand(options, commander)
                 await self.assertIndex(options)
 

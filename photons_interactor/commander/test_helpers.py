@@ -1,9 +1,10 @@
 from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import print_packet_difference
 from photons_app.registers import ProtocolRegister
+from photons_app.errors import PhotonsAppError
 
-from photons_socket.fake import FakeDevice, MemorySocketTarget, MemorySocketBridge
 from photons_products_registry import LIFIProductRegistry, capability_for_ids
+from photons_socket.fake import FakeDevice, MemorySocketTarget
 from photons_socket.messages import DiscoveryMessages
 from photons_device_messages import DeviceMessages
 from photons_multizone import MultiZoneMessages
@@ -11,11 +12,15 @@ from photons_protocol.frame import LIFXPacket
 from photons_colour import ColourMessages
 
 from input_algorithms.dictobj import dictobj
+from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
 
 from contextlib import contextmanager
 from unittest import mock
 import uuid
+
+class NotFound(PhotonsAppError):
+    desc = "Couldn't find device"
 
 def make_protocol_register():
     protocol_register = ProtocolRegister()
@@ -62,6 +67,24 @@ class Color(dictobj):
 
 class Firmware(dictobj):
     fields = ["version", "build_time"]
+
+class FakeDevices(dictobj.Spec):
+    groups = dictobj.Field(sb.dictof(sb.string_spec(), sb.any_spec()))
+    locations = dictobj.Field(sb.dictof(sb.string_spec(), sb.any_spec()))
+    devices = dictobj.Field(sb.listof(sb.any_spec()))
+
+    def for_serial(self, serial):
+        return self.for_attribute("serial", serial)
+
+    def for_attribute(self, attr, value):
+        for d in self.devices:
+            if getattr(d, attr) == value:
+                return d
+        raise NotFound(wanted=value)
+
+    def reset_devices(self):
+        for device in self.devices:
+            device.reset()
 
 def fake_devices(protocol_register):
     identifier = lambda : str(uuid.uuid4()).replace('-', "")
@@ -139,15 +162,18 @@ def fake_devices(protocol_register):
         , firmware = Firmware("1.1", 1530327089)
         )
 
-    return {
-          "groups":
-          { group_one.name: group_one
+    return FakeDevices.FieldSpec().empty_normalise(
+          groups = {
+            group_one.name: group_one
           , group_two.name: group_two
           , group_three.name: group_three
           }
-        , "locations": {location_one.name: location_one, location_two.name: location_two}
-        , "devices": [a19_1, a19_2, color1000, white800, strip1, strip2]
-        }
+        , locations = {
+              location_one.name: location_one
+            , location_two.name: location_two
+            }
+        , devices = [a19_1, a19_2, color1000, white800, strip1, strip2]
+        )
 
 class Device(FakeDevice):
     def __init__(self, serial, protocol_register, *, label, power, group, location, color, vendor_id, product_id, firmware):

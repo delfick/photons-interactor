@@ -33,7 +33,7 @@ def tearDown():
 
 describe TestCase, "DatabaseConnection":
     before_each:
-        test_runner.before_each(start_db_queue=True)
+        test_runner.before_each(start_db_queue=False)
         self.database = test_runner.database
 
     after_each:

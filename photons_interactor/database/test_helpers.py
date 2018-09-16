@@ -13,6 +13,10 @@ class DBTestRunner:
         uri = f"sqlite:///{self.filename}"
         self.database = DatabaseConnection(database=uri).new_session()
         self.database.create_tables()
+
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
         self.final_future = asyncio.Future()
 
         if start_db_queue:

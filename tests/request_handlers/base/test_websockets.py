@@ -47,7 +47,7 @@ class WSServer(thp.ServerRunner):
             with mock.patch("photons_interactor.server.DeviceFinder", FakeDeviceFinder):
                 yield
 
-        super().__init__(self.final_future, self.server, self.options, wrapper())
+        super().__init__(self.final_future, self.server, None, self.options, wrapper())
 
 describe AsyncTestCase, "SimpleWebSocketBase":
     async it "stores a task in wsconnections":
