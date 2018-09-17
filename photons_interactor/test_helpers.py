@@ -246,7 +246,7 @@ def make_server(wrapper, **kwargs):
 
 class ModuleLevelServer:
     def __init__(self):
-        self.loop = asyncio.get_event_loop()
+        self.loop = asyncio.new_event_loop()
         self.server = None
         self.closer = None
         self.record_lines_read = 0
