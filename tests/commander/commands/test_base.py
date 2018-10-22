@@ -1,17 +1,20 @@
 # coding: spec
 
+from photons_interactor.commander.store import store, load_commands
 from photons_interactor.commander import test_helpers as cthp
-from photons_interactor.commander.decorator import command
-from photons_interactor.commander.commands import Command
 from photons_interactor import test_helpers as thp
 
+from photons_app.test_helpers import AsyncTestCase
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
-from contextlib import contextmanager
 from textwrap import dedent
-import uuid
+from unittest import mock
 
-class TestCommand(Command):
+load_commands()
+store = store.clone()
+
+@store.command("test")
+class TestCommand(store.Command):
     """
     A test command to test help output
     """
@@ -32,8 +35,16 @@ class TestCommand(Command):
     async def execute(self):
         return self.as_dict()
 
-describe thp.CommandCase, "Commands":
-    async def assertHelpCommand(self, options, devices):
+test_server = thp.ModuleLevelServer(store)
+
+setUp = test_server.setUp
+tearDown = test_server.tearDown
+
+describe AsyncTestCase, "commands":
+    use_default_loop = True
+
+    @test_server.test
+    async it "has a help command", options, fake, server:
         want = dedent("""
         Command test
         ============
@@ -52,116 +63,60 @@ describe thp.CommandCase, "Commands":
         \ttwo is the second best number
         """).lstrip()
 
-        await self.assertCommand(options, {"command": "help", "args": {"command": "test"}}, text_output=want.encode())
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "help", "args": {"command": "test"}}, text_output=want.encode())
 
-    async def assertTestCommand(self, options, devices):
-        await self.assertCommand(options, {"command": "test"}, status=400
+    @test_server.test
+    async it "has a test command", options, fake, server:
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "test"}
+            , status=400
             , json_output = {
                   'error':
-                  { 'errors': [{'message': 'Bad value. Expected a value but got none', 'meta': '{path=<input>.args.two}'}]
+                  { 'errors': [{'message': 'Bad value. Expected a value but got none', 'meta': '{path=<input>.body.args.two}'}]
                   , 'message': 'Bad value'
-                  , 'meta': '{path=<input>.args}'
+                  , 'meta': '{path=<input>.body.args}'
                   }
                 , "error_code": "BadSpecValue"
                 , 'status': 400
                 }
             )
 
-        await self.assertCommand(options, {"command": "test", "args": {"one": 1, "two": "TWO", "three": True}}
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "test", "args": {"one": 1, "two": "TWO", "three": True}}
             , json_output = {"one": 1, "two": "TWO", "three": True}
             )
 
-    async def assertWS(self, options, devices, server):
-        connection = await server.ws_connect()
+    @test_server.test
+    async it "has websocket commands", options, fake, server:
+        async with server.ws_stream(self) as stream:
+            # Invalid path
+            await stream.start("/blah", {"stuff": True})
+            error = "Specified path is invalid"
+            await stream.check_reply({"error": error, "wanted": "/blah", "available": ["/v1/lifx/command"], "status": 404})
 
-        # Invalid path
-        msg_id = str(uuid.uuid1())
-        await server.ws_write(connection
-            , {"path": "/blah", "body": {"stuff": True}, "message_id": msg_id}
-            )
+            # invalid command
+            await stream.start("/v1/lifx/command", {"command": "nope"})
+            reply = await stream.check_reply(mock.ANY)
+            assert "test" in reply["error"]["available"]
+            reply["error"]["available"] = ["test"]
 
-        error = "Specified path is invalid: /blah"
-        self.assertEqual(await server.ws_read(connection)
-            , {"message_id": msg_id, "reply": {"error": error, "status": 404}}
-            )
-
-        # invalid command
-        msg_id = str(uuid.uuid1())
-        await server.ws_write(connection
-            , {"path": "/v1/lifx/command", "body": {"command": "nope"}, "message_id": msg_id}
-            )
-
-        reply = await server.ws_read(connection)
-
-        assert "test" in reply["reply"]["error"]["available"]
-        reply["reply"]["error"]["available"] = ["test"]
-
-        self.assertEqual(reply
-            , { "message_id": msg_id
-              , "reply":
-                { "error":
-                  { "message": 'Bad value. Unknown command'
-                  , "wanted": "nope"
-                  , "meta": '{path=<input>}'
-                  , "available":
-                    [ "test"
-                    ]
+            self.assertEqual(reply
+                , { "error":
+                    { "message": 'Bad value. Unknown command'
+                    , "wanted": "nope"
+                    , "meta": '{path=<input>.body.command}'
+                    , "available":
+                      [ "test"
+                      ]
+                    }
+                  , "error_code": "BadSpecValue"
+                  , "status": 400
                   }
-                , "error_code": "BadSpecValue"
-                , "status": 400
-                }
-              }
-            )
+                )
 
-        # valid command
-        msg_id = str(uuid.uuid1())
-        args = {"one": 1, "two": "TWO", "three": True}
-        await server.ws_write(connection
-            , {"path": "/v1/lifx/command", "body": {"command": "test", "args": args}, "message_id": msg_id}
-            )
+            # valid command
+            args = {"one": 1, "two": "TWO", "three": True}
+            await stream.start("/v1/lifx/command", {"command": "test", "args": args})
+            await stream.check_reply(args)
 
-        self.assertEqual(await server.ws_read(connection)
-            , { "message_id": msg_id
-              , "reply": {"one": 1, "two": "TWO", "three": True}
-              }
-            )
-
-        # another valid command
-        msg_id = str(uuid.uuid1())
-        args = {"one": 1, "two": "TWO", "three": True}
-        await server.ws_write(connection
-            , {"path": "/v1/lifx/command", "body": {"command": "query", "args": {"pkt_type": 101}}, "message_id": msg_id}
-            )
-
-        self.assertEqual(await server.ws_read(connection)
-            , { "message_id": msg_id
-              , "reply": cthp.light_state_responses
-              }
-            )
-
-        connection.close()
-        self.assertIs(await server.ws_read(connection), None)
-
-    @contextmanager
-    def register_test_command(self):
-        try:
-            command(name="test")(TestCommand)
-            yield
-        finally:
-            if "test" in command.available_commands:
-                del command.available_commands["test"]
-
-    async it "has base commands":
-        async def runner(options, fake, server):
-            for test in ("Help", "Test"):
-                for device in fake["devices"]:
-                    device.reset()
-                await getattr(self, f"assert{test}Command")(options, fake)
-
-        await self.wait_for(self.run_server(self.register_test_command(), runner))
-
-    async it "has websocket commands":
-        async def runner(options, fake, server):
-            await self.assertWS(options, fake, server)
-
-        await self.wait_for(self.run_server(self.register_test_command(), runner), timeout=6)
+            # another valid command
+            await stream.start("/v1/lifx/command", {"command": "query", "args": {"pkt_type": 101}})
+            await stream.check_reply(cthp.light_state_responses)

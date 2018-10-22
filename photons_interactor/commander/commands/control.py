@@ -1,19 +1,18 @@
-from photons_interactor.commander.commands.base import Command
 from photons_interactor.commander import default_fields as df
-from photons_interactor.commander.decorator import command
 from photons_interactor.commander import helpers as chp
+from photons_interactor.commander.store import store
 
 from photons_transform.transformer import Transformer
 
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 
-@command(name="discover")
-class DiscoverCommand(Command):
+@store.command(name="discover")
+class DiscoverCommand(store.Command):
     """
     Display information about all the devices that can be found on the network
     """
-    finder = df.finder_field
+    finder = store.injected("finder")
     matcher = df.matcher_field
     refresh = df.refresh_field
 
@@ -32,17 +31,18 @@ class DiscoverCommand(Command):
         else:
             return await self.finder.info_for(filtr=fltr)
 
-@command(name="query")
-class QueryCommand(Command):
+@store.command(name="query")
+class QueryCommand(store.Command):
     """
     Send a pkt to devices and return the result
     """
-    finder = df.finder_field
-    target = df.target_field
+    finder = store.injected("finder")
+    target = store.injected("targets.lan")
+    protocol_register = store.injected("protocol_register")
+
     matcher = df.matcher_field
     timeout = df.timeout_field
     refresh = df.refresh_field
-    protocol_register = df.protocol_register_field
 
     pkt_type = df.pkt_type_field
     pkt_args = df.pkt_args_field
@@ -53,13 +53,14 @@ class QueryCommand(Command):
         script = self.target.script(msg)
         return await chp.run(script, fltr, self.finder, timeout=self.timeout)
 
-@command(name="transform")
-class TransformCommand(Command):
+@store.command(name="transform")
+class TransformCommand(store.Command):
     """
     Apply a http api like transformation to the lights
     """
-    finder = df.finder_field
-    target = df.target_field
+    finder = store.injected("finder")
+    target = store.injected("targets.lan")
+
     matcher = df.matcher_field
     timeout = df.timeout_field
     refresh = df.refresh_field
@@ -82,18 +83,19 @@ class TransformCommand(Command):
         script = self.target.script(msg)
         return await chp.run(script, fltr, self.finder, add_replies=False, timeout=self.timeout)
 
-@command(name="set")
-class SetCommand(Command):
+@store.command(name="set")
+class SetCommand(store.Command):
     """
     Send a pkt to devices. This is the same as query except res_required is False
     and results aren't returned
     """
-    finder = df.finder_field
-    target = df.target_field
+    finder = store.injected("finder")
+    target = store.injected("targets.lan")
+    protocol_register = store.injected("protocol_register")
+
     matcher = df.matcher_field
     timeout = df.timeout_field
     refresh = df.refresh_field
-    protocol_register = df.protocol_register_field
 
     pkt_type = df.pkt_type_field
     pkt_args = df.pkt_args_field

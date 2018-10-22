@@ -293,7 +293,7 @@ class Device(FakeDevice):
 
         setattr(self, typ, [])
 
-    def make_response(self, pkt):
+    def make_response(self, pkt, protocol):
         if pkt.__class__.__name__.startswith("Get"):
             self.gets.append(pkt)
         else:

@@ -34,18 +34,7 @@ describe TestCase, "fields_description":
 
     it "works for default fields":
         fields = {
-              "finder_field": None
-            , "target_field": None
-            , "db_queue_field": None
-            , "commander_field": None
-            , "progress_cb_field": None
-            , "final_future_field": None
-            , "request_future_field": None
-            , "server_options_field": None
-            , "request_handler_field": None
-            , "protocol_register_field": None
-
-            , "refresh_field": "boolean"
+              "refresh_field": "boolean"
             , "timeout_field": "float (default 20)"
             , "matcher_field": "string or dictionary"
             , "pkt_type_field": "integer or string (required)"

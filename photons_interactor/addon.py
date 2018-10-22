@@ -33,13 +33,14 @@ def __lifx__(collector, *args, **kwargs):
 async def serve(collector, **kwargs):
     conf = collector.configuration
     await migrate(collector, extra="upgrade head")
-    await Server(
-          conf["photons_app"].final_future
+
+    options = conf["interactor"]
+    await Server(conf["photons_app"].final_future).serve(options.host, options.port
         , conf["interactor"]
         , conf["photons_app"].cleaners
         , conf["target_register"]
         , conf["protocol_register"]
-        ).serve()
+        )
 
 @an_action(label="Interactor")
 async def migrate(collector, extra=None, **kwargs):

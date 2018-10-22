@@ -1,17 +1,6 @@
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 
-finder_field = dictobj.Field(sb.overridden("{finder}"), formatted=True)
-target_field = dictobj.Field(sb.overridden("{targets.lan}"), formatted=True)
-db_queue_field = dictobj.Field(sb.overridden("{db_queue}"), formatted=True)
-commander_field = dictobj.Field(sb.overridden("{commander}"), formatted=True)
-progress_cb_field = dictobj.Field(sb.overridden("{progress_cb}"), formatted=True)
-final_future_field = dictobj.Field(sb.overridden("{final_future}"), formatted=True)
-request_future_field = dictobj.Field(sb.overridden("{request_future}"), formatted=True)
-server_options_field = dictobj.Field(sb.overridden("{server_options}"), formatted=True)
-request_handler_field = dictobj.Field(sb.overridden("{request_handler}"), formatted=True)
-protocol_register_field = dictobj.Field(sb.overridden("{protocol_register}"), formatted=True)
-
 refresh_field = dictobj.NullableField(sb.boolean
     , help = """
         Whether to refresh our idea of what is on the network"

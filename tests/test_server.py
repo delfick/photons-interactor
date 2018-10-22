@@ -8,28 +8,14 @@ from photons_app.test_helpers import AsyncTestCase
 from photons_app import helpers as hp
 
 from noseOfYeti.tokeniser.async_support import async_noy_sup_setUp, async_noy_sup_tearDown
+from tornado.httpclient import AsyncHTTPClient
+from whirlwind import test_helpers as wthp
 from contextlib import contextmanager
 from unittest import mock
-import http.client
 import asynctest
 import asyncio
 
 describe AsyncTestCase, "Server":
-    async it "takes in options":
-        final_future = mock.Mock(name="final_future")
-        server_options = mock.Mock(name="server_options")
-        cleaners = mock.Mock(name="cleaners")
-        target_register = mock.Mock(name="target_register")
-        protocol_register = mock.Mock(name="protocol_register")
-
-        server = Server(final_future, server_options, cleaners, target_register, protocol_register)
-
-        self.assertIs(server.final_future, final_future)
-        self.assertIs(server.server_options, server_options)
-        self.assertIs(server.cleaners, cleaners)
-        self.assertIs(server.target_register, target_register)
-        self.assertIs(server.protocol_register, protocol_register)
-
     describe "serve":
         async before_each:
             self.final_future = asyncio.Future()
@@ -43,34 +29,19 @@ describe AsyncTestCase, "Server":
                 self.final_future.cancel()
 
         async def assertIndex(self, options):
-            def doit():
-                conn = http.client.HTTPConnection("127.0.0.1", options.port, timeout=5)
-                conn.request("GET", "/")
-                res = conn.getresponse()
+            client = AsyncHTTPClient()
 
-                self.assertEqual(res.status, 200)
+            response = await client.fetch(f"http://127.0.0.1:{options.port}/"
+                , raise_error=False
+                )
 
-                recv = res.read().decode()
-                assert recv.startswith("<!DOCTYPE html>"), recv
-                self.assertEqual(res.headers['Content-Type'], "text/html; charset=UTF-8")
-            await self.wait_for(self.loop.run_in_executor(None, doit))
+            self.assertEqual(response.code, 200, response.body)
+            assert response.body.startswith(b"<!DOCTYPE html>"), response.body
 
-        async def assertPUTCommand(self, options, commander):
-            commander.execute = asynctest.mock.CoroutineMock(name="execute", return_value={})
-
-            def doit():
-                conn = http.client.HTTPConnection("127.0.0.1", options.port, timeout=5)
-                conn.request("PUT", "/v1/lifx/command", body=b'{"command": "wat"}')
-                res = conn.getresponse()
-
-                self.assertEqual(res.status, 200)
-                self.assertEqual(res.read(), b"{}")
-            await self.wait_for(self.loop.run_in_executor(None, doit))
-
-            commander.execute.assert_called_once_with({"command": "wat"}, mock.ANY, mock.ANY)
+            self.assertEqual(response.headers['Content-Type'], "text/html; charset=UTF-8")
 
         async it "works":
-            options = thp.make_options("127.0.0.1", thp.free_port()
+            options = thp.make_options("127.0.0.1", wthp.free_port()
                 , device_finder_options = {"arg1": 0.1, "arg2": True}
                 )
 
@@ -89,7 +60,7 @@ describe AsyncTestCase, "Server":
             FakeCommander = mock.Mock(name="Commander", return_value=commander)
 
             cleaners = []
-            server = Server(self.final_future, options, cleaners, self.target_register, self.protocol_register)
+            server = Server(self.final_future)
 
             @contextmanager
             def wrapper():
@@ -98,15 +69,19 @@ describe AsyncTestCase, "Server":
                         with mock.patch("photons_interactor.server.DBQueue", FakeDBQueue):
                             yield
 
-            async with thp.ServerRunner(self.final_future, server, None, options, wrapper()):
-                await self.assertPUTCommand(options, commander)
+            async with thp.ServerRunner(self.final_future, options.port, server, wrapper(), None, options, cleaners,self.target_register, self.protocol_register) as s:
+                commander.executor.return_value.execute = asynctest.mock.CoroutineMock(name="execute", return_value={})
+                await s.assertPUT(self, "/v1/lifx/command", {"command": "wat"}, json_output={})
+
                 await self.assertIndex(options)
 
             self.assertIs(server.commander, commander)
             self.assertIs(server.finder, finder)
 
-            FakeCommander.assert_called_once_with(
-                  finder = finder
+            from photons_interactor.commander.store import store
+
+            FakeCommander.assert_called_once_with(store
+                , finder = finder
                 , db_queue = db_queue
                 , test_devices = None
                 , final_future = self.final_future

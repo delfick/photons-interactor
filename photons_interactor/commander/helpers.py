@@ -1,4 +1,4 @@
-from photons_interactor.request_handlers.base import message_from_exc
+from photons_interactor.request_handlers.command import MessageFromExc
 from photons_interactor.commander.spec_description import signature
 from photons_interactor.commander.errors import NoSuchPacket
 
@@ -178,7 +178,7 @@ class ResultBuilder:
             self.result["results"][pkt.serial] = info
 
     def error(self, e):
-        msg = message_from_exc(e)
+        msg = MessageFromExc()(type(e), e, e.__traceback__)
 
         serial = None
         if hasattr(e, "kwargs") and "serial" in e.kwargs:

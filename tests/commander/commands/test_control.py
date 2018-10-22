@@ -1,30 +1,36 @@
 # coding: spec
 
+from photons_interactor.commander.store import store, load_commands
 from photons_interactor.commander import test_helpers as cthp
 from photons_interactor import test_helpers as thp
+
+from photons_app.test_helpers import AsyncTestCase
 
 from photons_device_messages import DeviceMessages
 from photons_colour import Parser
 
 import json
 
-test_server = thp.ModuleLevelServer()
+load_commands()
+store = store.clone()
+
+test_server = thp.ModuleLevelServer(store)
 
 setUp = test_server.setUp
 tearDown = test_server.tearDown
 
-describe thp.CommandCase, "Control Commands":
+describe AsyncTestCase, "Control Commands":
     use_default_loop = True
 
     @test_server.test
     async it "has discovery commands", options, fake, server:
-        await self.assertCommand(options, {"command": "discover"}, json_output=cthp.discovery_response)
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "discover"}, json_output=cthp.discovery_response)
 
-        res = await self.assertCommand(options, {"command": "discover", "args": {"just_serials": True}})
+        res = await server.assertPUT(self, "/v1/lifx/command", {"command": "discover", "args": {"just_serials": True}})
         serials = json.loads(res.decode())
         self.assertEqual(sorted(serials), sorted(device.serial for device in fake.devices))
 
-        res = await self.assertCommand(options, {"command": "discover", "args": {"matcher": {"group_name": "Living Room"}}})
+        res = await server.assertPUT(self, "/v1/lifx/command", {"command": "discover", "args": {"matcher": {"group_name": "Living Room"}}})
         j = json.loads(res.decode())
         wanted = {device.serial: cthp.discovery_response[device.serial]
               for device in fake.devices
@@ -33,25 +39,25 @@ describe thp.CommandCase, "Control Commands":
         self.assertEqual(len(wanted), 2)
         self.assertEqual(j, wanted)
 
-        res = await self.assertCommand(options, {"command": "discover", "args": {"just_serials": True, "matcher": "label=kitchen"}})
+        res = await server.assertPUT(self, "/v1/lifx/command", {"command": "discover", "args": {"just_serials": True, "matcher": "label=kitchen"}})
         serials = json.loads(res.decode())
         self.assertEqual(serials, [fake.for_attribute("label", "kitchen")[0].serial])
 
-        res = await self.assertCommand(options, {"command": "discover", "args": {"just_serials": True, "matcher": "label=lamp"}})
+        res = await server.assertPUT(self, "/v1/lifx/command", {"command": "discover", "args": {"just_serials": True, "matcher": "label=lamp"}})
         serials = json.loads(res.decode())
         self.assertEqual(serials, [d.serial for d in fake.for_attribute("label", "lamp", 2)])
 
-        res = await self.assertCommand(options, {"command": "discover", "args": {"just_serials": True, "matcher": "label=blah"}}, status=400)
+        res = await server.assertPUT(self, "/v1/lifx/command", {"command": "discover", "args": {"just_serials": True, "matcher": "label=blah"}}, status=400)
         j = json.loads(res.decode())
         self.assertEqual(j, {"error": {"message": "Didn't find any devices"}, "status": 400, "error_code": "FoundNoDevices"})
 
     @test_server.test
     async it "has query commands", options, fake, server:
-        await self.assertCommand(options, {"command": "query", "args": {"pkt_type": 101}}, json_output=cthp.light_state_responses)
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "query", "args": {"pkt_type": 101}}, json_output=cthp.light_state_responses)
 
         results = cthp.light_state_responses["results"]
         expected = {device.serial: results[device.serial] for device in fake.for_attribute("power", 65535, expect=5)}
-        await self.assertCommand(options
+        await server.assertPUT(self, "/v1/lifx/command"
             , {"command": "query", "args": {"pkt_type": 101, "matcher": "power=on"}}
             , json_output = {"results": expected}
             )
@@ -59,16 +65,16 @@ describe thp.CommandCase, "Control Commands":
         bathroom_light = fake.for_serial("d073d5000002")
         with bathroom_light.offline():
             expected["d073d5000002"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut", "status": 400}
-            await self.assertCommand(options
+            await server.assertPUT(self, "/v1/lifx/command"
                 , {"command": "query", "args": {"pkt_type": 101, "matcher": "power=on", "timeout": 0.1}}
                 , json_output = {"results": expected}
                 )
 
-        await self.assertCommand(options, {"command": "query", "args": {"pkt_type": "GetLabel"}}
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "query", "args": {"pkt_type": "GetLabel"}}
             , json_output=cthp.label_state_responses
             )
 
-        await self.assertCommand(options
+        await server.assertPUT(self, "/v1/lifx/command"
             , { "command": "query"
               , "args":
                 { "pkt_type": 502
@@ -83,7 +89,7 @@ describe thp.CommandCase, "Control Commands":
     async it "has set commands", options, fake, server:
         expected = {"results": {device.serial: "ok" for device in fake.devices}}
 
-        await self.assertCommand(options, {"command": "set", "args": {"pkt_type": "SetPower", "pkt_args": {"level": 0}}}
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "set", "args": {"pkt_type": "SetPower", "pkt_args": {"level": 0}}}
             , json_output = expected
             )
 
@@ -99,7 +105,7 @@ describe thp.CommandCase, "Control Commands":
                 , "status": 400
                 }
 
-            await self.assertCommand(options
+            await server.assertPUT(self, "/v1/lifx/command"
                 , {"command": "set", "args": {"pkt_type": "SetPower", "pkt_args": {"level": 65535}, "timeout": 0.1}}
                 , json_output = expected
                 )
@@ -112,7 +118,7 @@ describe thp.CommandCase, "Control Commands":
         kitchen_light = fake.for_attribute("label", "kitchen", expect=1)[0]
         expected = {"results": {kitchen_light.serial: "ok"}}
 
-        await self.assertCommand(options
+        await server.assertPUT(self, "/v1/lifx/command"
             , {"command": "set", "args": {"pkt_type": 24, "pkt_args": {"label": "blah"}, "matcher": "label=kitchen"}}
             , json_output = expected
             )
@@ -127,7 +133,7 @@ describe thp.CommandCase, "Control Commands":
         # Just power
         expected = {"results": {device.serial: "ok" for device in fake.devices}}
 
-        await self.assertCommand(options, {"command": "transform", "args": {"transform": {"power": "off"}}}
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "transform", "args": {"transform": {"power": "off"}}}
             , json_output = expected
             )
 
@@ -135,7 +141,7 @@ describe thp.CommandCase, "Control Commands":
             device.expectSetMessages(DeviceMessages.SetPower(level=0, res_required=False))
 
         # Just color
-        await self.assertCommand(options, {"command": "transform", "args": {"transform": {"color": "red", "effect": "sine"}}}
+        await server.assertPUT(self, "/v1/lifx/command", {"command": "transform", "args": {"transform": {"color": "red", "effect": "sine"}}}
             , json_output = expected
             )
 
@@ -152,7 +158,7 @@ describe thp.CommandCase, "Control Commands":
         tv_light = fake.for_attribute("label", "tv", expect=1)[0]
         with tv_light.offline():
             expected["results"]["d073d5000006"] = {'error': {'message': 'Timed out. Waiting for reply to a packet'}, "error_code": "TimedOut", "status": 400}
-            await self.assertCommand(options
+            await server.assertPUT(self, "/v1/lifx/command"
                 , {"command": "transform", "args": {"transform": {"power": "on", "color": "blue"}, "timeout": 0.2}}
                 , json_output = expected
                 )

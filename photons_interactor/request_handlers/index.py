@@ -1,4 +1,4 @@
-from photons_interactor.request_handlers.base import Simple
+from whirlwind.request_handlers.base import Simple
 
 import time
 

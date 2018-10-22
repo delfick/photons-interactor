@@ -1,9 +1,8 @@
 from photons_interactor.database.database import Scene, SceneInfo
-from photons_interactor.commander.commands.base import Command
 from photons_interactor.commander import default_fields as df
 from photons_interactor.commander.errors import NoSuchScene
-from photons_interactor.commander.decorator import command
 from photons_interactor.commander import helpers as chp
+from photons_interactor.commander.store import store
 
 from photons_app.errors import FoundNoDevices
 from photons_app import helpers as hp
@@ -19,12 +18,12 @@ from input_algorithms import spec_base as sb
 from collections import defaultdict
 import uuid
 
-@command(name="scene_info")
-class SceneInfoCommand(Command):
+@store.command(name="scene_info")
+class SceneInfoCommand(store.Command):
     """
     Retrieve information about scenes in the database
     """
-    db_queue = df.db_queue_field
+    db_queue = store.injected("db_queue")
 
     uuid = dictobj.NullableField(sb.listof(sb.string_spec())
         , help = "Only get information for scene with these uuid"
@@ -62,12 +61,12 @@ class SceneInfoCommand(Command):
             return dict(info)
         return await self.db_queue.request(get)
 
-@command(name="scene_change")
-class SceneChangeCommand(Command):
+@store.command(name="scene_change")
+class SceneChangeCommand(store.Command):
     """
     Set all the options for a scene
     """
-    db_queue = df.db_queue_field
+    db_queue = store.injected("db_queue")
 
     uuid = dictobj.NullableField(sb.string_spec
         , help = "The uuid of the scene to change, if None we create a new scene"
@@ -107,12 +106,12 @@ class SceneChangeCommand(Command):
             return scene_uuid
         return await self.db_queue.request(make)
 
-@command(name="scene_delete")
-class SceneDeleteCommand(Command):
+@store.command(name="scene_delete")
+class SceneDeleteCommand(store.Command):
     """
     Delete a scene
     """
-    db_queue = df.db_queue_field
+    db_queue = store.injected("db_queue")
 
     uuid = dictobj.Field(sb.string_spec, wrapper=sb.required
         , help = "The uuid of the scene to delete"
@@ -126,16 +125,17 @@ class SceneDeleteCommand(Command):
             return {"deleted": True}
         return await self.db_queue.request(delete)
 
-@command(name="scene_apply")
-class SceneApplyCommand(Command):
+@store.command(name="scene_apply")
+class SceneApplyCommand(store.Command):
     """
     Apply a scene
     """
-    finder = df.finder_field
-    target = df.target_field
+    finder = store.injected("finder")
+    target = store.injected("targets.lan")
+    db_queue = store.injected("db_queue")
+
     matcher = df.matcher_field
     timeout = df.timeout_field
-    db_queue = df.db_queue_field
 
     uuid = dictobj.Field(sb.string_spec, wrapper=sb.required
         , help = "The uuid of the scene to apply"
@@ -228,18 +228,19 @@ class SceneApplyCommand(Command):
             clone.cap = [c for c in clone.cap if c != f"not_{cap}"]
         return clone
 
-@command(name="scene_capture")
-class SceneCaptureCommand(Command):
+@store.command(name="scene_capture")
+class SceneCaptureCommand(store.Command):
     """
     Capture a scene
     """
-    finder = df.finder_field
-    target = df.target_field
+    path = store.injected("path")
+    finder = store.injected("finder")
+    target = store.injected("targets.lan")
+    db_queue = store.injected("db_queue")
+    executor = store.injected("executor")
+
     matcher = df.matcher_field
     refresh = df.refresh_field
-    db_queue = df.db_queue_field
-    commander = df.commander_field
-    progress_cb = df.progress_cb_field
 
     uuid = dictobj.NullableField(sb.string_spec
         , help = "The uuid of the scene to change, if None we create a new scene"
@@ -310,4 +311,4 @@ class SceneCaptureCommand(Command):
             , "label": self.label
             , "description": self.description
             }
-        return await self.commander.execute({"command": "scene_change", "args": args}, self.progress_cb)
+        return await self.executor.execute(self.path, {"command": "scene_change", "args": args})

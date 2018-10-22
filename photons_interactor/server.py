@@ -1,13 +1,15 @@
 from photons_interactor.request_handlers.command import CommandHandler, WSHandler
-from photons_interactor.request_handlers.base import wsconnections
 from photons_interactor.request_handlers.index import Index
 from photons_interactor.database.db_queue import DBQueue
-from photons_interactor.commander import Commander
 
 from photons_device_finder import DeviceFinder
 
+from whirlwind.server import Server, wait_for_futures
+from whirlwind.commander import Commander
 from tornado.web import StaticFileHandler
 from tornado.httpserver import HTTPServer
+from whirlwind.server import Server
+from functools import partial
 import tornado.web
 import tornado
 import logging
@@ -15,33 +17,15 @@ import time
 
 log = logging.getLogger("photons_interactor.server")
 
-class Server(object):
-    def __init__(self, final_future, server_options, cleaners, target_register, protocol_register):
-        self.cleaners = cleaners
+class Server(Server):
+    def __init__(self, final_future, store=None):
+        if store is None:
+            from photons_interactor.commander.store import store, load_commands
+            load_commands()
+
+        self.store = store
         self.final_future = final_future
-        self.server_options = server_options
-        self.target_register = target_register
-        self.protocol_register = protocol_register
-
-    async def serve(self):
-        await self.extra_futures()
-
-        s = self.server_options
-
-        http_server = HTTPServer(
-              tornado.web.Application(
-                  self.tornado_routes()
-                , cookie_secret = s.cookie_secret
-                )
-            )
-
-        log.info(f"Hosting server at http://{s.host}:{s.port}")
-
-        http_server.listen(s.port, s.host)
-        try:
-            await self.final_future
-        finally:
-            http_server.stop()
+        self.wsconnections = {}
 
     def tornado_routes(self):
         return [
@@ -51,7 +35,10 @@ class Server(object):
               )
             , ( "/v1/ws"
               , WSHandler
-              , {"commander": self.commander, "server_time": time.time()}
+              , { "commander": self.commander
+                , "server_time": time.time()
+                , "wsconnections": self.wsconnections
+                }
               )
             , ( r"/static/(.*)"
               , StaticFileHandler
@@ -62,7 +49,12 @@ class Server(object):
               )
             ]
 
-    async def extra_futures(self):
+    async def setup(self, server_options, cleaners, target_register, protocol_register):
+        self.cleaners = cleaners
+        self.server_options = server_options
+        self.target_register = target_register
+        self.protocol_register = protocol_register
+
         test_devices = None
         if self.server_options.fake_devices:
             from photons_interactor.commander import test_helpers as cthp
@@ -92,17 +84,11 @@ class Server(object):
             await self.finder.finish()
         self.cleaners.append(clean_finder)
 
-        async def wait_for_ws():
-            for t in list(wsconnections.values()):
-                if not t.done():
-                    try:
-                        await t
-                    except:
-                        pass
-        self.cleaners.append(wait_for_ws)
+        # Make sure to wait for the wsconnections
+        self.cleaners.append(partial(wait_for_futures, self.wsconnections))
 
-        self.commander = Commander(
-              finder = self.finder
+        self.commander = Commander(self.store
+            , finder = self.finder
             , db_queue = self.db_queue
             , test_devices = test_devices
             , final_future = self.final_future
