@@ -85,7 +85,7 @@ async def npm(collector, reference, **kwargs):
         except ImportError:
             raise PhotonsAppError('You must `pip install -e ".[tests]"` before you can run integration tests')
 
-        from photons_interactor.test_helpers import free_port, port_connected
+        from whirlwind.test_helpers import free_port, port_connected
         port = free_port()
         env = {"CYPRESS_BASE_URL": f"http://127.0.0.1:{port}"}
 
