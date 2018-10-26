@@ -13,7 +13,7 @@ setup(
       , "tornado==5.1.1"
       , "SQLAlchemy==1.2.10"
       , "alembic==1.0.0"
-      , "whirlwind-web==0.5"
+      , "whirlwind-web==0.5.2"
       ]
 
     , extras_require =
