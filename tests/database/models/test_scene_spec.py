@@ -4,9 +4,7 @@ from photons_interactor.database.models import scene_spec
 
 from photons_app.test_helpers import TestCase, print_packet_difference
 
-from photons_device_messages import DeviceMessages
-from photons_multizone import MultiZoneMessages
-from photons_tile_messages import TileMessages
+from photons_messages import DeviceMessages, MultiZoneMessages, TileMessages
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms.errors import BadSpecValue

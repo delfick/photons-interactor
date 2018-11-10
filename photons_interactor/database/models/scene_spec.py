@@ -1,6 +1,4 @@
-from photons_device_messages import DeviceMessages
-from photons_multizone import MultiZoneMessages
-from photons_tile_messages import TileMessages
+from photons_messages import DeviceMessages, MultiZoneMessages, TileMessages
 
 from input_algorithms.errors import BadSpecValue
 from input_algorithms.dictobj import dictobj

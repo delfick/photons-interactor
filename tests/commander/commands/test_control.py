@@ -6,7 +6,7 @@ from photons_interactor import test_helpers as thp
 
 from photons_app.test_helpers import AsyncTestCase
 
-from photons_device_messages import DeviceMessages
+from photons_messages import DeviceMessages
 from photons_colour import Parser
 
 import json

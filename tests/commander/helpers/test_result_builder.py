@@ -5,7 +5,7 @@ from photons_interactor.commander import helpers as chp
 from photons_app.errors import PhotonsAppError
 from photons_app.test_helpers import TestCase
 
-from photons_device_messages import DeviceMessages
+from photons_messages import DeviceMessages
 
 import types
 

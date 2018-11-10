@@ -7,11 +7,8 @@ from photons_interactor.commander.store import store
 from photons_app.errors import FoundNoDevices
 from photons_app import helpers as hp
 
-from photons_transform.transformer import Transformer
-from photons_device_messages import DeviceMessages
-from photons_multizone import MultiZoneMessages
-from photons_tile_messages import TileMessages
-from photons_colour import ColourMessages
+from photons_messages import DeviceMessages, MultiZoneMessages, TileMessages, ColourMessages
+from photons_control.transform import Transformer
 
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb

@@ -5,6 +5,8 @@ from photons_interactor.server import Server
 from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import AsyncTestCase
 
+from photons_messages import protocol_register
+
 from whirlwind import test_helpers as thp
 from unittest import mock
 import tempfile
@@ -59,7 +61,6 @@ class ServerRunner(thp.ServerRunner):
 def make_server(store, wrapper, **kwargs):
     final_future = asyncio.Future()
 
-    protocol_register = cthp.make_protocol_register()
     if "device_finder_options" not in kwargs:
         kwargs["device_finder_options"] = {"repeat_spread": 0.01}
     options = make_options("127.0.0.1", thp.free_port(), **kwargs)

@@ -1,15 +1,10 @@
 from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import print_packet_difference
-from photons_app.registers import ProtocolRegister
 from photons_app.errors import PhotonsAppError
 
+from photons_messages import DeviceMessages, MultiZoneMessages, ColourMessages, protocol_register
 from photons_products_registry import LIFIProductRegistry, capability_for_ids
 from photons_socket.fake import FakeDevice, MemorySocketTarget
-from photons_socket.messages import DiscoveryMessages
-from photons_device_messages import DeviceMessages
-from photons_multizone import MultiZoneMessages
-from photons_protocol.frame import LIFXPacket
-from photons_colour import ColourMessages
 
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
@@ -22,19 +17,10 @@ import uuid
 class NotFound(PhotonsAppError):
     desc = "Couldn't find device"
 
-def make_protocol_register():
-    protocol_register = ProtocolRegister()
-    protocol_register.add(1024, LIFXPacket)
-    protocol_register.message_register(1024).add(MultiZoneMessages)
-    protocol_register.message_register(1024).add(DiscoveryMessages)
-    protocol_register.message_register(1024).add(DeviceMessages)
-    protocol_register.message_register(1024).add(ColourMessages)
-    return protocol_register
-
 def make_memory_target(final_future):
     everything = {
           "final_future": final_future
-        , "protocol_register": make_protocol_register()
+        , "protocol_register": protocol_register
         }
     meta = Meta(everything, []).at("target")
     return MemorySocketTarget.FieldSpec(formatter=MergedOptionStringFormatter).normalise(meta, {})

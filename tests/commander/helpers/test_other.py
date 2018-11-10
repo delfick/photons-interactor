@@ -7,8 +7,7 @@ from photons_app.test_helpers import TestCase, AsyncTestCase
 from photons_app.registers import ProtocolRegister
 from photons_app.errors import PhotonsAppError
 
-from photons_device_messages import DeviceMessages
-from photons_protocol.frame import LIFXPacket
+from photons_messages import DeviceMessages, LIFXPacket
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms import spec_base as sb
