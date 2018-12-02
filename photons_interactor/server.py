@@ -1,4 +1,5 @@
 from photons_interactor.request_handlers.command import CommandHandler, WSHandler
+from photons_interactor.commander.commands.animations import AnimationsStore
 from photons_interactor.request_handlers.index import Index
 from photons_interactor.database.db_queue import DBQueue
 
@@ -7,11 +8,7 @@ from photons_device_finder import DeviceFinder
 from whirlwind.server import Server, wait_for_futures
 from whirlwind.commander import Commander
 from tornado.web import StaticFileHandler
-from tornado.httpserver import HTTPServer
-from whirlwind.server import Server
 from functools import partial
-import tornado.web
-import tornado
 import logging
 import time
 
@@ -78,6 +75,8 @@ class Server(Server):
             , **self.server_options.device_finder_options
             )
 
+        self.animations = AnimationsStore()
+
         await self.finder.start()
 
         async def clean_finder():
@@ -90,6 +89,7 @@ class Server(Server):
         self.commander = Commander(self.store
             , finder = self.finder
             , db_queue = self.db_queue
+            , animations = self.animations
             , test_devices = test_devices
             , final_future = self.final_future
             , server_options = self.server_options
