@@ -1,5 +1,6 @@
 # coding: spec
 
+from photons_interactor.commander.commands.animations import AnimationsStore
 from photons_interactor import test_helpers as thp
 from photons_interactor.options import Options
 from photons_interactor.server import Server
@@ -77,12 +78,14 @@ describe AsyncTestCase, "Server":
 
             self.assertIs(server.commander, commander)
             self.assertIs(server.finder, finder)
+            self.assertIsInstance(server.animations, AnimationsStore)
 
             from photons_interactor.commander.store import store
 
             FakeCommander.assert_called_once_with(store
                 , finder = finder
                 , db_queue = db_queue
+                , animations = server.animations
                 , test_devices = None
                 , final_future = self.final_future
                 , server_options = options
