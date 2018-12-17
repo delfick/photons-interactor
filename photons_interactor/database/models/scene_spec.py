@@ -1,4 +1,4 @@
-from photons_messages import DeviceMessages, MultiZoneMessages, TileMessages
+from photons_messages import LightMessages, MultiZoneMessages, TileMessages
 
 from input_algorithms.errors import BadSpecValue
 from input_algorithms.dictobj import dictobj
@@ -109,7 +109,7 @@ def make_spec(storing=True):
 
                 if power is not None:
                     level = 0 if power not in (True, "on") else 65535
-                    return DeviceMessages.SetLightPower(level=level, duration=duration)
+                    return LightMessages.SetLightPower(level=level, duration=duration)
 
             def determine_duration(self, overrides):
                 return overrides.get("duration", self.duration) or 0
@@ -133,14 +133,14 @@ def make_spec(storing=True):
                         color = colors[i]
                         continue
                     if colors[i] != color:
-                        yield MultiZoneMessages.SetMultiZoneColorZones(start_index=start, end_index=i - 1, **color, duration=duration
+                        yield MultiZoneMessages.SetColorZones(start_index=start, end_index=i - 1, **color, duration=duration
                             , res_required = False
                             )
                         color = colors[i]
                         start = i
 
                 color = colors[i]
-                yield MultiZoneMessages.SetMultiZoneColorZones(start_index=start, end_index=i, **color, duration=duration
+                yield MultiZoneMessages.SetColorZones(start_index=start, end_index=i, **color, duration=duration
                     , res_required = False
                     )
 
@@ -152,7 +152,7 @@ def make_spec(storing=True):
                 duration = self.determine_duration(overrides)
                 for i, lst in enumerate(self.chain):
                     colors = self.colors_from_hsbks(lst, overrides)
-                    yield TileMessages.SetTileState64(tile_index=i, length=1, x=0, y=0, width=8, duration=duration, colors=colors
+                    yield TileMessages.SetState64(tile_index=i, length=1, x=0, y=0, width=8, duration=duration, colors=colors
                         , res_required = False
                         )
 

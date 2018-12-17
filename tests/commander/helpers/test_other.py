@@ -7,7 +7,7 @@ from photons_app.test_helpers import TestCase, AsyncTestCase
 from photons_app.registers import ProtocolRegister
 from photons_app.errors import PhotonsAppError
 
-from photons_messages import DeviceMessages, LIFXPacket
+from photons_messages import DeviceMessages, LightMessages, LIFXPacket
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms import spec_base as sb
@@ -90,10 +90,11 @@ describe TestCase, "find_packet":
         self.protocol_register = ProtocolRegister()
         self.protocol_register.add(1024, LIFXPacket)
         self.protocol_register.message_register(1024).add(DeviceMessages)
+        self.protocol_register.message_register(1024).add(LightMessages)
 
     it "can find a packet based on pkt_type integer":
         self.assertIs(chp.find_packet(self.protocol_register, 23), DeviceMessages.GetLabel)
-        self.assertIs(chp.find_packet(self.protocol_register, 116), DeviceMessages.GetLightPower)
+        self.assertIs(chp.find_packet(self.protocol_register, 116), LightMessages.GetLightPower)
 
     it "can find a packet based on pkt_type name":
         self.assertIs(chp.find_packet(self.protocol_register, "GetLabel"), DeviceMessages.GetLabel)
@@ -103,8 +104,8 @@ describe TestCase, "find_packet":
         with self.fuzzyAssertRaisesError(NoSuchPacket, wanted="GetWat"):
             chp.find_packet(self.protocol_register, "GetWat")
 
-        with self.fuzzyAssertRaisesError(NoSuchPacket, wanted=101):
-            chp.find_packet(self.protocol_register, 101)
+        with self.fuzzyAssertRaisesError(NoSuchPacket, wanted=9001):
+            chp.find_packet(self.protocol_register, 9001)
 
 describe TestCase, "make_message":
     it "instantiates the kls without args if no pkt_args":
@@ -122,11 +123,11 @@ describe TestCase, "make_message":
         pkt_type = mock.Mock(name="pkt_type")
         protocol_register = mock.Mock(name="protocol_register")
 
-        find_packet = mock.Mock(name="find_packet", return_value=DeviceMessages.SetLightPower)
+        find_packet = mock.Mock(name="find_packet", return_value=LightMessages.SetLightPower)
         with mock.patch("photons_interactor.commander.helpers.find_packet", find_packet):
             pkt = chp.make_message(protocol_register, pkt_type, {"level": 65535, "duration": 10})
 
-        assert isinstance(pkt, DeviceMessages.SetLightPower)
+        assert isinstance(pkt, LightMessages.SetLightPower)
         self.assertEqual(pkt.payload.as_dict(), {"level": 65535, "duration": 10})
         find_packet.assert_called_once_with(protocol_register, pkt_type)
 

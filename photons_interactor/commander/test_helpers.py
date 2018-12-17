@@ -2,7 +2,7 @@ from photons_app.formatter import MergedOptionStringFormatter
 from photons_app.test_helpers import print_packet_difference
 from photons_app.errors import PhotonsAppError
 
-from photons_messages import DeviceMessages, MultiZoneMessages, ColourMessages, protocol_register
+from photons_messages import DeviceMessages, MultiZoneMessages, LightMessages, protocol_register
 from photons_products_registry import LIFIProductRegistry, capability_for_ids
 from photons_socket.fake import FakeDevice, MemorySocketTarget
 
@@ -236,7 +236,7 @@ class Device(FakeDevice):
         return capability_for_ids(self.product_id, self.vendor_id)
 
     def light_state_message(self):
-        return ColourMessages.LightState(
+        return LightMessages.LightState(
               hue = self.hue
             , saturation = self.saturation
             , brightness = self.brightness
@@ -272,7 +272,7 @@ class Device(FakeDevice):
 
             if repr(got.payload) != repr(want.payload):
                 print_packet_difference(got, want)
-            assert repr(got.payload) == repr(want.payload), f"{self.serial}: msg#{i}: Expected payloads to be the same, got {repr(got.payload)}, want {repr(want.payload)}"
+            assert got.simplify().payload == want.simplify().payload, f"{self.serial}: msg#{i}: Expected payloads to be the same, got {repr(got.payload)}, want {repr(want.payload)}"
 
             assert got.res_required == want.res_required, f"{self.serial}: msg#{i}: Expected same res_required, got {got}, want {want}"
             assert got.ack_required == want.ack_required, f"{self.serial}: msg#{i}: Expected same ack_required, got {got}, want {want}"
@@ -285,10 +285,10 @@ class Device(FakeDevice):
         else:
             self.sets.append(pkt)
 
-        if pkt | DeviceMessages.GetInfrared:
-            return DeviceMessages.StateInfrared(level=self.infrared)
+        if pkt | LightMessages.GetInfrared:
+            return LightMessages.StateInfrared(level=self.infrared)
 
-        if pkt | ColourMessages.GetColor:
+        if pkt | LightMessages.GetColor:
             return self.light_state_message()
 
         elif pkt | DeviceMessages.GetVersion:
@@ -318,7 +318,7 @@ class Device(FakeDevice):
                 , updated_at = self.location_updated_at
                 )
 
-        elif pkt | ColourMessages.SetWaveFormOptional or pkt | ColourMessages.SetColor:
+        elif pkt | LightMessages.SetWaveformOptional or pkt | LightMessages.SetColor:
             self.change_hsbk(Color(pkt.hue, pkt.saturation, pkt.brightness, pkt.kelvin))
             return self.light_state_message()
 
@@ -329,19 +329,24 @@ class Device(FakeDevice):
         elif pkt | DeviceMessages.GetLabel:
             return DeviceMessages.StateLabel(label=self.label)
 
-        elif pkt | DeviceMessages.SetPower or pkt | DeviceMessages.SetLightPower:
+        elif pkt | DeviceMessages.SetPower:
             res = DeviceMessages.StatePower(level=pkt.level)
             self.change_power(pkt.level)
             return res
 
-        elif pkt | MultiZoneMessages.GetMultiZoneColorZones and self.capability.has_multizone:
+        elif pkt | LightMessages.SetLightPower:
+            res = LightMessages.StateLightPower(level=pkt.level)
+            self.change_power(pkt.level)
+            return res
+
+        elif pkt | MultiZoneMessages.GetColorZones and self.capability.has_multizone:
             colors = []
             for i in range(16):
                 colors.append(Color(i * 10, 1, 1, 2500).as_dict())
 
             return [
-                  MultiZoneMessages.StateMultiZoneStateMultiZones(num_zones=16, zone_index=0, colors=colors[:8])
-                , MultiZoneMessages.StateMultiZoneStateMultiZones(num_zones=16, zone_index=8, colors=colors[8:])
+                  MultiZoneMessages.StateMultiZone(zones_count=16, zone_index=0, colors=colors[:8])
+                , MultiZoneMessages.StateMultiZone(zones_count=16, zone_index=8, colors=colors[8:])
                 ]
 
 class Around:
@@ -675,10 +680,10 @@ multizone_state_responses = {
                             "saturation": 1.0
                         }
                     ],
-                    "num_zones": 16,
+                    "zones_count": 16,
                     "zone_index": 0
                 },
-                "pkt_name": "StateMultiZoneStateMultiZones",
+                "pkt_name": "StateMultiZone",
                 "pkt_type": 506
             },
             {
@@ -733,10 +738,10 @@ multizone_state_responses = {
                             "saturation": 1.0
                         }
                     ],
-                    "num_zones": 16,
+                    "zones_count": 16,
                     "zone_index": 8
                 },
-                "pkt_name": "StateMultiZoneStateMultiZones",
+                "pkt_name": "StateMultiZone",
                 "pkt_type": 506
             }
         ],
@@ -793,10 +798,10 @@ multizone_state_responses = {
                             "saturation": 1.0
                         },
                     ],
-                    "num_zones": 16,
+                    "zones_count": 16,
                     "zone_index": 0
                 },
-                "pkt_name": "StateMultiZoneStateMultiZones",
+                "pkt_name": "StateMultiZone",
                 "pkt_type": 506
             },
             {
@@ -851,10 +856,10 @@ multizone_state_responses = {
                             "saturation": 1.0
                         }
                     ],
-                    "num_zones": 16,
+                    "zones_count": 16,
                     "zone_index": 8
                 },
-                "pkt_name": "StateMultiZoneStateMultiZones",
+                "pkt_name": "StateMultiZone",
                 "pkt_type": 506
             }
         ]

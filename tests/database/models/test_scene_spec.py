@@ -4,7 +4,7 @@ from photons_interactor.database.models import scene_spec
 
 from photons_app.test_helpers import TestCase, print_packet_difference
 
-from photons_messages import DeviceMessages, MultiZoneMessages, TileMessages
+from photons_messages import LightMessages, MultiZoneMessages, TileMessages
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
 from input_algorithms.errors import BadSpecValue
@@ -403,28 +403,28 @@ describe TestCase, "make_spec":
 
                 msg = self.obj.power_message({"power": "on"})
                 self.assertEqual(msg
-                    , DeviceMessages.SetLightPower(level = 65535, duration=0)
+                    , LightMessages.SetLightPower(level = 65535, duration=0)
                     )
 
                 msg = self.obj.power_message({"power": True})
                 self.assertEqual(msg
-                    , DeviceMessages.SetLightPower(level = 65535, duration=0)
+                    , LightMessages.SetLightPower(level = 65535, duration=0)
                     )
 
                 msg = self.obj.power_message({"power": False})
                 self.assertEqual(msg
-                    , DeviceMessages.SetLightPower(level = 0, duration=0)
+                    , LightMessages.SetLightPower(level = 0, duration=0)
                     )
 
                 msg = self.obj.power_message({"power": "off"})
                 self.assertEqual(msg
-                    , DeviceMessages.SetLightPower(level = 0, duration=0)
+                    , LightMessages.SetLightPower(level = 0, duration=0)
                     )
 
                 self.obj.duration = 2
                 msg = self.obj.power_message({"power": "off"})
                 self.assertEqual(msg
-                    , DeviceMessages.SetLightPower(level = 0, duration=2)
+                    , LightMessages.SetLightPower(level = 0, duration=2)
                     )
 
             it "provides power if on the object":
@@ -433,13 +433,13 @@ describe TestCase, "make_spec":
 
                 msg = self.obj.power_message({})
                 self.assertEqual(msg
-                    , DeviceMessages.SetLightPower(level = 65535, duration=3)
+                    , LightMessages.SetLightPower(level = 65535, duration=3)
                     )
 
                 self.obj.power = False
                 msg = self.obj.power_message({})
                 self.assertEqual(msg
-                    , DeviceMessages.SetLightPower(level = 0, duration=3)
+                    , LightMessages.SetLightPower(level = 0, duration=3)
                     )
 
         describe "zone_msgs":
@@ -470,7 +470,7 @@ describe TestCase, "make_spec":
                     ):
                     itr = iter(self.obj.zone_msgs(self.overrides))
                     m = next(itr)
-                    self.assertIs(type(m), MultiZoneMessages.SetMultiZoneColorZones)
+                    self.assertIs(type(m), MultiZoneMessages.SetColorZones)
 
                 power_message.assert_called_once_with(self.overrides)
                 colors_from_hsbks.assert_called_once_with(self.obj.zones, self.overrides)
@@ -478,7 +478,7 @@ describe TestCase, "make_spec":
 
             describe "Yielding SetMultiZoneColorZones messages":
                 def setter(self, h, s, b, k, **kwargs):
-                    return MultiZoneMessages.SetMultiZoneColorZones(
+                    return MultiZoneMessages.SetColorZones(
                       hue = h, saturation = s, brightness = b, kelvin = k
                     , res_required=False
                     , **kwargs
@@ -579,15 +579,15 @@ describe TestCase, "make_spec":
                     ):
                     itr = iter(self.obj.chain_msgs(self.overrides))
                     m = next(itr)
-                    self.assertIs(type(m), TileMessages.SetTileState64)
+                    self.assertIs(type(m), TileMessages.SetState64)
 
                 power_message.assert_called_once_with(self.overrides)
                 colors_from_hsbks.assert_called_once_with(self.obj.chain[0], self.overrides)
                 determine_duration.assert_called_once_with(self.overrides)
 
-            describe "yielding SetTileState64 messages":
+            describe "yielding SetState64 messages":
                 def setter(self, **kwargs):
-                    return TileMessages.SetTileState64(
+                    return TileMessages.SetState64(
                           length=1
                         , x=0
                         , y=0

@@ -7,7 +7,7 @@ from photons_interactor.commander.store import store
 from photons_app.errors import FoundNoDevices
 from photons_app import helpers as hp
 
-from photons_messages import DeviceMessages, MultiZoneMessages, TileMessages, ColourMessages
+from photons_messages import DeviceMessages, MultiZoneMessages, TileMessages, LightMessages
 from photons_control.transform import Transformer
 
 from input_algorithms.dictobj import dictobj
@@ -264,27 +264,27 @@ class SceneCaptureCommand(store.Command):
             msgs.append(DeviceMessages.GetPower(target=serial))
 
             if "multizone" in info["cap"]:
-                msgs.append(MultiZoneMessages.GetMultiZoneColorZones(start_index=0, end_index=255, target=serial))
+                msgs.append(MultiZoneMessages.GetColorZones(start_index=0, end_index=255, target=serial))
             elif "chain" in info["cap"]:
-                msgs.append(TileMessages.GetTileState64(tile_index=0, length=5, x=0, y=0, width=8, target=serial))
+                msgs.append(TileMessages.GetState64(tile_index=0, length=5, x=0, y=0, width=8, target=serial))
             else:
-                msgs.append(ColourMessages.GetColor(target=serial))
+                msgs.append(LightMessages.GetColor(target=serial))
 
         state = defaultdict(dict)
         afr = await self.finder.args_for_run()
         async for pkt, _, _ in self.target.script(msgs).run_with(None, afr, multiple_replies=True, first_wait=0.5):
             if pkt | DeviceMessages.StatePower:
                 state[pkt.serial]["power"] = pkt.level != 0
-            elif pkt | ColourMessages.LightState:
+            elif pkt | LightMessages.LightState:
                 hsbk = f"kelvin:{pkt.kelvin} saturation:{pkt.saturation} brightness:{pkt.brightness} hue:{pkt.hue}"
                 state[pkt.serial]["color"] = hsbk
-            elif pkt | MultiZoneMessages.StateMultiZoneStateMultiZones:
+            elif pkt | MultiZoneMessages.StateMultiZone:
                 if "zones" not in state[pkt.serial]:
                     state[pkt.serial]["zones"] = {}
                 for i, zi in enumerate(range(pkt.zone_index, pkt.zone_index + 8)):
                     c = pkt.colors[i]
                     state[pkt.serial]["zones"][zi] = [c.hue, c.saturation, c.brightness, c.kelvin]
-            elif pkt | TileMessages.StateTileState64:
+            elif pkt | TileMessages.State64:
                 if "chain" not in state[pkt.serial]:
                     state[pkt.serial]["chain"] = {}
                 colors = [[c.hue, c.saturation, c.brightness, c.kelvin] for c in pkt.colors]
