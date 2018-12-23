@@ -81,6 +81,18 @@ function getPos(el) {
   return { x: lx, y: ly };
 }
 
+function x_y_for_evt(evt, offset) {
+  var s_x, s_y;
+  if (evt.clientX === undefined) {
+    s_x = evt.changedTouches[0].clientX - offset.x;
+    s_y = evt.changedTouches[0].clientY - offset.y;
+  } else {
+    s_x = evt.clientX - offset.x;
+    s_y = evt.clientY - offset.y;
+  }
+  return [s_x, s_y];
+}
+
 class Power extends React.Component {
   constructor(props) {
     super(props);
@@ -103,6 +115,7 @@ class Power extends React.Component {
       <Group>
         <Arc
           onClick={::this.clicked}
+          onTap={::this.clicked}
           angle={70}
           rotation={90 - 35}
           x={center_x}
@@ -113,6 +126,7 @@ class Power extends React.Component {
         />
         <Arc
           onClick={::this.clicked}
+          onTap={::this.clicked}
           x={this.props.width / 2}
           y={arc_top}
           angle={280}
@@ -123,6 +137,7 @@ class Power extends React.Component {
         />
         <Line
           onClick={::this.clicked}
+          onTap={::this.clicked}
           points={[
             this.props.width / 2,
             arc_top - 10,
@@ -140,8 +155,7 @@ class Power extends React.Component {
 class DraggableArc extends React.Component {
   clickArcs(e) {
     const offset = getPos(e.target.getStage().attrs.container);
-    const s_x = e.evt.clientX - offset.x;
-    const s_y = e.evt.clientY - offset.y;
+    const [s_x, s_y] = x_y_for_evt(e.evt, offset);
 
     var nodes = e.target.getParent().getChildren();
     var point = { x: s_x, y: s_y };
@@ -219,6 +233,7 @@ class DraggableArc extends React.Component {
           x={center_x}
           y={center_y}
           onClick={::this.clickArcs}
+          onTap={::this.clickArcs}
           innerRadius={inner_radius}
           outerRadius={outer_radius}
           fillRadialGradientStartRadius={inner_radius}
@@ -532,14 +547,14 @@ export class ColourPicker extends React.Component {
 
   dragstart(e) {
     const offset = getPos(e.target.getStage().attrs.container);
-    this.h_x = e.evt.clientX - offset.x;
-    this.h_y = e.evt.clientY - offset.y;
+    const [s_x, s_y] = x_y_for_evt(e.evt, offset);
+    this.h_x = s_x;
+    this.h_y = s_y;
   }
 
   dragmove(e) {
     const offset = getPos(e.target.getStage().attrs.container);
-    const s_x = e.evt.clientX - offset.x;
-    const s_y = e.evt.clientY - offset.y;
+    const [s_x, s_y] = x_y_for_evt(e.evt, offset);
     var s_rad = Math.atan2(s_y - this.center_y, s_x - this.center_x);
     s_rad -= Math.atan2(this.h_y - this.center_y, this.h_x - this.center_x);
     s_rad += this.last_angle;
@@ -550,8 +565,7 @@ export class ColourPicker extends React.Component {
 
   dragend(e) {
     const offset = getPos(e.target.getStage().attrs.container);
-    const s_x = e.evt.clientX - offset.x;
-    const s_y = e.evt.clientY - offset.y;
+    const [s_x, s_y] = x_y_for_evt(e.evt, offset);
 
     var s_rad = Math.atan2(s_y - this.center_y, s_x - this.center_x);
     s_rad -= Math.atan2(this.h_y - this.center_y, this.h_x - this.center_x);
@@ -665,6 +679,7 @@ export class ColourPicker extends React.Component {
               center_x={this.center_x}
               center_y={this.center_y}
               onClick={::this.clickColours}
+              onTap={::this.clickColours}
               onDragStart={::this.dragstart}
               onDragMove={::this.dragmove}
               onDragEnd={::this.dragend}
@@ -672,6 +687,7 @@ export class ColourPicker extends React.Component {
             <Power
               on={this.state.on}
               onClick={::this.power_clicked}
+              onTap={::this.power_clicked}
               events={this.events}
               width={this.props.width}
               height={this.props.height}
