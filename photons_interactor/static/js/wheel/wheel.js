@@ -62,7 +62,7 @@ function angle_to_kelvin(angle) {
 }
 
 function kelvin_to_angle(kelvin) {
-  return (kelvin - 1500) * 360 / (9000 - 1500);
+  return ((kelvin - 1500) * 360) / (9000 - 1500);
 }
 
 function normal_hue(hue) {
@@ -254,7 +254,7 @@ class Brightness extends React.Component {
     const lines = [];
     for (let i = 0; i < 16; i++) {
       let y = i * (this.props.height / 15) + pos_y;
-      let l = 100 - Math.round(100 * Math.abs(y - center_y) / center_y);
+      let l = 100 - Math.round((100 * Math.abs(y - center_y)) / center_y);
       let stroke = "hsl(0,0%," + l + "%)";
       lines.push({ i, y, stroke });
     }
@@ -309,14 +309,14 @@ class Brightness extends React.Component {
             />
           </Group>
           <Group>
-            {lines.map(l =>
+            {lines.map(l => (
               <Line
                 key={l.i}
                 points={[center_x - 10, l.y, center_x + 10, l.y]}
                 stroke={l.stroke}
                 strokeWidth={1}
               />
-            )}
+            ))}
           </Group>
         </Group>
       </Group>
@@ -630,15 +630,15 @@ export class ColourPicker extends React.Component {
               align="center"
               width={this.props.width}
             />
-            {this.props.white
-              ? <Text
-                  y={30}
-                  fontSize={24}
-                  text={kelvinText}
-                  align="center"
-                  width={this.props.width}
-                />
-              : null}
+            {this.props.white ? (
+              <Text
+                y={30}
+                fontSize={24}
+                text={kelvinText}
+                align="center"
+                width={this.props.width}
+              />
+            ) : null}
           </Layer>
         </Stage>
         <Stage width={this.props.width} height={this.props.height}>
@@ -681,30 +681,32 @@ export class ColourPicker extends React.Component {
               outer_radius={this.outer_radius}
             />
           </Layer>
-          {this.props.white
-            ? <Layer>
-                <Line
-                  points={[
-                    this.center_x,
-                    this.center_y - this.outer_radius,
-                    this.center_x,
-                    this.center_y - this.inner_radius
-                  ]}
-                  stroke="black"
-                  strokeWidth={3}
-                />
-              </Layer>
-            : <SaturationControl
-                center_x={this.center_x}
-                center_y={this.center_y}
-                inner_radius={this.inner_radius}
-                outer_radius={this.outer_radius}
-                onDragMove={::this.drag_saturation}
-                refs={this.extra_refs}
-                on={this.state.on}
-                hue={this.tweener.getTweeningValue("hue")}
-                saturation={this.state.saturation}
-              />}
+          {this.props.white ? (
+            <Layer>
+              <Line
+                points={[
+                  this.center_x,
+                  this.center_y - this.outer_radius,
+                  this.center_x,
+                  this.center_y - this.inner_radius
+                ]}
+                stroke="black"
+                strokeWidth={3}
+              />
+            </Layer>
+          ) : (
+            <SaturationControl
+              center_x={this.center_x}
+              center_y={this.center_y}
+              inner_radius={this.inner_radius}
+              outer_radius={this.outer_radius}
+              onDragMove={::this.drag_saturation}
+              refs={this.extra_refs}
+              on={this.state.on}
+              hue={this.tweener.getTweeningValue("hue")}
+              saturation={this.state.saturation}
+            />
+          )}
         </Stage>
       </div>
     );
