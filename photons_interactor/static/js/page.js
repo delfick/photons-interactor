@@ -55,7 +55,7 @@ const Page = connect()(({ width, children, classes, dispatch }) => (
           >
             Interactor
           </Typography>
-          <Hidden smUp implementation="css">
+          <Hidden mdUp implementation="css">
             <IconButton
               className={classes.menuButton}
               color="inherit"
