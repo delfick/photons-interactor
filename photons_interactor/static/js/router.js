@@ -1,4 +1,5 @@
 import { DevicesState } from "./device/state.js";
+import { TilesPage } from "./tiles/page.js";
 import Dashboard from "./dashboard.js";
 import Page from "./page.js";
 
@@ -9,6 +10,9 @@ import { router } from "redux-saga-router";
 export const routes = {
   "/": function* indexSaga() {
     yield put(DevicesState.GetSerials());
+  },
+  "/tiles": function* indexSaga() {
+    yield put(DevicesState.Refresh());
   }
 };
 
@@ -16,10 +20,25 @@ export const routerFork = history => fork(router, history, routes);
 
 export const Routes = ({ history }) => (
   <Router history={history}>
-    <Page>
-      <Switch>
-        <Route exact path="/" component={Dashboard} />
-      </Switch>
-    </Page>
+    <Switch>
+      <Route
+        exact
+        path="/"
+        render={props => (
+          <Page {...props}>
+            <Dashboard />
+          </Page>
+        )}
+      />
+      <Route
+        exact
+        path="/tiles"
+        render={props => (
+          <Page {...props}>
+            <TilesPage />
+          </Page>
+        )}
+      />
+    </Switch>
   </Router>
 );

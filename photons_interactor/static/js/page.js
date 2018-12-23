@@ -1,16 +1,21 @@
 import { ControlPane } from "./control/component.js";
 import { ControlState } from "./control/state.js";
+import { history } from "./history.js";
 
 import { connect } from "react-redux";
+import { Route } from "react-router";
 import PropTypes from "prop-types";
 import React from "react";
 
+import VideoLibraryIcon from "@material-ui/icons/VideoLibrary";
+import DashboardIcon from "@material-ui/icons/Dashboard";
 import { withStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 import IconButton from "@material-ui/core/IconButton";
 import withWidth from "@material-ui/core/withWidth";
 import Toolbar from "@material-ui/core/Toolbar";
 import EditIcon from "@material-ui/icons/Edit";
+import Button from "@material-ui/core/Button";
 import Hidden from "@material-ui/core/Hidden";
 import AppBar from "@material-ui/core/AppBar";
 import Grid from "@material-ui/core/Grid";
@@ -32,46 +37,87 @@ const styles = theme => ({
     padding: theme.spacing.unit * 3,
     minWidth: 0 // So the Typography noWrap works
   },
-  grow: { flexGrow: 1 },
   menuButton: {
-    marginLeft: -12
+    marginLeft: -12,
+    float: "right"
   },
   toolbar: theme.mixins.toolbar,
   appBar: {
     zIndex: theme.zIndex.drawer + 1
+  },
+  navButton: {
+    marginLeft: theme.spacing.unit * 2,
+    margin: theme.spacing.unit
+  },
+  navLeftIcon: {
+    marginRight: theme.spacing.unit
+  },
+  toolbarRightButtons: {
+    marginLeft: "auto",
+    marginRight: -12
   }
 });
 
-const Page = connect()(({ width, children, classes, dispatch }) => (
+const Page = connect()(({ location, width, children, classes, dispatch }) => (
   <div>
     <div className={classes.root}>
       <AppBar position="absolute" className={classes.appBar}>
         <Toolbar>
-          <Typography
-            variant="title"
-            color="inherit"
-            className={classes.grow}
-            noWrap
-          >
+          <Typography variant="title" color="inherit" noWrap>
             Interactor
           </Typography>
-          <Hidden mdUp implementation="css">
-            <IconButton
-              className={classes.menuButton}
-              color="inherit"
-              aria-label="Control"
-              onClick={e => dispatch(ControlState.Toggle())}
+          {location.pathname === "/" ? (
+            <Button
+              variant="contained"
+              color="default"
+              className={classes.navButton}
+              href="/tiles"
+              onClick={e => {
+                e.preventDefault();
+                history.push("/tiles");
+              }}
             >
-              <EditIcon />
-            </IconButton>
-          </Hidden>
+              <VideoLibraryIcon className={classes.navLeftIcon} />
+              Tiles
+            </Button>
+          ) : null}
+          {location.pathname === "/" ? (
+            <Hidden
+              mdUp
+              implementation="css"
+              className={classes.toolbarRightButtons}
+            >
+              <IconButton
+                className={classes.menuButton}
+                color="inherit"
+                aria-label="Control"
+                onClick={e => dispatch(ControlState.Toggle())}
+              >
+                <EditIcon />
+              </IconButton>
+            </Hidden>
+          ) : (
+            <Button
+              variant="contained"
+              color="default"
+              className={classes.navButton}
+              href="/tiles"
+              onClick={e => {
+                e.preventDefault();
+                history.push("/");
+              }}
+            >
+              <DashboardIcon className={classes.navLeftIcon} />
+              Home
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
       <main className={classes.content}>
         <div className={classes.toolbar} />
         {children}
       </main>
-      <ControlPane />
+      {location.pathname === "/" ? <ControlPane /> : null}
     </div>
   </div>
 ));
