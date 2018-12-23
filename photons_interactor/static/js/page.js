@@ -1,5 +1,7 @@
 import { ControlPane } from "./control/component.js";
+import { ControlState } from "./control/state.js";
 
+import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import React from "react";
 
@@ -9,6 +11,8 @@ import IconButton from "@material-ui/core/IconButton";
 import withWidth from "@material-ui/core/withWidth";
 import Toolbar from "@material-ui/core/Toolbar";
 import MenuIcon from "@material-ui/icons/Menu";
+import EditIcon from "@material-ui/icons/Edit";
+import Hidden from "@material-ui/core/Hidden";
 import AppBar from "@material-ui/core/AppBar";
 import Grid from "@material-ui/core/Grid";
 
@@ -29,9 +33,9 @@ const styles = theme => ({
     padding: theme.spacing.unit * 3,
     minWidth: 0 // So the Typography noWrap works
   },
+  grow: { flexGrow: 1 },
   menuButton: {
-    marginLeft: -12,
-    marginRight: 20
+    marginLeft: -12
   },
   toolbar: theme.mixins.toolbar,
   appBar: {
@@ -39,33 +43,46 @@ const styles = theme => ({
   }
 });
 
-const Page = ({ width, children, classes }) => {
-  return (
-    <div>
-      <div className={classes.root}>
-        <AppBar position="absolute" className={classes.appBar}>
-          <Toolbar>
+const Page = connect()(({ width, children, classes, dispatch }) => (
+  <div>
+    <div className={classes.root}>
+      <AppBar position="absolute" className={classes.appBar}>
+        <Toolbar>
+          <IconButton
+            className={classes.menuButton}
+            color="inherit"
+            aria-label="Menu"
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography
+            variant="title"
+            color="inherit"
+            className={classes.grow}
+            noWrap
+          >
+            Interactor
+          </Typography>
+          <Hidden smUp implementation="css">
             <IconButton
               className={classes.menuButton}
               color="inherit"
-              aria-label="Menu"
+              aria-label="Control"
+              onClick={e => dispatch(ControlState.Toggle())}
             >
-              <MenuIcon />
+              <EditIcon />
             </IconButton>
-            <Typography variant="title" color="inherit" noWrap>
-              Interactor
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <main className={classes.content}>
-          <div className={classes.toolbar} />
-          {children}
-        </main>
-        <ControlPane />
-      </div>
+          </Hidden>
+        </Toolbar>
+      </AppBar>
+      <main className={classes.content}>
+        <div className={classes.toolbar} />
+        {children}
+      </main>
+      <ControlPane />
     </div>
-  );
-};
+  </div>
+));
 
 Page.propTypes = {
   classes: PropTypes.object.isRequired
