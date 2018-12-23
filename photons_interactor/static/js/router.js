@@ -9,17 +9,17 @@ import { router } from "redux-saga-router";
 export const routes = {
   "/": function* indexSaga() {
     yield put(DevicesState.GetSerials());
-    yield put(DevicesState.GetDetails());
   }
 };
 
 export const routerFork = history => fork(router, history, routes);
 
-export const Routes = ({ history }) =>
+export const Routes = ({ history }) => (
   <Router history={history}>
     <Page>
       <Switch>
         <Route exact path="/" component={Dashboard} />
       </Switch>
     </Page>
-  </Router>;
+  </Router>
+);

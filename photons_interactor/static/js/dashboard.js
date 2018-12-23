@@ -10,13 +10,45 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 import { withStyles } from "@material-ui/core/styles";
 import Typography from "@material-ui/core/Typography";
 import Grid from "@material-ui/core/Grid";
+import AppBar from "@material-ui/core/AppBar";
+import Toolbar from "@material-ui/core/Toolbar";
+import RefreshIcon from "@material-ui/icons/Refresh";
+import Divider from "@material-ui/core/Divider";
+import Button from "@material-ui/core/Button";
 
 const styles = theme => ({
   devices: {
     flexGrow: 1,
     marginTop: "10px"
+  },
+  bar: { flexGrow: 1 },
+  devicesTitle: {
+    borderRight: "0.1em solid black",
+    padding: "8px 16px 8px 0px"
   }
 });
+
+const DashboardBar = withStyles(styles)(
+  connect((state, ownProps) => ({}))(({ classes, dispatch }) => (
+    <div className={classes.bar}>
+      <AppBar position="static" color="default">
+        <Toolbar>
+          <Typography
+            className={classes.devicesTitle}
+            variant="title"
+            color="inherit"
+          >
+            Devices
+          </Typography>
+          <Divider />
+          <Button onClick={e => dispatch(DevicesState.Refresh())}>
+            <RefreshIcon />
+          </Button>
+        </Toolbar>
+      </AppBar>
+    </div>
+  ))
+);
 
 var dashconnector = connect((state, ownProps) => ({
   error: state.devices.error,
@@ -24,9 +56,9 @@ var dashconnector = connect((state, ownProps) => ({
   loading: state.devices.loading
 }));
 const Dashboard = dashconnector(
-  ({ error, loading, serials, width, classes, spacing, dispatch }) =>
+  ({ error, loading, serials, width, classes, spacing, dispatch }) => (
     <div>
-      <Typography variant="display2">Devices</Typography>
+      <DashboardBar />
       <ShowError error={error} clearer={DevicesState.ClearError()} />
       <Grid container className={classes.devices} spacing={16}>
         <Grid item xs={12}>
@@ -37,15 +69,16 @@ const Dashboard = dashconnector(
             spacing={16}
           >
             {loading ? <CircularProgress /> : null}
-            {serials.map(serial =>
+            {serials.map(serial => (
               <Grid key={serial} item>
                 <Bulb serial={serial} />
               </Grid>
-            )}
+            ))}
           </Grid>
         </Grid>
       </Grid>
     </div>
+  )
 );
 
 Dashboard.propTypes = {

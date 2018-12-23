@@ -14,6 +14,8 @@ class DevicesStateKls {
   }));
   GotDetails = createAction("Got details");
 
+  Refresh = createAction("Refresh devices");
+
   DetailsError = createAction("Error getting information");
   ClearError = createAction("Clear the error");
 
@@ -27,7 +29,16 @@ class DevicesStateKls {
           return {
             ...state,
             devices: devices || {},
+            serials: Object.keys(devices).sort(),
             loading: false
+          };
+        },
+        [this.Refresh]: (state, payload) => {
+          return {
+            ...state,
+            serials: [],
+            devices: {},
+            loading: true
           };
         },
         [this.DetailsError]: (state, { error }) => {
@@ -84,9 +95,24 @@ function* getSerialsSaga(original) {
   );
 }
 
-export function* deviceSaga() {
-  yield takeLatest(DevicesState.GetSerials, getSerialsSaga);
-  yield takeLatest(DevicesState.GetDetails, getDetailsSaga);
+function* gotSerialsSaga(original) {
+  yield put(DevicesState.GetDetails());
 }
 
-export const fortests = { getDetailsSaga, getSerialsSaga };
+function* refreshSaga(original) {
+  yield put(DevicesState.GetDetails(true));
+}
+
+export function* deviceSaga() {
+  yield takeLatest(DevicesState.GetSerials, getSerialsSaga);
+  yield takeLatest(DevicesState.GotSerials, gotSerialsSaga);
+  yield takeLatest(DevicesState.GetDetails, getDetailsSaga);
+  yield takeLatest(DevicesState.Refresh, refreshSaga);
+}
+
+export const fortests = {
+  getDetailsSaga,
+  getSerialsSaga,
+  gotSerialsSaga,
+  refreshSaga
+};

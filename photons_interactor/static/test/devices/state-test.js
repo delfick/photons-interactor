@@ -20,7 +20,15 @@ describe("Devices Sagas", () => {
       );
       assert.deepEqual(
         saga.next().value,
+        takeLatest(DevicesState.GotSerials, devicemod.gotSerialsSaga)
+      );
+      assert.deepEqual(
+        saga.next().value,
         takeLatest(DevicesState.GetDetails, devicemod.getDetailsSaga)
+      );
+      assert.deepEqual(
+        saga.next().value,
+        takeLatest(DevicesState.Refresh, devicemod.refreshSaga)
       );
       assert(saga.next().done);
     });
@@ -104,6 +112,28 @@ describe("Devices Sagas", () => {
         command: "discover",
         args: { refresh: true, four: 4 }
       });
+    });
+  });
+
+  describe("gotSerialsSaga", () => {
+    it("asks for a GetDetails()", () => {
+      var original = DevicesState.Refresh();
+      var saga = devicemod.gotSerialsSaga(original);
+      var result = saga.next().value;
+      var payload = result.PUT.action;
+      assert.deepEqual(payload, DevicesState.GetDetails());
+      assert(saga.next().done);
+    });
+  });
+
+  describe("refreshSaga", () => {
+    it("asks for a GetDetails(refresh)", () => {
+      var original = DevicesState.Refresh();
+      var saga = devicemod.refreshSaga(original);
+      var result = saga.next().value;
+      var payload = result.PUT.action;
+      assert.deepEqual(payload, DevicesState.GetDetails(true));
+      assert(saga.next().done);
     });
   });
 });
@@ -206,6 +236,21 @@ describe("DevicesState", () => {
       var state = store.getState();
       assert.deepEqual(state.devices.devices, devices);
       assert.deepEqual(state.devices.loading, false);
+    });
+
+    it("updates serials if different in the  GotDetails", () => {
+      var { store } = makeTestStore(makeReducer());
+      var serials = ["d1"];
+      store.dispatch(DevicesState.GotSerials({ serials }));
+      var state = store.getState();
+      assert.deepEqual(state.devices.serials, ["d1"]);
+
+      var devices = { d1: { one: 1 }, d2: { two: 2 } };
+      store.dispatch(DevicesState.GotDetails({ devices }));
+      var state = store.getState();
+      assert.deepEqual(state.devices.devices, devices);
+      assert.deepEqual(state.devices.loading, false);
+      assert.deepEqual(state.devices.serials, ["d1", "d2"]);
     });
 
     it("responds to DetailsError and ClearError", () => {
