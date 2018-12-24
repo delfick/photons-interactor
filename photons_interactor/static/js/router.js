@@ -20,25 +20,11 @@ export const routerFork = history => fork(router, history, routes);
 
 export const Routes = ({ history }) => (
   <Router history={history}>
-    <Switch>
-      <Route
-        exact
-        path="/"
-        render={props => (
-          <Page {...props}>
-            <Dashboard />
-          </Page>
-        )}
-      />
-      <Route
-        exact
-        path="/tiles"
-        render={props => (
-          <Page {...props}>
-            <TilesPage />
-          </Page>
-        )}
-      />
-    </Switch>
+    <Page>
+      <Switch>
+        <Route exact path="/" component={Dashboard} />
+        <Route exact path="/tiles" component={TilesPage} />
+      </Switch>
+    </Page>
   </Router>
 );

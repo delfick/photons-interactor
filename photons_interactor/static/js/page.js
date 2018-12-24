@@ -58,7 +58,52 @@ const styles = theme => ({
   }
 });
 
-const Page = connect()(({ location, width, children, classes, dispatch }) => (
+const GoToTilesButton = ({ classes }) => (
+  <Button
+    variant="contained"
+    color="default"
+    className={classes.navButton}
+    href="/tiles"
+    onClick={e => {
+      e.preventDefault();
+      history.push("/tiles");
+    }}
+  >
+    <VideoLibraryIcon className={classes.navLeftIcon} />
+    Tiles
+  </Button>
+);
+
+const GoToHomeButton = ({ classes }) => (
+  <Button
+    variant="contained"
+    color="default"
+    className={classes.navButton}
+    href="/tiles"
+    onClick={e => {
+      e.preventDefault();
+      history.push("/");
+    }}
+  >
+    <DashboardIcon className={classes.navLeftIcon} />
+    Home
+  </Button>
+);
+
+const OpenControlPaneButton = connect()(({ classes, dispatch }) => (
+  <Hidden mdUp implementation="css" className={classes.toolbarRightButtons}>
+    <IconButton
+      className={classes.menuButton}
+      color="inherit"
+      aria-label="Control"
+      onClick={e => dispatch(ControlState.Toggle())}
+    >
+      <EditIcon />
+    </IconButton>
+  </Hidden>
+));
+
+const Page = ({ width, children, classes }) => (
   <div>
     <div className={classes.root}>
       <AppBar position="absolute" className={classes.appBar}>
@@ -66,61 +111,24 @@ const Page = connect()(({ location, width, children, classes, dispatch }) => (
           <Typography variant="title" color="inherit" noWrap>
             Interactor
           </Typography>
-          {location.pathname === "/" ? (
-            <Button
-              variant="contained"
-              color="default"
-              className={classes.navButton}
-              href="/tiles"
-              onClick={e => {
-                e.preventDefault();
-                history.push("/tiles");
-              }}
-            >
-              <VideoLibraryIcon className={classes.navLeftIcon} />
-              Tiles
-            </Button>
-          ) : null}
-          {location.pathname === "/" ? (
-            <Hidden
-              mdUp
-              implementation="css"
-              className={classes.toolbarRightButtons}
-            >
-              <IconButton
-                className={classes.menuButton}
-                color="inherit"
-                aria-label="Control"
-                onClick={e => dispatch(ControlState.Toggle())}
-              >
-                <EditIcon />
-              </IconButton>
-            </Hidden>
+          {window.location.pathname === "/" ? (
+            <GoToTilesButton classes={classes} />
           ) : (
-            <Button
-              variant="contained"
-              color="default"
-              className={classes.navButton}
-              href="/tiles"
-              onClick={e => {
-                e.preventDefault();
-                history.push("/");
-              }}
-            >
-              <DashboardIcon className={classes.navLeftIcon} />
-              Home
-            </Button>
+            <GoToHomeButton classes={classes} />
           )}
+          {window.location.pathname === "/" ? (
+            <OpenControlPaneButton classes={classes} />
+          ) : null}
         </Toolbar>
       </AppBar>
       <main className={classes.content}>
         <div className={classes.toolbar} />
         {children}
       </main>
-      {location.pathname === "/" ? <ControlPane /> : null}
+      {window.location.pathname === "/" ? <ControlPane /> : null}
     </div>
   </div>
-));
+);
 
 Page.propTypes = {
   classes: PropTypes.object.isRequired
