@@ -7,6 +7,11 @@ from photons_control.transform import Transformer
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 
+@store.command(name="status")
+class StatusCommand(store.Command):
+    async def execute(self):
+        return {"on": True}
+
 @store.command(name="discover")
 class DiscoverCommand(store.Command):
     """

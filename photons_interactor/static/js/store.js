@@ -1,4 +1,5 @@
 import { SelectionState, selectionSaga } from "./selection/state.js";
+import { AnimationsState, animationsSaga } from "./tiles/state.js";
 import { DevicesState, deviceSaga } from "./device/state.js";
 import { ControlState } from "./control/state.js";
 
@@ -12,7 +13,8 @@ export const makeReducer = extra => {
     ...extra,
     control: ControlState.reducer(),
     devices: DevicesState.reducer(),
-    selection: SelectionState.reducer()
+    selection: SelectionState.reducer(),
+    animations: AnimationsState.reducer()
   });
 };
 
@@ -28,4 +30,5 @@ export const makeStore = (reducer, sagaMiddleware) => {
 export const runSagaMiddleware = sagaMiddleware => {
   sagaMiddleware.run(deviceSaga);
   sagaMiddleware.run(selectionSaga);
+  sagaMiddleware.run(animationsSaga);
 };
