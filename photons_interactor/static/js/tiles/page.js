@@ -213,7 +213,7 @@ function tiles_from(serials, devices, statuses) {
     .sort()
     .map(serial => {
       var animations = animationInfos[serial].animations.sort(
-        (a, b) => a.started - b.started
+        (a, b) => b.info.started - a.info.started
       );
       var title = serial;
       if (animationInfos[serial].label) {
