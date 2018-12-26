@@ -88,11 +88,11 @@ class TileTransitionAnimation(Animation):
             self.acks = True
             wait += 1
 
-        if wait == 1:
+        if wait == 2:
             self.every = 1
             self.duration = 1
 
-        if wait == 2:
+        if wait == 3:
             raise Finish("Transition complete")
 
         return filled, remaining, wait
@@ -102,7 +102,7 @@ class TileTransitionAnimation(Animation):
         filled, _, wait = state
 
         color = self.color
-        if wait:
+        if wait > 1:
             color = Color(0, 0, 0, 3500)
 
         for point in filled:
