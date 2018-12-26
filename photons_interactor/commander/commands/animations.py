@@ -6,14 +6,19 @@ from photons_interactor.commander.store import store
 from photons_app.errors import PhotonsAppError, FoundNoDevices
 from photons_app import helpers as hp
 
-from photons_tile_paint.animation import Finish
-from photons_tile_paint.addon import Animations
+from photons_tile_paint.animation import Animation, Finish, coords_for_horizontal_line
+from photons_tile_paint.addon import Animations, Animator
+from photons_tile_paint.options import BackgroundOption
+from photons_themes.theme import ThemeColor as Color
+from photons_themes.canvas import Canvas
 
+from input_algorithms.errors import BadSpecValue
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 from tornado import websocket
 import logging
 import asyncio
+import random
 import time
 import uuid
 
@@ -34,13 +39,88 @@ class NotAWebSocket(PhotonsAppError):
 class valid_animation_name(sb.Spec):
     def normalise_filled(self, meta, val):
         animations = meta.everything["animations"]
-        return sb.string_choice_spec(list(animations.animators)).normalise(meta, val)
+        available = list(animations.presets) + list(animations.animators)
+        return sb.string_choice_spec(available).normalise(meta, val)
+
+class PresetAnimation(dictobj.Spec):
+    animation = dictobj.Field(sb.string_choice_spec(list(dict(Animations.animators()))), wrapper=sb.required)
+    options = dictobj.Field(sb.dictionary_spec())
+
+class non_empty_list_spec(sb.Spec):
+    def setup(self, spec):
+        self.spec = spec
+
+    def normalise_empty(self, meta):
+        raise BadSpecValue("Preset must have a non empty list of animations", meta=meta)
+
+    def normalise_filled(self, meta, val):
+        val = sb.listof(self.spec).normalise(meta, val)
+        if not val:
+            raise BadSpecValue("Preset must have a non empty list of animations", meta=meta)
+        return val
+
+presets_spec = lambda: sb.dictof(sb.string_spec(), non_empty_list_spec(PresetAnimation.FieldSpec()))
+
+class TileTransitionAnimation(Animation):
+    def setup(self):
+        self.color = Color(random.randrange(0, 360), 1, 1, 3500)
+
+    def next_state(self, prev_state, coords):
+        if prev_state is None:
+            filled = {}
+            remaining = {}
+
+            for (left, top), (width, height) in coords:
+                for i in range(left, left + width):
+                    for j in range(top - height, top):
+                        remaining[(i, j)] = True
+
+            wait = 0
+        else:
+            filled, remaining, wait = prev_state
+
+        next_selection = random.sample(list(remaining), k=min(len(remaining), 10))
+        for point in next_selection:
+            filled[point] = True
+            del remaining[point]
+
+        if not remaining:
+            self.acks = True
+            wait += 1
+
+        if wait == 1:
+            self.every = 1
+            self.duration = 1
+
+        if wait == 2:
+            raise Finish("Transition complete")
+
+        return filled, remaining, wait
+
+    def make_canvas(self, state, coords):
+        canvas = Canvas()
+        filled, _, wait = state
+
+        color = self.color
+        if wait:
+            color = Color(0, 0, 0, 3500)
+
+        for point in filled:
+            canvas[point] = color
+
+        return canvas
+
+class TileTransitionOptions(dictobj.Spec):
+    background = dictobj.Field(sb.overridden(BackgroundOption.FieldSpec().empty_normalise(type="current")))
+
+transition_animation = Animator(TileTransitionAnimation, TileTransitionOptions, "Transition animation")
 
 class AnimationsStore:
     _merged_options_formattable = True
 
-    def __init__(self):
+    def __init__(self, presets):
         self.animations = {}
+        self.presets = presets
         self.animators = dict(Animations.animators())
         self.listeners = {}
 
@@ -59,10 +139,19 @@ class AnimationsStore:
             fut.cancel()
 
     def available(self):
-        return list(self.animators)
+        return list(self.presets) + list([a for a in self.animators if a not in self.presets])
 
     def start(self, animation, target, serials, reference, afr, options, stop_conflicting=False):
-        if animation not in self.animators:
+        repeat = False
+        shuffle = False
+
+        if animation in self.presets:
+            animations = list(self.presets[animation])
+            repeat = options.get("repeat", True)
+            shuffle = options.get("shuffle", True)
+        elif animation in self.animators:
+            animations = [PresetAnimation(animation=animation, options=options)]
+        else:
             raise NoSuchAnimation(wanted=animation, available=list(self.animators))
 
         conflicting = set()
@@ -83,23 +172,49 @@ class AnimationsStore:
         animation_id = str(uuid.uuid4())
 
         pauser = asyncio.Condition()
-        final_future = asyncio.Future()
+        final_future = hp.ChildOfFuture(afr.stop_fut)
         info = {
               "pauser": pauser
             , "paused": False
             , "final_future": final_future
             , "started": time.time()
             , "serials": serials
-            , "name": self.animators[animation].name
+            , "name": animations[0].animation
             }
 
         async def coro():
-            try:
-                await self.animators[animation].animate(target, afr, final_future, reference, options
-                    , pauser=info["pauser"]
-                    )
-            except Finish:
-                pass
+            while True:
+                if shuffle:
+                    random.shuffle(animations)
+
+                for i, a in enumerate(animations):
+                    if final_future.done():
+                        return
+
+                    if info["name"] != a.animation:
+                        info["name"] = a.animation
+                        self.activate_listeners()
+
+                    try:
+                        await self.animators[a.animation].animate(target, afr, final_future, reference, a.options
+                            , pauser=info["pauser"]
+                            )
+                    except Finish:
+                        pass
+
+                    if final_future.done():
+                        return
+
+                    if len(animations) > 1 and (i < (len(animations) - 1) or repeat):
+                        info["name"] = "transition"
+                        self.activate_listeners()
+                        try:
+                            await transition_animation.animate(target, afr, final_future, reference, {})
+                        except Finish:
+                            pass
+
+                if not repeat:
+                    return
         task_future = asyncio.ensure_future(hp.async_as_background(coro()))
 
         info["task_future"] = task_future

@@ -1,3 +1,4 @@
+from photons_interactor.commander.commands.animations import presets_spec
 from photons_interactor.database.database import Database
 from photons_interactor.assets import Assets
 
@@ -30,6 +31,10 @@ class Options(dictobj.Spec):
 
     assets = dictobj.Field(Assets.FieldSpec(formatter=MergedOptionStringFormatter)
         , help = "Options for where assets can be found"
+        )
+
+    animations_presets = dictobj.Field(presets_spec()
+        , help = "Presets for combinations of tile animations"
         )
 
     fake_devices = dictobj.Field(sb.boolean, default=False

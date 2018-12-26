@@ -75,7 +75,7 @@ class Server(Server):
             , **self.server_options.device_finder_options
             )
 
-        self.animations = AnimationsStore()
+        self.animations = AnimationsStore(self.server_options.animations_presets)
 
         await self.finder.start()
 
