@@ -449,6 +449,7 @@ class StatusStreamAnimateCommand(store.Command):
     """
     animations = store.injected("animations")
     progress_cb = store.injected("progress_cb")
+    final_future = store.injected("final_future")
     request_handler = store.injected("request_handler")
 
     async def execute(self):
@@ -459,9 +460,10 @@ class StatusStreamAnimateCommand(store.Command):
         self.progress_cb({"available": self.animations.available()})
 
         while True:
-            await asyncio.wait([self.request_handler.connection_future, fut], return_when=asyncio.FIRST_COMPLETED)
+            futs = [self.request_handler.connection_future, self.final_future, fut]
+            await asyncio.wait(futs, return_when=asyncio.FIRST_COMPLETED)
 
-            if self.request_handler.connection_future.done():
+            if self.request_handler.connection_future.done() or self.final_future.done():
                 log.info(hp.lc("Connection to status stream went away"))
                 self.animations.remove_listener(u)
                 break

@@ -84,7 +84,10 @@ class Server(Server):
         self.cleaners.append(clean_finder)
 
         # Make sure to wait for the wsconnections
-        self.cleaners.append(partial(wait_for_futures, self.wsconnections))
+        async def waiter():
+            self.final_future.cancel()
+            await wait_for_futures(self.wsconnections)
+        self.cleaners.append(waiter)
 
         self.commander = Commander(self.store
             , finder = self.finder
