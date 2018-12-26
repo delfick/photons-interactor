@@ -256,7 +256,7 @@ describe("DevicesState", () => {
     it("responds to DetailsError and ClearError", () => {
       var { store } = makeTestStore(makeReducer());
       var error = { error: "well that didn't work", error_code: "NoWorky" };
-      store.dispatch(DevicesState.DetailsError({ error }));
+      store.dispatch(DevicesState.DetailsError(error));
       var { devices } = store.getState();
       assert.deepEqual(devices.error, 'NoWorky: "well that didn\'t work"');
       assert.deepEqual(devices.loading, false);
