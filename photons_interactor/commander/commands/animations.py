@@ -6,7 +6,7 @@ from photons_interactor.commander.store import store
 from photons_app.errors import PhotonsAppError, FoundNoDevices
 from photons_app import helpers as hp
 
-from photons_tile_paint.animation import Animation, Finish, coords_for_horizontal_line
+from photons_tile_paint.animation import Animation, Finish
 from photons_tile_paint.addon import Animations, Animator
 from photons_tile_paint.options import BackgroundOption
 from photons_themes.theme import ThemeColor as Color
