@@ -1,5 +1,5 @@
+import { AnimationsState, DisplayDice } from "./state.js";
 import { DevicesState } from "../device/state.js";
-import { AnimationsState } from "./state.js";
 import { ShowError } from "../error.js";
 
 import { connect } from "react-redux";
@@ -7,21 +7,31 @@ import PropTypes from "prop-types";
 import React from "react";
 
 import CircularProgress from "@material-ui/core/CircularProgress";
+import MuiDialogContent from "@material-ui/core/DialogContent";
+import MuiDialogActions from "@material-ui/core/DialogActions";
 import PauseIcon from "@material-ui/icons/PauseCircleFilled";
 import PlayIcon from "@material-ui/icons/PlayCircleFilled";
+import MuiDialogTitle from "@material-ui/core/DialogTitle";
 import CardContent from "@material-ui/core/CardContent";
+import MoreVertIcon from "@material-ui/icons/MoreVert";
 import { withStyles } from "@material-ui/core/styles";
+import CardHeader from "@material-ui/core/CardHeader";
 import Typography from "@material-ui/core/Typography";
+import IconButton from "@material-ui/core/IconButton";
 import RefreshIcon from "@material-ui/icons/Refresh";
 import CancelIcon from "@material-ui/icons/Cancel";
 import MenuItem from "@material-ui/core/MenuItem";
+import CloseIcon from "@material-ui/icons/Close";
 import Toolbar from "@material-ui/core/Toolbar";
 import Divider from "@material-ui/core/Divider";
+import Dialog from "@material-ui/core/Dialog";
 import Select from "@material-ui/core/Select";
 import AppBar from "@material-ui/core/AppBar";
 import Button from "@material-ui/core/Button";
+import Menu from "@material-ui/core/Menu";
 import Grid from "@material-ui/core/Grid";
 import Card from "@material-ui/core/Card";
+import Chip from "@material-ui/core/Chip";
 
 const styles = theme => ({
   devices: {
@@ -46,6 +56,9 @@ const styles = theme => ({
   animationControl: {
     paddingLeft: "10px",
     minWidth: 0
+  },
+  dialogerror: {
+    margin: theme.spacing.unit
   }
 });
 
@@ -225,6 +238,184 @@ function tiles_from(serials, devices, statuses) {
   return final;
 }
 
+const DialogTitle = withStyles(theme => ({
+  root: {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    margin: 0,
+    padding: theme.spacing.unit * 2
+  },
+  closeButton: {
+    position: "absolute",
+    right: theme.spacing.unit,
+    top: theme.spacing.unit,
+    color: theme.palette.grey[500]
+  }
+}))(props => {
+  const { children, classes, onClose } = props;
+  return (
+    <MuiDialogTitle disableTypography className={classes.root}>
+      <Typography variant="h6">{children}</Typography>
+      <IconButton
+        aria-label="Close"
+        className={classes.closeButton}
+        onClick={onClose}
+      >
+        <CloseIcon />
+      </IconButton>
+    </MuiDialogTitle>
+  );
+});
+
+const DialogContent = withStyles(theme => ({
+  root: {
+    margin: 0,
+    padding: theme.spacing.unit * 2
+  }
+}))(MuiDialogContent);
+
+@withStyles(styles)
+@connect()
+class TileOptions extends React.Component {
+  state = {
+    anchorEl: null,
+    dialogopen: false,
+    dialogloading: false,
+    dialogerror: undefined,
+    dialogmade: undefined
+  };
+
+  handleClick(event) {
+    this.setState({ anchorEl: event.currentTarget });
+  }
+
+  handleClose() {
+    this.setState({ anchorEl: null });
+  }
+
+  onDialogClose() {
+    this.setState({ dialogopen: false });
+  }
+
+  displayDice(dispatch, serial) {
+    this.setState({
+      dialogloading: true,
+      dialogopen: true,
+      dialogerror: undefined,
+      dialogmade: undefined
+    });
+    this.handleClose();
+    var onFinish = this.onDoneDice.bind(this);
+    dispatch(DisplayDice(serial, onFinish));
+  }
+
+  onDoneDice(error, made) {
+    this.setState({
+      dialogloading: false,
+      dialogerror: error,
+      dialogmade: made
+    });
+
+    if (made && made.length > 0) {
+      var canvas = this.refs.tiles;
+      var canvasDom = ReactDOM.findDOMNode(canvas);
+
+      var dialog = this.refs.dialog;
+      var dialogDom = ReactDOM.findDOMNode(dialog);
+
+      var width = dialogDom.getBoundingClientRect().width - 20;
+      canvasDom.width = width;
+
+      var ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = "rgba(0, 0, 1, 0)";
+      ctx.fillRect(0, 0, width, 300);
+
+      var cellWidth = Math.floor(width / 5 / 9);
+
+      var drawIndividual = function(i, hsbks) {
+        var startx = cellWidth * 9 * i;
+        var starty = cellWidth;
+        ctx.clearRect(startx, starty, 240, 240);
+        for (var j = 0; j < hsbks.length; j++) {
+          var row = Math.floor(j / 8);
+          var col = j % 8;
+          var x = startx + col * cellWidth;
+          var y = starty + cellWidth * row;
+          ctx.fillStyle = hsbks[j];
+          ctx.fillRect(x, y, cellWidth, cellWidth);
+        }
+      };
+
+      made.map((hsbks, i) => drawIndividual(i, hsbks));
+    }
+  }
+
+  render() {
+    const { anchorEl } = this.state;
+    const { serial, dispatch, classes } = this.props;
+    const open = Boolean(anchorEl);
+
+    return (
+      <div>
+        <IconButton
+          aria-label="More"
+          aria-owns={open ? "tile-menu" : undefined}
+          aria-haspopup="true"
+          onClick={this.handleClick.bind(this)}
+        >
+          <MoreVertIcon />
+        </IconButton>
+        <Menu
+          id="tile-menu"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={this.handleClose.bind(this)}
+        >
+          <MenuItem onClick={() => this.displayDice(dispatch, serial)}>
+            Dice
+          </MenuItem>
+        </Menu>
+        <Dialog
+          onClose={this.onDialogClose.bind(this)}
+          aria-labelledby="applying-dice"
+          open={this.state.dialogopen}
+          fullWidth={true}
+        >
+          <DialogTitle onClose={this.onDialogClose.bind(this)}>
+            Applying dice
+          </DialogTitle>
+          {this.state.dialogloading ? (
+            <DialogContent>
+              <CircularProgress />
+            </DialogContent>
+          ) : (
+            <DialogContent ref="dialog">
+              {this.state.dialogerror ? (
+                <Chip
+                  color="secondary"
+                  label={this.state.dialogerror}
+                  className={classes.dialogerror}
+                  variant="outlined"
+                />
+              ) : null}
+              {this.state.dialogmade && this.state.dialogmade.length > 0 ? (
+                <Typography gutterBottom>
+                  For horizontal tile animations like tile_time or tile_nyan,
+                  it's best that your tiles are arranged to look like the
+                  following
+                </Typography>
+              ) : null}
+              {this.state.dialogmade && this.state.dialogmade.length > 0 ? (
+                <canvas className={classes.tiledicecanvas} ref="tiles" />
+              ) : null}
+            </DialogContent>
+          )}
+        </Dialog>
+      </div>
+    );
+  }
+}
+
 var dashconnector = connect((state, ownProps) => ({
   error: state.devices.error,
   serials: state.devices.serials,
@@ -253,14 +444,11 @@ export const TilesPage = withStyles(styles)(
                 ([serial, title, animations]) => (
                   <Grid key={serial} item className={classes.tileitem}>
                     <Card className={classes.tilecard}>
+                      <CardHeader
+                        action={<TileOptions serial={serial} />}
+                        subheader={title}
+                      />
                       <CardContent>
-                        <Typography
-                          className={classes.tilecardtitle}
-                          color="textSecondary"
-                          gutterBottom
-                        >
-                          {title}
-                        </Typography>
                         <Grid
                           container
                           direction="column"

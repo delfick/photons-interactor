@@ -1,5 +1,5 @@
+import { AnimationsState, animationsSaga, tilesSaga } from "./tiles/state.js";
 import { SelectionState, selectionSaga } from "./selection/state.js";
-import { AnimationsState, animationsSaga } from "./tiles/state.js";
 import { DevicesState, deviceSaga } from "./device/state.js";
 import { ControlState } from "./control/state.js";
 
@@ -31,4 +31,5 @@ export const runSagaMiddleware = sagaMiddleware => {
   sagaMiddleware.run(deviceSaga);
   sagaMiddleware.run(selectionSaga);
   sagaMiddleware.run(animationsSaga);
+  sagaMiddleware.run(tilesSaga);
 };

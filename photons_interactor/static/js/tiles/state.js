@@ -3,6 +3,19 @@ import { WSCommand } from "../wsclient.js";
 import { select, put, takeLatest } from "redux-saga/effects";
 import { createAction, createReducer } from "redux-act";
 
+export const DisplayDice = createAction(
+  "Display dice on a tile",
+  (serial, onFinish) => {
+    if (onFinish === undefined) {
+      throw new Error("onFinish cannot be undefined");
+    }
+    return {
+      serial,
+      onFinish
+    };
+  }
+);
+
 class AnimationsStateKls {
   EnsureStatusStream = createAction(
     "Ensure we have a stream to animation status"
@@ -157,6 +170,34 @@ function* removeAnimationSaga(original) {
   );
 }
 
+function* displayDiceSaga(original) {
+  var { payload } = original;
+  var { serial, onFinish } = payload;
+  var args = { matcher: { serial } };
+
+  var onerror = ({ error, error_code }) => {
+    var errormsg = `${error_code}: ${JSON.stringify(error)}`;
+    onFinish(errormsg, []);
+  };
+
+  var onsuccess = ({ data }) => {
+    var { results, errors } = data;
+    var errormsg = undefined;
+    if (errors) {
+      errormsg = JSON.stringify(errors);
+    }
+    onFinish(errormsg, results.tiles);
+  };
+
+  yield put(
+    WSCommand(
+      "/v1/lifx/command",
+      { command: "tiles/dice", args: args },
+      { onerror, onsuccess, original }
+    )
+  );
+}
+
 export function* animationsSaga() {
   yield takeLatest(AnimationsState.EnsureStatusStream, ensureStatusSaga);
   yield takeLatest(AnimationsState.LostStatusStream, lostStatusStreamSaga);
@@ -164,6 +205,10 @@ export function* animationsSaga() {
   yield takeLatest(AnimationsState.StartAnimation, startAnimationSaga);
   yield takeLatest(AnimationsState.PauseAnimation, pauseAnimationSaga);
   yield takeLatest(AnimationsState.ResumeAnimation, resumeAnimationSaga);
+}
+
+export function* tilesSaga() {
+  yield takeLatest(DisplayDice, displayDiceSaga);
 }
 
 export const fortests = {
