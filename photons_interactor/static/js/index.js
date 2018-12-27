@@ -18,6 +18,8 @@ import ReactDOM from "react-dom";
 import React from "react";
 import "typeface-roboto";
 
+window.__MUI_USE_NEXT_TYPOGRAPHY_VARIANTS__ = true;
+
 const reducer = makeReducer();
 const sagaMiddleware = makeSagaMiddleware();
 const store = makeStore(reducer, sagaMiddleware);

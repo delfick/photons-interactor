@@ -98,9 +98,9 @@ const ControlContents = connect()(
             <CloseIcon />
           </IconButton>
         ) : null}
-        <Typography variant="display2">Control</Typography>
+        <Typography variant="h3">Control</Typography>
         {Object.keys(selection).length == 0 ? (
-          <Typography variant="subheading">Click devices to control</Typography>
+          <Typography variant="subtitle1">Click devices to control</Typography>
         ) : (
           <Control selection={selection} />
         )}{" "}

@@ -35,7 +35,7 @@ const DashboardBar = withStyles(styles)(
         <Toolbar>
           <Typography
             className={classes.devicesTitle}
-            variant="title"
+            variant="h6"
             color="inherit"
           >
             Devices

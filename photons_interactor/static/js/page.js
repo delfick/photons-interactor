@@ -108,7 +108,7 @@ const Page = ({ width, children, classes }) => (
     <div className={classes.root}>
       <AppBar position="absolute" className={classes.appBar}>
         <Toolbar>
-          <Typography variant="title" color="inherit" noWrap>
+          <Typography variant="h6" color="inherit" noWrap>
             Interactor
           </Typography>
           {window.location.pathname === "/" ? (
