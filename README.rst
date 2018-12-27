@@ -9,7 +9,15 @@ all commands are super fast.
 Under Construction!!!
 ---------------------
 
-Note that I've barely started this project so it doesn't do much at the moment
+Note that this project so it doesn't do much at the moment and so it's not on
+pypi yet.
+
+You can run it locally from a checked out copy of this repository though.
+
+As long as you have python3.6 or up installed::
+
+  $ pip3 install venvstarter
+  $ ./interact serve
 
 The License
 -----------
