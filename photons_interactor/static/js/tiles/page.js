@@ -445,7 +445,7 @@ export const TilesPage = withStyles(styles)(
                   <Grid key={serial} item className={classes.tileitem}>
                     <Card className={classes.tilecard}>
                       <CardHeader
-                        action={<TileOptions serial={serial} />}
+                        avatar={<TileOptions serial={serial} />}
                         subheader={title}
                       />
                       <CardContent>
