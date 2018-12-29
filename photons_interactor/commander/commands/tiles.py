@@ -3,6 +3,8 @@ from photons_interactor.commander.tiles import tile_dice
 from photons_interactor.commander import helpers as chp
 from photons_interactor.commander.store import store
 
+from photons_messages import DeviceMessages
+
 @store.command(name="tiles/dice")
 class TileDiceCommand(store.Command):
     """
@@ -12,7 +14,6 @@ class TileDiceCommand(store.Command):
     target = store.injected("targets.lan")
 
     matcher = df.matcher_field
-    timeout = df.timeout_field
     refresh = df.refresh_field
 
     async def execute(self):
@@ -20,6 +21,14 @@ class TileDiceCommand(store.Command):
 
         result = chp.ResultBuilder()
         afr = await self.finder.args_for_run()
-        result.result["results"]["tiles"] = await tile_dice(self.target, self.finder.find(filtr=fltr), afr, error_catcher=result.error)
+        reference = self.finder.find(filtr=fltr)
+
+        await self.target.script(DeviceMessages.SetPower(level=65535)).run_with_all(reference, afr
+            , error_catcher = result.error
+            )
+
+        result.result["results"]["tiles"] = await tile_dice(self.target, self.finder.find(filtr=fltr), afr
+            , error_catcher = result.error
+            )
 
         return result
