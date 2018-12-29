@@ -416,6 +416,16 @@ class TileOptions extends React.Component {
   }
 }
 
+export const TilesPage = connect((state, ownProps) => ({
+  error: state.devices.error
+}))(({ error }) => (
+  <div>
+    <TilesBar />
+    <ShowError error={error} clearer={DevicesState.ClearError()} />
+    <AnimationList />
+  </div>
+));
+
 var dashconnector = connect((state, ownProps) => ({
   error: state.devices.error,
   serials: state.devices.serials,
@@ -423,61 +433,57 @@ var dashconnector = connect((state, ownProps) => ({
   loading: state.devices.loading,
   statuses: state.animations.statuses
 }));
-export const TilesPage = withStyles(styles)(
+export const AnimationList = withStyles(styles)(
   dashconnector(
     ({ error, loading, serials, devices, statuses, classes, dispatch }) => (
-      <div>
-        <TilesBar />
-        <ShowError error={error} clearer={DevicesState.ClearError()} />
-        <Grid container className={classes.devices} spacing={16}>
-          <Grid item xs={12}>
-            <Grid
-              container
-              className={classes.demo}
-              justify="center"
-              spacing={16}
-              direction="column"
-              alignItems="stretch"
-            >
-              {loading ? <CircularProgress /> : null}
-              {tiles_from(serials, devices, statuses).map(
-                ([serial, title, animations]) => (
-                  <Grid key={serial} item className={classes.tileitem}>
-                    <Card className={classes.tilecard}>
-                      <CardHeader
-                        avatar={<TileOptions serial={serial} />}
-                        subheader={title}
-                      />
-                      <CardContent>
-                        <Grid
-                          container
-                          direction="column"
-                          justify="center"
-                          alignItems="flex-start"
-                        >
-                          {no_running_animation(animations) ? (
-                            <Grid item>
-                              <StartAnimationChooser serial={serial} />
-                            </Grid>
-                          ) : null}
-                          {animations.map(info => (
-                            <Grid item key={info.animation_id}>
-                              <Animation
-                                info={info.info}
-                                animation_id={info.animation_id}
-                              />
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                )
-              )}
-            </Grid>
+      <Grid container className={classes.devices} spacing={16}>
+        <Grid item xs={12}>
+          <Grid
+            container
+            className={classes.demo}
+            justify="center"
+            spacing={16}
+            direction="column"
+            alignItems="stretch"
+          >
+            {loading ? <CircularProgress /> : null}
+            {tiles_from(serials, devices, statuses).map(
+              ([serial, title, animations]) => (
+                <Grid key={serial} item className={classes.tileitem}>
+                  <Card className={classes.tilecard}>
+                    <CardHeader
+                      avatar={<TileOptions serial={serial} />}
+                      subheader={title}
+                    />
+                    <CardContent>
+                      <Grid
+                        container
+                        direction="column"
+                        justify="center"
+                        alignItems="flex-start"
+                      >
+                        {no_running_animation(animations) ? (
+                          <Grid item>
+                            <StartAnimationChooser serial={serial} />
+                          </Grid>
+                        ) : null}
+                        {animations.map(info => (
+                          <Grid item key={info.animation_id}>
+                            <Animation
+                              info={info.info}
+                              animation_id={info.animation_id}
+                            />
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              )
+            )}
           </Grid>
         </Grid>
-      </div>
+      </Grid>
     )
   )
 );
