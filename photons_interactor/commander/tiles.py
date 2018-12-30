@@ -18,7 +18,7 @@ def make_rgb_pixels(canvas, length):
 
     for msg in canvas_to_msgs(canvas, coords_for_horizontal_line[:length], duration=1, acks=True):
         nxt = []
-        for c in msg.kwargs["colors"]:
+        for c in msg.colors:
             if c.saturation > 0:
                 rgb = colorsys.hsv_to_rgb(c.hue / 360, c.saturation, c.brightness)
                 rgb = tuple(int(p * 255) for p in rgb)
