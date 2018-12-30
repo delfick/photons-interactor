@@ -196,7 +196,7 @@ class AnimationsStore:
                         self.activate_listeners()
 
                     opts = dict(a.options)
-                    if "combine_tiles" not in options and options.get("combine_tiles"):
+                    if "combine_tiles" not in a.options and options.get("combine_tiles"):
                         opts["combine_tiles"] = True
 
                     try:
