@@ -132,14 +132,18 @@ class StartAnimationChooser extends React.Component {
   }
 
   render() {
-    var { dispatch, serial, available, classes } = this.props;
+    var { dispatch, serial, available, classes, combine_tiles } = this.props;
 
     return (
       <div>
         <Button
           onClick={e =>
             dispatch(
-              AnimationsState.StartAnimation({ serial }, this.chosen(available))
+              AnimationsState.StartAnimation(
+                { serial },
+                this.chosen(available),
+                { combine_tiles }
+              )
             )
           }
           className={classes.animationControl}
@@ -252,6 +256,17 @@ function no_running_animation(animations) {
     }
   });
   return no_running_animation;
+}
+
+function no_running_statuses(statuses) {
+  let no_running_statuses = true;
+  Object.keys(statuses).map(id => {
+    var info = statuses[id];
+    if (info.running) {
+      no_running_statuses = false;
+    }
+  });
+  return no_running_statuses;
 }
 
 function tiles_from(serials, devices, statuses) {
@@ -516,6 +531,23 @@ export const AnimationList = withStyles(styles)(
             alignItems="stretch"
           >
             {loading ? <CircularProgress /> : null}
+            {no_running_statuses(statuses) &&
+            tiles_from(serials, devices, {}).length > 0 ? (
+              <Grid item className={classes.tileitem}>
+                <Card className={classes.tilecard}>
+                  <CardHeader
+                    avatar={<TileOptions serial={serials} />}
+                    subheader="ALL TILES"
+                  />
+                  <CardContent>
+                    <StartAnimationChooser
+                      serial={serials}
+                      combine_tiles={true}
+                    />
+                  </CardContent>
+                </Card>
+              </Grid>
+            ) : null}
             {tiles_from(serials, devices, statuses).map(
               ([serial, title, animations]) => (
                 <Grid key={serial} item className={classes.tileitem}>

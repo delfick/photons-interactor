@@ -195,8 +195,12 @@ class AnimationsStore:
                         info["name"] = a.animation
                         self.activate_listeners()
 
+                    opts = dict(a.options)
+                    if "combine_tiles" not in options and options.get("combine_tiles"):
+                        opts["combine_tiles"] = True
+
                     try:
-                        await self.animators[a.animation].animate(target, afr, final_future, reference, a.options
+                        await self.animators[a.animation].animate(target, afr, final_future, reference, opts
                             , pauser=info["pauser"]
                             )
                     except Finish:
@@ -209,7 +213,7 @@ class AnimationsStore:
                         info["name"] = "transition"
                         self.activate_listeners()
                         try:
-                            await transition_animation.animate(target, afr, final_future, reference, {})
+                            await transition_animation.animate(target, afr, final_future, reference, options)
                         except Finish:
                             pass
 

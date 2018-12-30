@@ -43,10 +43,14 @@ class AnimationsStateKls {
     animation_id
   }));
 
-  StartAnimation = createAction("Start an animation", (matcher, animation) => ({
-    matcher,
-    animation
-  }));
+  StartAnimation = createAction(
+    "Start an animation",
+    (matcher, animation, options) => ({
+      matcher,
+      animation,
+      options
+    })
+  );
 
   reducer() {
     return createReducer(
