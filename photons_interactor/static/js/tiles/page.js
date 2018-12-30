@@ -553,7 +553,7 @@ export const AnimationList = withStyles(styles)(
           >
             {loading ? <CircularProgress /> : null}
             {no_running_statuses(statuses) &&
-            tiles_from(serials, devices, {}).length > 0 ? (
+            tiles_from(serials, devices, {}).length > 1 ? (
               <Grid item className={classes.tileitem}>
                 <Card className={classes.tilecard}>
                   <CardHeader
