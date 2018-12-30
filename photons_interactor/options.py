@@ -55,4 +55,4 @@ class Options(dictobj.Spec):
 
     @property
     def html_path(self):
-        return "/(?:tiles)?"
+        return "/(?:tiles.+)?"
