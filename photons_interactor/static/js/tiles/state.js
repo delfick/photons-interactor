@@ -16,6 +16,34 @@ export const DisplayDice = createAction(
   }
 );
 
+class TilesStateKls {
+  ArrangeError = createAction("Arrange error");
+  StartArrange = createAction("Start an arrange");
+  LeaveArrange = createAction("Leave arrange");
+  GotCoords = createAction("Got coords");
+
+  reducer() {
+    return createReducer(
+      {
+        [this.StartArrange]: (state, payload) => {
+          return { ...state, arranging: true };
+        },
+        [this.GotCoords]: (state, { error, serials }) => {
+          var pixels = { ...state.pixels, ...serials };
+          return { ...state, error, pixels };
+        }
+      },
+      {
+        error: undefined,
+        pixels: {},
+        arranging: false
+      }
+    );
+  }
+}
+
+export const TilesState = new TilesStateKls();
+
 class AnimationsStateKls {
   EnsureStatusStream = createAction(
     "Ensure we have a stream to animation status"
@@ -202,6 +230,33 @@ function* displayDiceSaga(original) {
   );
 }
 
+function* startArrangeSaga(original) {
+  var onerror = TilesState.ArrangeError;
+
+  var onsuccess = ({ data }) => TilesState.GotCoords(data);
+
+  yield put(
+    WSCommand(
+      "/v1/lifx/command",
+      { command: "tiles/arrange/start" },
+      { onerror, onsuccess, original }
+    )
+  );
+}
+
+function* leaveArrangeSaga(original) {
+  var state = yield select();
+  if (state.tiles.arranging) {
+    yield put(
+      WSCommand(
+        "/v1/lifx/command",
+        { command: "tiles/arrange/leave" },
+        { original }
+      )
+    );
+  }
+}
+
 export function* animationsSaga() {
   yield takeLatest(AnimationsState.EnsureStatusStream, ensureStatusSaga);
   yield takeLatest(AnimationsState.LostStatusStream, lostStatusStreamSaga);
@@ -213,6 +268,8 @@ export function* animationsSaga() {
 
 export function* tilesSaga() {
   yield takeLatest(DisplayDice, displayDiceSaga);
+  yield takeLatest(TilesState.StartArrange, startArrangeSaga);
+  yield takeLatest(TilesState.LeaveArrange, leaveArrangeSaga);
 }
 
 export const fortests = {

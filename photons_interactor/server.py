@@ -1,5 +1,6 @@
 from photons_interactor.request_handlers.command import CommandHandler, WSHandler
 from photons_interactor.commander.commands.animations import AnimationsStore
+from photons_interactor.commander.commands.tiles import ArrangeState
 from photons_interactor.request_handlers.index import Index
 from photons_interactor.database.db_queue import DBQueue
 
@@ -75,7 +76,8 @@ class Server(Server):
             , **self.server_options.device_finder_options
             )
 
-        self.animations = AnimationsStore(self.server_options.animations_presets)
+        self.arranger = ArrangeState()
+        self.animations = AnimationsStore(self.server_options.animations_presets, self.arranger)
 
         await self.finder.start()
 
@@ -92,6 +94,7 @@ class Server(Server):
         self.commander = Commander(self.store
             , finder = self.finder
             , db_queue = self.db_queue
+            , arranger = self.arranger
             , animations = self.animations
             , test_devices = test_devices
             , final_future = self.final_future

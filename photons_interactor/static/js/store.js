@@ -1,4 +1,9 @@
-import { AnimationsState, animationsSaga, tilesSaga } from "./tiles/state.js";
+import {
+  AnimationsState,
+  animationsSaga,
+  TilesState,
+  tilesSaga
+} from "./tiles/state.js";
 import { SelectionState, selectionSaga } from "./selection/state.js";
 import { DevicesState, deviceSaga } from "./device/state.js";
 import { ControlState } from "./control/state.js";
@@ -11,6 +16,7 @@ import { combineReducers } from "redux";
 export const makeReducer = extra => {
   return combineReducers({
     ...extra,
+    tiles: TilesState.reducer(),
     control: ControlState.reducer(),
     devices: DevicesState.reducer(),
     selection: SelectionState.reducer(),

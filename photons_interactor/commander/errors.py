@@ -11,3 +11,6 @@ class NoSuchScene(PhotonsAppError):
 
 class InvalidArgs(PhotonsAppError):
     desc = "Invalid arguments"
+
+class NotAWebSocket(PhotonsAppError):
+    desc = "Request wasn't a websocket"

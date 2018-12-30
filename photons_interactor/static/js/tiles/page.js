@@ -1,4 +1,4 @@
-import { AnimationsState, DisplayDice } from "./state.js";
+import { AnimationsState, DisplayDice, TilesState } from "./state.js";
 import { DevicesState } from "../device/state.js";
 import { TilesArranger } from "./arrange.js";
 import { ChangePath } from "../router.js";
@@ -28,7 +28,6 @@ import CancelIcon from "@material-ui/icons/Cancel";
 import MenuItem from "@material-ui/core/MenuItem";
 import CloseIcon from "@material-ui/icons/Close";
 import Toolbar from "@material-ui/core/Toolbar";
-import Divider from "@material-ui/core/Divider";
 import Dialog from "@material-ui/core/Dialog";
 import Select from "@material-ui/core/Select";
 import AppBar from "@material-ui/core/AppBar";
@@ -238,10 +237,28 @@ const TilesBar = withStyles(styles)(
             Tiles
           </Typography>
           <TilePageChanger />
-          <Divider />
-          <Button onClick={e => dispatch(DevicesState.Refresh())}>
-            <RefreshIcon />
-          </Button>
+          <Router history={history}>
+            <Switch>
+              <Route
+                exact
+                path="/tiles/animate"
+                render={() => (
+                  <Button onClick={e => dispatch(DevicesState.Refresh())}>
+                    <RefreshIcon />
+                  </Button>
+                )}
+              />
+              <Route
+                exact
+                path="/tiles/arrange"
+                render={() => (
+                  <Button onClick={e => dispatch(TilesState.StartArrange())}>
+                    <RefreshIcon />
+                  </Button>
+                )}
+              />
+            </Switch>
+          </Router>
         </Toolbar>
       </AppBar>
     </div>
@@ -498,13 +515,17 @@ class TileOptions extends React.Component {
 export const TilesPage = connect((state, ownProps) => ({
   error: state.devices.error
 }))(({ error }) => (
-  <div>
+  <div style={{ height: "100%" }}>
     <TilesBar />
     <ShowError error={error} clearer={DevicesState.ClearError()} />
     <Router history={history}>
       <Switch>
         <Route exact path="/tiles/animate" component={AnimationList} />
-        <Route exact path="/tiles/arrange" component={TilesArranger} />
+        <Route
+          exact
+          path="/tiles/arrange"
+          render={() => <TilesArranger style={{ height: "100%" }} />}
+        />
       </Switch>
     </Router>
   </div>

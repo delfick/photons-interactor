@@ -1,4 +1,4 @@
-import { AnimationsState } from "./tiles/state.js";
+import { AnimationsState, TilesState } from "./tiles/state.js";
 import { DevicesState } from "./device/state.js";
 import { TilesPage } from "./tiles/page.js";
 import { createAction } from "redux-act";
@@ -33,10 +33,26 @@ export const routes = {
     // Don't force a refresh and let user do that themselves if they want
     yield put(DevicesState.GetDetails());
   },
-  "/tiles/arrange": function* tilesArrangeSaga() {}
+  "/tiles/arrange": function* tilesArrangeSaga() {
+    yield put(AnimationsState.EnsureStatusStream());
+
+    // Hack so that the WSCommand from StartArrange gets seen
+    yield delay(1);
+
+    yield put(TilesState.StartArrange());
+  }
 };
 
-export const routerFork = history => fork(router, history, routes);
+export const routeoptions = {
+  *beforeRouteChange() {
+    if (window.location.pathname != "/tiles/arrange") {
+      yield put(TilesState.LeaveArrange());
+    }
+  }
+};
+
+export const routerFork = history =>
+  fork(router, history, routes, routeoptions);
 
 export const Routes = ({ history }) => (
   <Router history={history}>

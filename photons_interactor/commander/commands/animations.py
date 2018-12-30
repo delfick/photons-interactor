@@ -1,4 +1,5 @@
 from photons_interactor.request_handlers.command import MessageFromExc
+from photons_interactor.commander.errors import NotAWebSocket
 from photons_interactor.commander import default_fields as df
 from photons_interactor.commander import helpers as chp
 from photons_interactor.commander.store import store
@@ -32,9 +33,6 @@ class FoundNoTiles(PhotonsAppError):
 
 class AllSerialsAlreadyAnimating(PhotonsAppError):
     desc = "Can't start animation on already animating devices"
-
-class NotAWebSocket(PhotonsAppError):
-    desc = "Request wasn't a websocket"
 
 class valid_animation_name(sb.Spec):
     def normalise_filled(self, meta, val):
@@ -118,8 +116,9 @@ transition_animation = Animator(TileTransitionAnimation, TileTransitionOptions, 
 class AnimationsStore:
     _merged_options_formattable = True
 
-    def __init__(self, presets):
+    def __init__(self, presets, arranger):
         self.animations = {}
+        self.arranger = arranger
         self.presets = presets
         self.animators = dict(Animations.animators())
         self.listeners = {}
@@ -130,9 +129,10 @@ class AnimationsStore:
         self.listeners[u].cancel()
         return u, self.listeners[u]
 
-    def remove_listener(self, u):
+    async def remove_listener(self, u, ref, target, afr):
         if u in self.listeners:
             del self.listeners[u]
+        await self.arranger.leave_arrange(ref, target, afr)
 
     def activate_listeners(self):
         for fut in self.listeners.values():
@@ -451,6 +451,8 @@ class StatusStreamAnimateCommand(store.Command):
     """
     An endless stream of updates to animation status
     """
+    finder = store.injected("finder")
+    target = store.injected("targets.lan")
     animations = store.injected("animations")
     progress_cb = store.injected("progress_cb")
     final_future = store.injected("final_future")
@@ -469,7 +471,8 @@ class StatusStreamAnimateCommand(store.Command):
 
             if self.request_handler.connection_future.done() or self.final_future.done():
                 log.info(hp.lc("Connection to status stream went away"))
-                self.animations.remove_listener(u)
+                afr = await self.finder.args_for_run()
+                await self.animations.remove_listener(u, self.request_handler.key, self.target, afr)
                 break
 
             self.progress_cb({"status": self.animations.status(sb.NotSpecified)})
