@@ -77,14 +77,15 @@ class ArrangeState:
     async def start(self, serial, target, afr):
         length = 5
         errors = []
-        initial = []
+        initial = {"colors": [], "power": 65535}
         orientations = []
 
         get_state = TileMessages.GetState64(tile_index=0, length=5, x=0, y=0, width=8)
         get_chain = TileMessages.GetDeviceChain()
-        async for pkt, _, _ in target.script([get_state, get_chain]).run_with(serial, afr, error_catcher=errors):
+        get_power = DeviceMessages.GetPower()
+        async for pkt, _, _ in target.script([get_state, get_chain, get_power]).run_with(serial, afr, error_catcher=errors):
             if pkt | TileMessages.State64:
-                initial.append(
+                initial["colors"].append(
                       [ {"hue": c.hue, "saturation": c.saturation, "brightness": c.brightness, "kelvin":  c.kelvin}
                         for c in pkt.colors
                       ]
@@ -92,6 +93,8 @@ class ArrangeState:
             elif pkt | TileMessages.StateDeviceChain:
                 length = pkt.total_count
                 orientations = orientations_from(pkt)
+            elif pkt | DeviceMessages.StatePower:
+                initial["power"] = pkt.level
 
         if errors:
             return errors, None, None
@@ -106,7 +109,8 @@ class ArrangeState:
 
         pixels = make_rgb_pixels(canvas, length)
 
-        msgs = list(canvas_to_msgs(canvas, coords_for_horizontal_line, duration=1, acks=True, orientations=orientations))
+        msgs = [DeviceMessages.SetPower(level=65535)]
+        msgs.extend(canvas_to_msgs(canvas, coords_for_horizontal_line, duration=1, acks=True, orientations=orientations))
         await target.script(msgs).run_with_all(serial, afr, error_catcher=errors)
 
         if errors:
@@ -115,8 +119,9 @@ class ArrangeState:
         return errors, initial, pixels
 
     async def restore(self, serial, initial, target, afr):
-        msgs = []
-        for i, colors in enumerate(initial):
+        msgs = [DeviceMessages.SetPower(level=initial["power"])]
+
+        for i, colors in enumerate(initial["colors"]):
             msgs.append(TileMessages.SetState64(
                   tile_index = i
                 , length = 1
