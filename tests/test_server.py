@@ -85,6 +85,7 @@ describe AsyncTestCase, "Server":
             FakeCommander.assert_called_once_with(store
                 , finder = finder
                 , db_queue = db_queue
+                , arranger = server.arranger
                 , animations = server.animations
                 , test_devices = None
                 , final_future = self.final_future
