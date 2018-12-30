@@ -19,7 +19,10 @@ export const routes = {
   "/": function* indexSaga() {
     yield put(DevicesState.GetSerials());
   },
-  "/tiles": function* indexSaga() {
+  "/tiles": function* tilesSaga() {
+    yield put(ChangePath("/tiles/animate"));
+  },
+  "/tiles/animate": function* tilesAnimateSaga() {
     // Make sure we get animation status info
     yield put(AnimationsState.EnsureStatusStream());
 
@@ -29,7 +32,8 @@ export const routes = {
     // Make sure we know the devices
     // Don't force a refresh and let user do that themselves if they want
     yield put(DevicesState.GetDetails());
-  }
+  },
+  "/tiles/arrange": function* tilesArrangeSaga() {}
 };
 
 export const routerFork = history => fork(router, history, routes);
@@ -39,7 +43,7 @@ export const Routes = ({ history }) => (
     <Page>
       <Switch>
         <Route exact path="/" component={Dashboard} />
-        <Route exact path="/tiles" component={TilesPage} />
+        <Route path="/tiles" component={TilesPage} />
       </Switch>
     </Page>
   </Router>

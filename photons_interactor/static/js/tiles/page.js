@@ -1,12 +1,17 @@
 import { AnimationsState, DisplayDice } from "./state.js";
 import { DevicesState } from "../device/state.js";
+import { TilesArranger } from "./arrange.js";
+import { ChangePath } from "../router.js";
 import { ShowError } from "../error.js";
+import { history } from "../history.js";
 
+import { Router, Route, Switch } from "react-router";
 import { connect } from "react-redux";
 import PropTypes from "prop-types";
 import React from "react";
 
 import CircularProgress from "@material-ui/core/CircularProgress";
+import ArrowDropDownIcon from "@material-ui/icons/ArrowDropDown";
 import MuiDialogContent from "@material-ui/core/DialogContent";
 import MuiDialogActions from "@material-ui/core/DialogActions";
 import PauseIcon from "@material-ui/icons/PauseCircleFilled";
@@ -39,8 +44,7 @@ const styles = theme => ({
     marginTop: "10px"
   },
   bar: { flexGrow: 1 },
-  devicesTitle: {
-    borderRight: "0.1em solid black",
+  tileTitle: {
     padding: "8px 16px 8px 0px"
   },
   tilecard: {
@@ -158,18 +162,78 @@ class StartAnimationChooser extends React.Component {
   }
 }
 
+@withStyles(styles)
+@connect()
+class TilePageChanger extends React.Component {
+  state = { anchorEl: null };
+
+  handleClick(event) {
+    this.setState({ anchorEl: event.currentTarget });
+  }
+
+  goTo(path) {
+    this.setState({ anchorEl: null });
+    this.props.dispatch(ChangePath(path));
+  }
+
+  render() {
+    const { anchorEl } = this.state;
+
+    return (
+      <div>
+        <Button
+          aria-owns={anchorEl ? "tile-page-menu" : undefined}
+          aria-haspopup="true"
+          onClick={this.handleClick.bind(this)}
+          variant="outlined"
+        >
+          <Router history={history}>
+            <Switch>
+              <Route
+                exact
+                path="/tiles/animate"
+                render={() => <span>Animate</span>}
+              />
+              <Route
+                exact
+                path="/tiles/arrange"
+                render={() => <span>Arrange</span>}
+              />
+            </Switch>
+          </Router>
+          <ArrowDropDownIcon />
+        </Button>
+        <Menu
+          id="simple-menu"
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={this.handleClose}
+        >
+          <MenuItem onClick={this.goTo.bind(this, "/tiles/animate")}>
+            Animate
+          </MenuItem>
+          <MenuItem onClick={this.goTo.bind(this, "/tiles/arrange")}>
+            Arrange
+          </MenuItem>
+        </Menu>
+      </div>
+    );
+  }
+}
+
 const TilesBar = withStyles(styles)(
   connect((state, ownProps) => ({}))(({ classes, dispatch }) => (
     <div className={classes.bar}>
       <AppBar position="static" color="default">
         <Toolbar>
           <Typography
-            className={classes.devicesTitle}
+            className={classes.tileTitle}
             variant="h6"
             color="inherit"
           >
             Tiles
           </Typography>
+          <TilePageChanger />
           <Divider />
           <Button onClick={e => dispatch(DevicesState.Refresh())}>
             <RefreshIcon />
@@ -422,7 +486,12 @@ export const TilesPage = connect((state, ownProps) => ({
   <div>
     <TilesBar />
     <ShowError error={error} clearer={DevicesState.ClearError()} />
-    <AnimationList />
+    <Router history={history}>
+      <Switch>
+        <Route exact path="/tiles/animate" component={AnimationList} />
+        <Route exact path="/tiles/arrange" component={TilesArranger} />
+      </Switch>
+    </Router>
   </div>
 ));
 
