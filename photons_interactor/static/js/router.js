@@ -1,6 +1,7 @@
 import { AnimationsState } from "./tiles/state.js";
 import { DevicesState } from "./device/state.js";
 import { TilesPage } from "./tiles/page.js";
+import { createAction } from "redux-act";
 import Dashboard from "./dashboard.js";
 import Page from "./page.js";
 
@@ -8,6 +9,11 @@ import { Router, Route, Switch } from "react-router";
 import { fork, put } from "redux-saga/effects";
 import { router } from "redux-saga-router";
 import { delay } from "redux-saga";
+
+export const ChangePath = createAction(
+  "Change the path of the browser",
+  path => ({ path })
+);
 
 export const routes = {
   "/": function* indexSaga() {

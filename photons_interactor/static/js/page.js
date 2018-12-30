@@ -1,6 +1,6 @@
 import { ControlPane } from "./control/component.js";
 import { ControlState } from "./control/state.js";
-import { history } from "./history.js";
+import { ChangePath } from "./router.js";
 
 import { connect } from "react-redux";
 import { Route } from "react-router";
@@ -58,7 +58,7 @@ const styles = theme => ({
   }
 });
 
-const GoToTilesButton = ({ classes }) => (
+const GoToTilesButton = connect()(({ classes, dispatch }) => (
   <Button
     variant="contained"
     color="default"
@@ -66,15 +66,15 @@ const GoToTilesButton = ({ classes }) => (
     href="/tiles"
     onClick={e => {
       e.preventDefault();
-      history.push("/tiles");
+      dispatch(ChangePath("/tiles"));
     }}
   >
     <VideoLibraryIcon className={classes.navLeftIcon} />
     Tiles
   </Button>
-);
+));
 
-const GoToHomeButton = ({ classes }) => (
+const GoToHomeButton = connect()(({ classes, dispatch }) => (
   <Button
     variant="contained"
     color="default"
@@ -82,13 +82,13 @@ const GoToHomeButton = ({ classes }) => (
     href="/tiles"
     onClick={e => {
       e.preventDefault();
-      history.push("/");
+      dispatch(ChangePath("/"));
     }}
   >
     <DashboardIcon className={classes.navLeftIcon} />
     Home
   </Button>
-);
+));
 
 const OpenControlPaneButton = connect()(({ classes, dispatch }) => (
   <Hidden mdUp implementation="css" className={classes.toolbarRightButtons}>

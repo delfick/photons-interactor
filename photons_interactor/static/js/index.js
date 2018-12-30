@@ -2,9 +2,9 @@
 import "babel-core/register";
 import "babel-polyfill";
 
+import { history, routerSaga } from "./history.js";
 import { routerFork, Routes } from "./router.js";
 import { listen } from "./wsclient.js";
-import { history } from "./history.js";
 import {
   makeReducer,
   makeSagaMiddleware,
@@ -47,6 +47,7 @@ var url =
 function* mainSaga() {
   yield fork(listen, url);
   yield routerFork(history);
+  yield fork(routerSaga);
 }
 
 sagaMiddleware.run(mainSaga);
