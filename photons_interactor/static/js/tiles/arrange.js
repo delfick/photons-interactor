@@ -16,7 +16,7 @@ export class TilesArranger extends React.Component {
       });
     });
 
-    var pixelWidth = Math.floor(width / (tiles.length * 9));
+    var pixelWidth = Math.max(Math.floor(width / (20 * 9)), 6);
 
     var pixels = [];
     tiles.map((tile, i) => {
@@ -35,8 +35,6 @@ export class TilesArranger extends React.Component {
         });
       });
     });
-
-    console.log(pixels);
 
     return (
       <Stage
