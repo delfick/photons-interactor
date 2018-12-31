@@ -11,8 +11,9 @@ from photons_themes.canvas import Canvas
 import colorsys
 import math
 
-def make_rgb_pixels(canvas, length):
-    made = []
+def make_rgb_and_color_pixels(canvas, length):
+    rgb_made = []
+    color_made = []
 
     for msg in canvas_to_msgs(canvas, coords_for_horizontal_line[:length], duration=1, acks=True):
         nxt = []
@@ -27,9 +28,10 @@ def make_rgb_pixels(canvas, length):
                     rgb = convert_K_to_RGB(c.kelvin)
 
             nxt.append(f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}")
-        made.append(nxt)
+        rgb_made.append(nxt)
+        color_made.append([c.as_dict() for c in msg.colors])
 
-    return made
+    return rgb_made, color_made
 
 async def tile_dice(target, serials, afr, **kwargs):
     canvas = Canvas()
@@ -50,7 +52,7 @@ async def tile_dice(target, serials, afr, **kwargs):
         if pkt | TileMessages.StateDeviceChain:
             orientations[pkt.serial] = orientations_from(pkt)
 
-    made = make_rgb_pixels(canvas, 5)
+    made, _ = make_rgb_and_color_pixels(canvas, 5)
 
     msgs = []
     for serial in serials:

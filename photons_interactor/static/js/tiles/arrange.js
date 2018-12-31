@@ -58,9 +58,11 @@ class Tile extends React.Component {
       start_y,
       pixels,
       tile_index,
+      serial,
       pixelWidth,
       lineWidth,
-      tileWidth
+      tileWidth,
+      dispatch
     } = this.props;
 
     return (
@@ -71,6 +73,8 @@ class Tile extends React.Component {
         draggable={true}
         onDragEnd={this.onDragEnd.bind(this)}
         dragBoundFunc={this.dragBound.bind(this)}
+        onClick={() => dispatch(TilesState.Highlight(serial, tile_index))}
+        onTap={() => dispatch(TilesState.Highlight(serial, tile_index))}
       >
         {pixels.map((pixel, j) => {
           var x = (j % 8) * pixelWidth;
@@ -130,6 +134,7 @@ class Tiles extends React.Component {
       rects.push(
         <Tile
           key={serial + i}
+          serial={serial}
           zero_x={zero_x}
           zero_y={zero_y}
           serial={serial}

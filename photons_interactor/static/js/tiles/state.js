@@ -20,6 +20,10 @@ class TilesStateKls {
   ArrangeError = createAction("Arrange error");
   StartArrange = createAction("Start an arrange");
   LeaveArrange = createAction("Leave arrange");
+  Highlight = createAction("highlight a tile", (serial, tile_index) => ({
+    serial,
+    tile_index
+  }));
   GotData = createAction("Got data");
 
   GotCoords = createAction("Got coords");
@@ -288,6 +292,16 @@ function* changeCoordsSaga(original) {
   );
 }
 
+function* highlightSaga(original) {
+  yield put(
+    WSCommand(
+      "/v1/lifx/command",
+      { command: "tiles/arrange/highlight", args: original.payload },
+      { original }
+    )
+  );
+}
+
 export function* animationsSaga() {
   yield takeLatest(AnimationsState.EnsureStatusStream, ensureStatusSaga);
   yield takeLatest(AnimationsState.LostStatusStream, lostStatusStreamSaga);
@@ -302,6 +316,7 @@ export function* tilesSaga() {
   yield takeLatest(TilesState.StartArrange, startArrangeSaga);
   yield takeLatest(TilesState.LeaveArrange, leaveArrangeSaga);
   yield takeLatest(TilesState.ChangeCoords, changeCoordsSaga);
+  yield takeLatest(TilesState.Highlight, highlightSaga);
 }
 
 export const fortests = {
