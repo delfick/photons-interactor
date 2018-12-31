@@ -20,6 +20,7 @@ from photons_themes.canvas import Canvas
 
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
+from collections import defaultdict
 from tornado import websocket
 import logging
 
@@ -42,10 +43,14 @@ class ArrangeState:
 
         for serial in serials:
             tasks = []
+            refs = []
             pixels = None
             initial = None
 
+            refs = defaultdict(list)
+
             if serial in self.serials:
+                refs[serial] = self.serials[serial]["refs"]
                 pixels = self.serials[serial]["pixels"]
                 initial = self.serials[serial]["initial"]
 
@@ -61,7 +66,7 @@ class ArrangeState:
                     all_errors.extend(errors)
                 else:
                     initial, pixels, coords = data
-                    self.serials[serial] = {"refs": [], "pixels": pixels, "initial": initial, "coords": coords}
+                    self.serials[serial] = {"refs": refs[serial], "pixels": pixels, "initial": initial, "coords": coords}
 
         final = {"serials": {}}
         if all_errors:
@@ -127,11 +132,11 @@ class ArrangeState:
         length = 5
         errors = []
         coords = []
-        initial = {"colors": [], "power": 65535}
         orientations = []
 
         msgs = [TileMessages.GetDeviceChain()]
         if initial is None:
+            initial = {"colors": [], "power": 65535}
             msgs.append(TileMessages.GetState64(tile_index=0, length=5, x=0, y=0, width=8))
             msgs.append(DeviceMessages.GetPower())
 
