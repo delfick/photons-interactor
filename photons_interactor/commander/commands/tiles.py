@@ -254,7 +254,7 @@ class LeaveArrangeCommand(store.Command):
         return {"ok": True}
 
 @store.command(name="tiles/arrange/change")
-class LeaveArrangeCommand(store.Command):
+class ChangeArrangeCommand(store.Command):
     finder = store.injected("finder")
     target = store.injected("targets.lan")
     arranger = store.injected("arranger")
