@@ -1,3 +1,5 @@
+import { TilesState } from "./state.js";
+
 import { Stage, Layer, Text, Rect, Group, Line } from "react-konva";
 import { withSize } from "react-sizeme";
 import { connect } from "react-redux";
@@ -23,11 +25,134 @@ function x_y_for_evt(evt, offset) {
   return [s_x, s_y];
 }
 
-@withSize({ monitorHeight: true })
+@connect((state, ownProps) => ({
+  pixels: state.tiles.by_serial[ownProps.serial].pixels[ownProps.tile_index]
+}))
+class Tile extends React.Component {
+  onDragEnd(e) {
+    var left_x = (this.newx - this.props.zero_x) / this.props.pixelWidth;
+    var top_y = (this.props.zero_y - this.newy) / this.props.pixelWidth;
+    this.props.dispatch(
+      TilesState.ChangeCoords(
+        this.props.serial,
+        this.props.tile_index,
+        left_x,
+        top_y
+      )
+    );
+  }
+
+  dragBound(pos) {
+    var newpos = {
+      x: pos.x - ((pos.x - this.props.zero_x) % this.props.pixelWidth),
+      y: pos.y - ((pos.y - this.props.zero_y) % this.props.pixelWidth)
+    };
+    this.newx = newpos.x;
+    this.newy = newpos.y;
+    return newpos;
+  }
+
+  render() {
+    var {
+      start_x,
+      start_y,
+      pixels,
+      tile_index,
+      pixelWidth,
+      lineWidth,
+      tileWidth
+    } = this.props;
+
+    return (
+      <Group
+        ref="group"
+        x={start_x}
+        y={start_y}
+        draggable={true}
+        onDragEnd={this.onDragEnd.bind(this)}
+        dragBoundFunc={this.dragBound.bind(this)}
+      >
+        {pixels.map((pixel, j) => {
+          var x = (j % 8) * pixelWidth;
+          var y = Math.floor(j / 8) * pixelWidth;
+          return (
+            <Rect
+              key={j}
+              width={pixelWidth}
+              height={pixelWidth}
+              x={x}
+              y={y}
+              fill={pixel}
+            />
+          );
+        })}
+        <Line
+          stroke="white"
+          strokeWidth={lineWidth}
+          points={[
+            0,
+            0,
+            tileWidth,
+            0,
+            tileWidth,
+            tileWidth,
+            0,
+            tileWidth,
+            0,
+            0
+          ]}
+        />
+      </Group>
+    );
+  }
+}
+
 @connect((state, ownProps) => ({ by_serial: state.tiles.by_serial }))
+class Tiles extends React.Component {
+  render() {
+    var { pixelWidth, tileWidth, zero_x, zero_y, by_serial } = this.props;
+
+    var tiles = [];
+    var lineWidth = Math.max(Math.floor(pixelWidth / 2), 1);
+
+    Object.keys(by_serial).map(serial => {
+      var coords = by_serial[serial].coords;
+      by_serial[serial].pixels.map((tile, i) => {
+        tiles.push([serial, coords[i], i]);
+      });
+    });
+
+    var rects = [];
+    tiles.map(([serial, [user_x, user_y], i]) => {
+      var start_x = zero_x + user_x * pixelWidth;
+      var start_y = zero_y - user_y * pixelWidth;
+
+      rects.push(
+        <Tile
+          key={serial + i}
+          zero_x={zero_x}
+          zero_y={zero_y}
+          serial={serial}
+          tile_index={i}
+          start_x={start_x}
+          start_y={start_y}
+          tileWith={tileWidth}
+          pixelWidth={pixelWidth}
+          lineWidth={lineWidth}
+        />
+      );
+    });
+
+    return <Layer>{rects}</Layer>;
+  }
+}
+
+@withSize({ monitorHeight: true })
 export class TilesArranger extends React.Component {
   constructor(props) {
     super(props);
+    this.tileoffsets = {};
+
     this.state = {
       zero_x: Math.floor(props.size.width / 2),
       zero_y: Math.floor(props.size.height / 2) - 100
@@ -58,18 +183,8 @@ export class TilesArranger extends React.Component {
 
   render() {
     var { width, height } = this.props.size;
-    var { by_serial } = this.props;
-
-    var tiles = [];
-    Object.keys(by_serial).map(serial => {
-      var coords = by_serial[serial].coords;
-      by_serial[serial].pixels.map((tile, i) => {
-        tiles.push([tile, coords[i]]);
-      });
-    });
 
     var pixelWidth = Math.max(Math.ceil(width / 160), 6);
-    var lineWidth = Math.max(Math.floor(pixelWidth / 2), 1);
     var tileWidth = pixelWidth * 8;
 
     var grid = [
@@ -143,7 +258,7 @@ export class TilesArranger extends React.Component {
       i >= -tileWidth * 2;
       i -= tileWidth
     ) {
-      if (i < width) {
+      if (i < height) {
         grid.push(
           <Line
             key={"bcol" + i}
@@ -154,48 +269,6 @@ export class TilesArranger extends React.Component {
         );
       }
     }
-
-    var rects = [];
-    tiles.map(([tile, [user_x, user_y]], i) => {
-      var pixels = [];
-      var start_x = this.state.zero_x + user_x * pixelWidth;
-      var start_y = this.state.zero_y - user_y * pixelWidth;
-
-      rects.push(
-        <Group key={i} x={start_x} y={start_y}>
-          {tile.map((pixel, j) => {
-            var x = (j % 8) * pixelWidth;
-            var y = Math.floor(j / 8) * pixelWidth;
-            return (
-              <Rect
-                key={j}
-                width={pixelWidth}
-                height={pixelWidth}
-                x={x}
-                y={y}
-                fill={pixel}
-              />
-            );
-          })}
-          <Line
-            stroke="white"
-            strokeWidth={lineWidth}
-            points={[
-              0,
-              0,
-              tileWidth,
-              0,
-              tileWidth,
-              tileWidth,
-              0,
-              tileWidth,
-              0,
-              0
-            ]}
-          />
-        </Group>
-      );
-    });
 
     return (
       <Stage
@@ -217,7 +290,12 @@ export class TilesArranger extends React.Component {
           />
         </Layer>
         <Layer>{grid}</Layer>
-        <Layer>{rects}</Layer>
+        <Tiles
+          zero_x={this.state.zero_x}
+          zero_y={this.state.zero_y}
+          pixelWidth={pixelWidth}
+          tileWidth={tileWidth}
+        />
       </Stage>
     );
   }

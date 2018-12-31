@@ -20,7 +20,18 @@ class TilesStateKls {
   ArrangeError = createAction("Arrange error");
   StartArrange = createAction("Start an arrange");
   LeaveArrange = createAction("Leave arrange");
+  GotData = createAction("Got data");
+
   GotCoords = createAction("Got coords");
+  ChangeCoords = createAction(
+    "Change coords",
+    (serial, tile_index, left_x, top_y) => ({
+      serial,
+      tile_index,
+      left_x,
+      top_y
+    })
+  );
 
   reducer() {
     return createReducer(
@@ -28,9 +39,17 @@ class TilesStateKls {
         [this.StartArrange]: (state, payload) => {
           return { ...state, arranging: true };
         },
-        [this.GotCoords]: (state, { error, serials }) => {
-          var by_serial = { ...state.by_serial, ...serials };
-          return { ...state, error, by_serial };
+        [this.GotData]: (state, { error, serials }) => {
+          return { ...state, error, by_serial: serials };
+        },
+        [this.GotCoords]: (state, { serial, data }) => {
+          var by_serial = { ...state.by_serial };
+          if (data === null) {
+            delete by_serial[serial];
+          } else {
+            by_serial[serial] = { ...state.by_serial[serial], ...data };
+          }
+          return { ...state, by_serial };
         }
       },
       {
@@ -233,7 +252,7 @@ function* displayDiceSaga(original) {
 function* startArrangeSaga(original) {
   var onerror = TilesState.ArrangeError;
 
-  var onsuccess = ({ data }) => TilesState.GotCoords(data);
+  var onsuccess = ({ data }) => TilesState.GotData(data);
 
   yield put(
     WSCommand(
@@ -257,6 +276,18 @@ function* leaveArrangeSaga(original) {
   }
 }
 
+function* changeCoordsSaga(original) {
+  var onsuccess = ({ data }) => TilesState.GotCoords(data);
+
+  yield put(
+    WSCommand(
+      "/v1/lifx/command",
+      { command: "tiles/arrange/change", args: original.payload },
+      { onsuccess, original }
+    )
+  );
+}
+
 export function* animationsSaga() {
   yield takeLatest(AnimationsState.EnsureStatusStream, ensureStatusSaga);
   yield takeLatest(AnimationsState.LostStatusStream, lostStatusStreamSaga);
@@ -270,6 +301,7 @@ export function* tilesSaga() {
   yield takeLatest(DisplayDice, displayDiceSaga);
   yield takeLatest(TilesState.StartArrange, startArrangeSaga);
   yield takeLatest(TilesState.LeaveArrange, leaveArrangeSaga);
+  yield takeLatest(TilesState.ChangeCoords, changeCoordsSaga);
 }
 
 export const fortests = {

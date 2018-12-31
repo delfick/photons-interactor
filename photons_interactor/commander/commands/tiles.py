@@ -17,6 +17,8 @@ from photons_themes.theme import ThemeColor as Color
 from photons_control.tile import tiles_from
 from photons_themes.canvas import Canvas
 
+from input_algorithms.dictobj import dictobj
+from input_algorithms import spec_base as sb
 from tornado import websocket
 import logging
 
@@ -32,10 +34,21 @@ class ArrangeState:
     async def start_arrange(self, serials, ref, target, afr):
         log.info(hp.lc("Starting arrange", serials=serials, ref=ref))
         all_errors = []
+
+        for serial in list(self.serials):
+            if serial not in serials:
+                del self.serials[serial]
+
         for serial in serials:
             tasks = []
-            if serial not in self.serials:
-                tasks.append((serial, hp.async_as_background(self.start(serial, target, afr))))
+            pixels = None
+            initial = None
+
+            if serial in self.serials:
+                pixels = self.serials[serial]["pixels"]
+                initial = self.serials[serial]["initial"]
+
+            tasks.append((serial, hp.async_as_background(self.start(serial, target, afr, pixels, initial))))
 
             for serial, t in tasks:
                 try:
@@ -58,9 +71,42 @@ class ArrangeState:
             if serial in self.serials:
                 if ref not in self.serials[serial]["refs"]:
                     self.serials[serial]["refs"].append(ref)
-                final["serials"][serial] = self.serials[serial]
+                final["serials"][serial] = self.info_for_browser(serial)
 
         return final
+
+    def info_for_browser(self, serial):
+        return {k: self.serials[serial][k] for k in ("pixels", "coords")}
+
+    async def change(self, serial, tile_index, left_x, top_y, target, afr):
+        if serial not in self.serials:
+            return {"serial": serial, "data": None}
+
+        user_x = (left_x + 4) / 8
+        user_y = (top_y - 4) / 8
+
+        msg = TileMessages.SetUserPosition(
+              tile_index = tile_index
+            , user_x = user_x
+            , user_y = user_y
+            , res_required = False
+            )
+
+        errors = []
+        await target.script(msg).run_with_all(serial, afr, error_catcher=errors, timeout=5)
+
+        if errors:
+            return {"serial": serial, "data": None}
+
+        coords = []
+        get_chain = TileMessages.GetDeviceChain()
+        async for pkt, _, _ in target.script(get_chain).run_with(serial, afr, error_catcher=errors, timeout=5):
+            if pkt | TileMessages.StateDeviceChain:
+                coords = [((c.user_x, c.user_y), (c.width, c.height)) for c in tiles_from(pkt)]
+                coords = [top_left for top_left, _ in user_coords_to_pixel_coords(coords)]
+                self.serials[serial]["coords"] = coords
+
+        return {"serial": serial, "data": self.info_for_browser(serial)}
 
     async def leave_arrange(self, ref, target, afr):
         log.info(hp.lc("Leaving arrange", ref=ref))
@@ -76,17 +122,19 @@ class ArrangeState:
         for t in tasks:
             await t
 
-    async def start(self, serial, target, afr):
+    async def start(self, serial, target, afr, pixels, initial):
         length = 5
         errors = []
         coords = []
         initial = {"colors": [], "power": 65535}
         orientations = []
 
-        get_state = TileMessages.GetState64(tile_index=0, length=5, x=0, y=0, width=8)
-        get_chain = TileMessages.GetDeviceChain()
-        get_power = DeviceMessages.GetPower()
-        async for pkt, _, _ in target.script([get_state, get_chain, get_power]).run_with(serial, afr, error_catcher=errors):
+        msgs = [TileMessages.GetDeviceChain()]
+        if initial is None:
+            msgs.append(TileMessages.GetState64(tile_index=0, length=5, x=0, y=0, width=8))
+            msgs.append(DeviceMessages.GetPower())
+
+        async for pkt, _, _ in target.script(msgs).run_with(serial, afr, error_catcher=errors):
             if pkt | TileMessages.State64:
                 initial["colors"].append(
                       [ {"hue": c.hue, "saturation": c.saturation, "brightness": c.brightness, "kelvin":  c.kelvin}
@@ -104,22 +152,22 @@ class ArrangeState:
         if errors:
             return errors, None, None
 
-        canvas = Canvas()
+        if pixels is None:
+            canvas = Canvas()
 
-        def dcf(i, j):
-            return Color(0, 0, 0, 3500)
-        canvas.default_color_func = dcf
+            def dcf(i, j):
+                return Color(0, 0, 0, 3500)
+            canvas.default_color_func = dcf
 
-        self.style_maker.set_canvas(canvas, length)
+            self.style_maker.set_canvas(canvas, length)
+            pixels = make_rgb_pixels(canvas, length)
 
-        pixels = make_rgb_pixels(canvas, length)
+            msgs = [DeviceMessages.SetPower(level=65535)]
+            msgs.extend(canvas_to_msgs(canvas, coords_for_horizontal_line, duration=1, acks=True, orientations=orientations))
+            await target.script(msgs).run_with_all(serial, afr, error_catcher=errors)
 
-        msgs = [DeviceMessages.SetPower(level=65535)]
-        msgs.extend(canvas_to_msgs(canvas, coords_for_horizontal_line, duration=1, acks=True, orientations=orientations))
-        await target.script(msgs).run_with_all(serial, afr, error_catcher=errors)
-
-        if errors:
-            return errors, None
+            if errors:
+                return errors, None
 
         return errors, (initial, pixels, coords)
 
@@ -199,3 +247,18 @@ class LeaveArrangeCommand(store.Command):
         afr = await self.finder.args_for_run()
         await self.arranger.leave_arrange(self.request_handler.key, self.target, afr)
         return {"ok": True}
+
+@store.command(name="tiles/arrange/change")
+class LeaveArrangeCommand(store.Command):
+    finder = store.injected("finder")
+    target = store.injected("targets.lan")
+    arranger = store.injected("arranger")
+
+    serial = dictobj.Field(sb.string_spec)
+    tile_index = dictobj.Field(sb.integer_spec)
+    left_x = dictobj.Field(sb.integer_spec)
+    top_y = dictobj.Field(sb.integer_spec)
+
+    async def execute(self):
+        afr = await self.finder.args_for_run()
+        return await self.arranger.change(self.serial, self.tile_index, self.left_x, self.top_y, self.target, afr)
