@@ -4,6 +4,7 @@ from photons_interactor.commander.errors import NotAWebSocket
 from photons_interactor.commander import helpers as chp
 from photons_interactor.commander.store import store
 
+from photons_app.errors import FoundNoDevices
 from photons_app import helpers as hp
 
 from photons_tile_paint.animation import (
@@ -208,11 +209,15 @@ class TileDiceCommand(store.Command):
         afr = await self.finder.args_for_run()
         reference = self.finder.find(filtr=fltr)
 
-        await self.target.script(DeviceMessages.SetPower(level=65535)).run_with_all(reference, afr
+        serials = await tile_serials_from_reference(self.target, reference, afr)
+        if not serials:
+            raise FoundNoDevices("Didn't find any tiles")
+
+        await self.target.script(DeviceMessages.SetPower(level=65535)).run_with_all(serials, afr
             , error_catcher = result.error
             )
 
-        result.result["results"]["tiles"] = await tile_dice(self.target, self.finder.find(filtr=fltr), afr
+        result.result["results"]["tiles"] = await tile_dice(self.target, serials, afr
             , error_catcher = result.error
             )
 

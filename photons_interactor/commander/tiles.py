@@ -1,8 +1,6 @@
-from photons_app.errors import FoundNoDevices
-
 from photons_tile_paint.animation import (
       coords_for_horizontal_line
-    , tile_serials_from_reference, put_characters_on_canvas
+    , put_characters_on_canvas
     , canvas_to_msgs, orientations_from
     )
 from photons_themes.theme import ThemeColor as Color
@@ -33,11 +31,7 @@ def make_rgb_pixels(canvas, length):
 
     return made
 
-async def tile_dice(target, reference, afr, **kwargs):
-    serials = await tile_serials_from_reference(target, reference, afr)
-    if not serials:
-        raise FoundNoDevices("Didn't find any tiles")
-
+async def tile_dice(target, serials, afr, **kwargs):
     canvas = Canvas()
 
     def default_color_func(i, j):
