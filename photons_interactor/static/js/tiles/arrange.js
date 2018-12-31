@@ -136,7 +136,7 @@ class Tiles extends React.Component {
           tile_index={i}
           start_x={start_x}
           start_y={start_y}
-          tileWith={tileWidth}
+          tileWidth={tileWidth}
           pixelWidth={pixelWidth}
           lineWidth={lineWidth}
         />
