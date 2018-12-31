@@ -29,13 +29,13 @@ class TilesStateKls {
           return { ...state, arranging: true };
         },
         [this.GotCoords]: (state, { error, serials }) => {
-          var pixels = { ...state.pixels, ...serials };
-          return { ...state, error, pixels };
+          var by_serial = { ...state.by_serial, ...serials };
+          return { ...state, error, by_serial };
         }
       },
       {
         error: undefined,
-        pixels: {},
+        by_serial: {},
         arranging: false
       }
     );

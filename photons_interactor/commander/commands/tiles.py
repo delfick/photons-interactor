@@ -11,8 +11,10 @@ from photons_tile_paint.animation import (
     , tile_serials_from_reference
     , canvas_to_msgs, orientations_from
     )
+from photons_themes.coords import user_coords_to_pixel_coords
 from photons_messages import DeviceMessages, TileMessages
 from photons_themes.theme import ThemeColor as Color
+from photons_control.tile import tiles_from
 from photons_themes.canvas import Canvas
 
 from tornado import websocket
@@ -37,15 +39,15 @@ class ArrangeState:
 
             for serial, t in tasks:
                 try:
-                    errors, initial, pixels = await t
+                    errors, data = await t
                 except Exception as error:
                     errors = [error]
 
                 if errors:
                     all_errors.extend(errors)
-
-                if pixels:
-                    self.serials[serial] = {"refs": [], "pixels": pixels, "initial": initial}
+                else:
+                    initial, pixels, coords = data
+                    self.serials[serial] = {"refs": [], "pixels": pixels, "initial": initial, "coords": coords}
 
         final = {"serials": {}}
         if all_errors:
@@ -56,7 +58,7 @@ class ArrangeState:
             if serial in self.serials:
                 if ref not in self.serials[serial]["refs"]:
                     self.serials[serial]["refs"].append(ref)
-                final["serials"][serial] = self.serials[serial]["pixels"]
+                final["serials"][serial] = self.serials[serial]
 
         return final
 
@@ -77,6 +79,7 @@ class ArrangeState:
     async def start(self, serial, target, afr):
         length = 5
         errors = []
+        coords = []
         initial = {"colors": [], "power": 65535}
         orientations = []
 
@@ -93,6 +96,8 @@ class ArrangeState:
             elif pkt | TileMessages.StateDeviceChain:
                 length = pkt.total_count
                 orientations = orientations_from(pkt)
+                coords = [((c.user_x, c.user_y), (c.width, c.height)) for c in tiles_from(pkt)]
+                coords = [top_left for top_left, _ in user_coords_to_pixel_coords(coords)]
             elif pkt | DeviceMessages.StatePower:
                 initial["power"] = pkt.level
 
@@ -114,9 +119,9 @@ class ArrangeState:
         await target.script(msgs).run_with_all(serial, afr, error_catcher=errors)
 
         if errors:
-            return errors, None, None
+            return errors, None
 
-        return errors, initial, pixels
+        return errors, (initial, pixels, coords)
 
     async def restore(self, serial, initial, target, afr):
         msgs = [DeviceMessages.SetPower(level=initial["power"])]
