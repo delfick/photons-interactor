@@ -25,9 +25,33 @@ function x_y_for_evt(evt, offset) {
   return [s_x, s_y];
 }
 
-@connect((state, ownProps) => ({
+const TilePixels = connect((state, ownProps) => ({
   pixels: state.tiles.by_serial[ownProps.serial].pixels[ownProps.tile_index]
-}))
+}))(({ dispatch, pixels, pixelWidth, lineWidth, tileWidth }) => (
+  <Group>
+    {pixels.map((pixel, j) => {
+      var x = (j % 8) * pixelWidth;
+      var y = Math.floor(j / 8) * pixelWidth;
+      return (
+        <Rect
+          key={j}
+          width={pixelWidth}
+          height={pixelWidth}
+          x={x}
+          y={y}
+          fill={pixel}
+        />
+      );
+    })}
+    <Line
+      stroke="white"
+      strokeWidth={lineWidth}
+      points={[0, 0, tileWidth, 0, tileWidth, tileWidth, 0, tileWidth, 0, 0]}
+    />
+  </Group>
+));
+
+@connect()
 class Tile extends React.Component {
   onDragEnd(e) {
     var left_x = (this.newx - this.props.zero_x) / this.props.pixelWidth;
@@ -76,35 +100,12 @@ class Tile extends React.Component {
         onClick={() => dispatch(TilesState.Highlight(serial, tile_index))}
         onTap={() => dispatch(TilesState.Highlight(serial, tile_index))}
       >
-        {pixels.map((pixel, j) => {
-          var x = (j % 8) * pixelWidth;
-          var y = Math.floor(j / 8) * pixelWidth;
-          return (
-            <Rect
-              key={j}
-              width={pixelWidth}
-              height={pixelWidth}
-              x={x}
-              y={y}
-              fill={pixel}
-            />
-          );
-        })}
-        <Line
-          stroke="white"
-          strokeWidth={lineWidth}
-          points={[
-            0,
-            0,
-            tileWidth,
-            0,
-            tileWidth,
-            tileWidth,
-            0,
-            tileWidth,
-            0,
-            0
-          ]}
+        <TilePixels
+          serial={serial}
+          tile_index={tile_index}
+          pixelWidth={pixelWidth}
+          lineWidth={lineWidth}
+          tileWidth={tileWidth}
         />
       </Group>
     );
