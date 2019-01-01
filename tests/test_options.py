@@ -23,7 +23,7 @@ describe TestCase, "Options":
         self.assertNotEqual(cookie_secret, options2.cookie_secret)
 
         self.assertEqual(options.static_dest, dist_dir)
-        self.assertEqual(options.html_path, "/(?:tiles.+)?")
+        self.assertEqual(options.html_path, "/(?:tiles.*)?")
         self.assertEqual(options.database.as_dict(), {"uri": "somewhere", "db_migrations": mock.ANY})
 
     it "can set values of it's own":
