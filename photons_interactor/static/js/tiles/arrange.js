@@ -248,7 +248,7 @@ export class TilesArranger extends React.Component {
 
     for (
       var i = this.state.zero_y + tileWidth;
-      i <= width + tileWidth * 2;
+      i <= height + tileWidth * 2;
       i += tileWidth
     ) {
       if (i > 0) {
