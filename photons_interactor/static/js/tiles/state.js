@@ -16,6 +16,31 @@ export const DisplayDice = createAction(
   }
 );
 
+function full_screen(on) {
+  if (on) {
+    var elem = document.documentElement;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      elem.msRequestFullscreen();
+    } else if (elem.mozRequestFullScreen) {
+      elem.mozRequestFullScreen();
+    } else if (elem.webkitRequestFullscreen) {
+      elem.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+  }
+}
+
 class TilesStateKls {
   ArrangeError = createAction("Arrange error");
   StartArrange = createAction("Start an arrange");
@@ -25,6 +50,8 @@ class TilesStateKls {
     tile_index
   }));
   GotData = createAction("Got data");
+
+  ToggleArrangerExpand = createAction("Toggle arranger expand");
 
   GotCoords = createAction("Got coords");
   ChangeCoords = createAction(
@@ -54,12 +81,18 @@ class TilesStateKls {
             by_serial[serial] = { ...state.by_serial[serial], ...data };
           }
           return { ...state, by_serial };
+        },
+        [this.ToggleArrangerExpand]: (state, payload) => {
+          var expandArranger = !state.expandArranger;
+          full_screen(expandArranger);
+          return { ...state, expandArranger: expandArranger };
         }
       },
       {
         error: undefined,
         by_serial: {},
-        arranging: false
+        arranging: false,
+        expandArranger: false
       }
     );
   }

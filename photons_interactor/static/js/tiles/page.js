@@ -512,6 +512,24 @@ class TileOptions extends React.Component {
   }
 }
 
+const TileArrangerShell = connect((state, ownProps) => ({
+  expandArranger: state.tiles.expandArranger
+}))(({ expandArranger }) => {
+  var style = { width: "100%", height: "100%" };
+  if (expandArranger) {
+    style.position = "absolute";
+    style.left = 0;
+    style.top = 0;
+    style.zIndex = 9001;
+  }
+
+  return (
+    <div style={style}>
+      <TilesArranger style={{ height: "100%" }} />
+    </div>
+  );
+});
+
 export const TilesPage = connect((state, ownProps) => ({
   error: state.devices.error
 }))(({ error }) => (
@@ -521,11 +539,7 @@ export const TilesPage = connect((state, ownProps) => ({
     <Router history={history}>
       <Switch>
         <Route exact path="/tiles/animate" component={AnimationList} />
-        <Route
-          exact
-          path="/tiles/arrange"
-          render={() => <TilesArranger style={{ height: "100%" }} />}
-        />
+        <Route exact path="/tiles/arrange" component={TileArrangerShell} />
       </Switch>
     </Router>
   </div>

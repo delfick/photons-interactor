@@ -152,6 +152,7 @@ class Tiles extends React.Component {
   }
 }
 
+@connect()
 @withSize({ monitorHeight: true })
 export class TilesArranger extends React.Component {
   constructor(props) {
@@ -184,6 +185,10 @@ export class TilesArranger extends React.Component {
       zero_x: this.grid_start_offset.zero_x - diffx,
       zero_y: this.grid_start_offset.zero_y - diffy
     });
+  }
+
+  clickExpander(e) {
+    this.props.dispatch(TilesState.ToggleArrangerExpand());
   }
 
   render() {
@@ -301,6 +306,52 @@ export class TilesArranger extends React.Component {
           pixelWidth={pixelWidth}
           tileWidth={tileWidth}
         />
+        <Layer>
+          <Group
+            onClick={this.clickExpander.bind(this)}
+            onTap={this.clickExpander.bind(this)}
+          >
+            <Rect
+              width={40}
+              height={40}
+              x={width - 40}
+              y={0}
+              fill="#ffffff5c"
+            />
+            <Line
+              strokeWidth={3}
+              stroke="black"
+              points={[
+                width - 35,
+                5,
+                width - 5,
+                5,
+                width - 5,
+                35,
+                width - 35,
+                35,
+                width - 35,
+                5
+              ]}
+            />
+            <Line
+              strokeWidth={3}
+              stroke="black"
+              points={[
+                width - 35,
+                25,
+                width - 25,
+                25,
+                width - 25,
+                35,
+                width - 35,
+                35,
+                width - 35,
+                25
+              ]}
+            />
+          </Group>
+        </Layer>
       </Stage>
     );
   }
