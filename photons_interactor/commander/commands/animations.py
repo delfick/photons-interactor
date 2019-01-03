@@ -205,6 +205,9 @@ class AnimationsStore:
                             )
                     except Finish:
                         pass
+                    except Exception as error:
+                        log.exception(error)
+                        await asyncio.sleep(1)
 
                     if final_future.done():
                         return
@@ -216,6 +219,9 @@ class AnimationsStore:
                             await transition_animation.animate(target, afr, final_future, reference, options)
                         except Finish:
                             pass
+                        except Exception as error:
+                            log.exception(error)
+                            await asyncio.sleep(1)
 
                 if not repeat:
                     return
