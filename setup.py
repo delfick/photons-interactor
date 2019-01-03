@@ -9,7 +9,7 @@ setup(
     , include_package_data = True
 
     , install_requires =
-      [ "lifx-photons-core==0.9.3"
+      [ "lifx-photons-core==0.9.4"
       , "tornado==5.1.1"
       , "SQLAlchemy==1.2.10"
       , "alembic==1.0.0"
