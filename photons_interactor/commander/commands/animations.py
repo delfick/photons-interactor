@@ -70,7 +70,7 @@ class TileTransitionAnimation(Animation):
 
             for (left, top), (width, height) in coords:
                 for i in range(left, left + width):
-                    for j in range(top - height, top):
+                    for j in range(top, top - height, -1):
                         remaining[(i, j)] = True
 
             wait = 0
