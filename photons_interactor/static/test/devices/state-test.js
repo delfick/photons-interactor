@@ -10,6 +10,11 @@ import {
 import { put, takeLatest } from "redux-saga/effects";
 import { assert } from "chai";
 
+var putAction = thing => {
+  assert.equal(thing.type, "PUT");
+  return thing.payload.action;
+};
+
 describe("Devices Sagas", () => {
   describe("deviceSaga", () => {
     it("converts some commands", () => {
@@ -37,8 +42,8 @@ describe("Devices Sagas", () => {
   const getWSCommand = (saga, original) => {
     var saga = saga(original);
     var result = saga.next().value;
-    var payload = result.PUT.action.payload;
-    delete result.PUT.action.payload;
+    var payload = putAction(result).payload;
+    delete putAction(result).payload;
 
     var want = WSCommand("<path>", undefined, {});
     delete want.payload;
@@ -120,7 +125,7 @@ describe("Devices Sagas", () => {
       var original = DevicesState.Refresh();
       var saga = devicemod.gotSerialsSaga(original);
       var result = saga.next().value;
-      var payload = result.PUT.action;
+      var payload = putAction(result);
       assert.deepEqual(payload, DevicesState.GetDetails());
       assert(saga.next().done);
     });
@@ -131,7 +136,7 @@ describe("Devices Sagas", () => {
       var original = DevicesState.Refresh();
       var saga = devicemod.refreshSaga(original);
       var result = saga.next().value;
-      var payload = result.PUT.action;
+      var payload = putAction(result);
       assert.deepEqual(payload, DevicesState.GetDetails(true));
       assert(saga.next().done);
     });

@@ -46,17 +46,17 @@ describe("WSClient", function() {
           return { ...state, datas: [...state.datas, data] };
         },
         [GotError]: (state, { error, error_code, original }) => {
-          var error = { error, error_code };
-          original.payload.promise.resolve({ error });
-          return { ...state, errors: [...state.errors, error] };
+          var e = { error, error_code };
+          original.payload.promise.resolve({ error: e });
+          return { ...state, errors: [...state.errors, e] };
         },
         [GotProgress]: (state, { progress, original }) => {
           original.payload.progress.push(progress);
           return { ...state, progresses: [...state.progresses, progress] };
         },
         [DefaultError]: (state, { error, error_code }) => {
-          var error = { error, error_code };
-          return { ...state, defaulterror: [...state.defaulterror, error] };
+          var e = { error, error_code };
+          return { ...state, defaulterror: [...state.defaulterror, e] };
         }
       },
       { datas: [], errors: [], progresses: [], defaulterror: [] }
@@ -208,7 +208,7 @@ describe("WSClient", function() {
         await wstask.done;
       }
       if (wsServer) {
-        wsServer.close(1000, "test ended");
+        wsServer.close();
       }
     });
 
