@@ -4,7 +4,7 @@ import IconButton from "@material-ui/core/IconButton";
 import Snackbar from "@material-ui/core/Snackbar";
 import CloseIcon from "@material-ui/icons/Close";
 
-export const ShowError = connect()(({ dispatch, error, clearer }) =>
+export const ShowError = connect()(({ dispatch, error, clearer }) => (
   <Snackbar
     anchorOrigin={{
       vertical: "bottom",
@@ -26,10 +26,6 @@ export const ShowError = connect()(({ dispatch, error, clearer }) =>
         <CloseIcon />
       </IconButton>
     ]}
-    message={
-      <span id="message-id">
-        {error}
-      </span>
-    }
+    message={<span id="message-id">{error}</span>}
   />
-);
+));

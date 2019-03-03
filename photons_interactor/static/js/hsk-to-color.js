@@ -11,7 +11,7 @@ export default (hue, saturation, kelvin) => {
     l *= 2;
     s *= l <= 1 ? l : 2 - l;
     _v = (l + s) / 2;
-    _s = 2 * s / (l + s);
+    _s = (2 * s) / (l + s);
 
     return {
       h: _h,

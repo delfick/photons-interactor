@@ -18,7 +18,7 @@ var bulbconnector = connect((state, ownProps) => ({
   data: state.devices.devices[ownProps.serial],
   selected: state.selection.selection[ownProps.serial]
 }));
-const Bulb = bulbconnector(({ dispatch, serial, data, selected }) =>
+const Bulb = bulbconnector(({ dispatch, serial, data, selected }) => (
   <Card
     data-cy="bulb"
     style={selected ? { backgroundColor: "#0000ff14" } : undefined}
@@ -27,19 +27,20 @@ const Bulb = bulbconnector(({ dispatch, serial, data, selected }) =>
     }}
   >
     <CardContent>
-      <Typography component="p">
-        {serial}
-      </Typography>
-      {!data
-        ? <CircularProgress size={20} />
-        : <BulbData serial={serial} data={data} />}
+      <Typography component="p">{serial}</Typography>
+      {!data ? (
+        <CircularProgress size={20} />
+      ) : (
+        <BulbData serial={serial} data={data} />
+      )}
     </CardContent>
   </Card>
-);
+));
 
-const BulbData = ({ serial, data }) =>
+const BulbData = ({ serial, data }) => (
   <Typography component="p" data-cy="bulb-label">
     {data.label}
-  </Typography>;
+  </Typography>
+);
 
 export { Bulb };
