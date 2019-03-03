@@ -1,5 +1,14 @@
-import { call, spawn, cancel, fork, put, take, race } from "redux-saga/effects";
-import { eventChannel, channel, END, delay } from "redux-saga";
+import {
+  call,
+  spawn,
+  cancel,
+  fork,
+  put,
+  take,
+  race,
+  delay
+} from "redux-saga/effects";
+import { eventChannel, channel, END } from "redux-saga";
 import { createAction, createReducer } from "redux-act";
 import uuidv4 from "uuid/v4";
 
@@ -50,7 +59,7 @@ export const WSCommand = createAction(
 
 function* maybeTimeoutMessage(actions, messageId) {
   var action = actions[messageId];
-  yield call(delay, action.timeout || 5000);
+  yield delay(action.timeout || 5000);
   try {
     var response = action.onerror({
       error: "Timedout waiting for a reply to the message",
@@ -90,7 +99,7 @@ function* sendToSocket(socket, sendch, actions) {
 
 function* tickMessages(socket) {
   while (true) {
-    yield call(delay, 15000);
+    yield delay(15000);
     if (socket.readyState === 1) {
       socket.send(JSON.stringify({ path: "__tick__" }));
     }
@@ -131,7 +140,7 @@ function* startWS(url, count, sendch, receivech, actions) {
   var start = Date.now();
 
   try {
-    var { timeout, w } = yield race({ timeout: call(delay, 2000), w: ws });
+    var { timeout, w } = yield race({ timeout: delay(2000), w: ws });
   } catch (e) {
     console.error("Failed to start websocket connection", e);
     yield put(
@@ -144,7 +153,7 @@ function* startWS(url, count, sendch, receivech, actions) {
     );
     var diff = Date.now() - start;
     if (diff < 1000) {
-      yield call(delay, 1000 - diff);
+      yield delay(1000 - diff);
     }
     return;
   }
@@ -381,6 +390,6 @@ export function* listen(url, defaultonerror, delayMS) {
     }
 
     delete messages[count];
-    yield call(delay, delayMS || 5000);
+    yield delay(delayMS || 5000);
   }
 }

@@ -1,8 +1,7 @@
 import { WSCommand } from "../wsclient.js";
 
-import { take, put, takeLatest, select, call } from "redux-saga/effects";
+import { take, put, takeLatest, select, call, delay } from "redux-saga/effects";
 import { createAction, createReducer } from "redux-act";
-import { delay } from "redux-saga";
 
 class SelectionStateKls {
   SetPower = createAction("Set power", power => ({
@@ -156,14 +155,14 @@ function* askForDetailsSaga(original) {
     if (results) {
       var payload = results.payload;
       var { hue, saturation, brightness, kelvin } = payload;
-      var data = {
+      var d = {
         on: payload.power !== 0,
         hue,
         saturation,
         brightness,
         kelvin
       };
-      return SelectionState.GotState({ data, serial, state_number });
+      return SelectionState.GotState({ data: d, serial, state_number });
     }
   };
 
@@ -180,7 +179,7 @@ function* askForDetailsSaga(original) {
     )
   );
 
-  yield call(delay, 1000);
+  yield delay(1000);
   yield put(SelectionState.StopWaiting({ state_number }));
 }
 

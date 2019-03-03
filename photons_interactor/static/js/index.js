@@ -1,6 +1,9 @@
+// Get csss
+import "../css/app.scss";
+
 // Do polyfills, must happen first
-import "babel-core/register";
-import "babel-polyfill";
+import "@babel/register";
+import "@babel/polyfill";
 
 import { history, routerSaga } from "./history.js";
 import { routerFork, Routes } from "./router.js";

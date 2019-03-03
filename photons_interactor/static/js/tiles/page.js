@@ -151,7 +151,7 @@ class StartAnimationChooser extends React.Component {
         </Button>
 
         <Select
-          value={this.chosen(available)}
+          value={this.chosen(available) || "Select"}
           onChange={e => this.setState({ chosen: e.target.value })}
         >
           {available.map(name => (

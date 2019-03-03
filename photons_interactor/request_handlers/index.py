@@ -30,14 +30,14 @@ template = """
   <head>
     <title>Photons Interactor</title>
     <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64,{favicon}">
-    <link rel="stylesheet" type="text/css" href="/static/app.css?{timestamp}">
+    <link rel="stylesheet" type="text/css" href="/static/main.css?{timestamp}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
 
   <body>
     <div id="page"></div>
 
-    <script src="/static/vendor.app.js?{timestamp}"></script>
+    <script src="/static/vendors~main.app.js?{timestamp}"></script>
     <script src="/static/app.js?{timestamp}"></script>
 
     <script>

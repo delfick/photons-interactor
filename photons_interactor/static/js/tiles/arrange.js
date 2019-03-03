@@ -1,6 +1,7 @@
 import { TilesState } from "./state.js";
 
 import { Stage, Layer, Text, Rect, Group, Line } from "react-konva";
+import { ReactReduxContext, Provider } from "react-redux";
 import { withSize } from "react-sizeme";
 import { connect } from "react-redux";
 
@@ -282,78 +283,83 @@ export class TilesArranger extends React.Component {
     }
 
     return (
-      <Stage
-        ref="child"
-        width={width}
-        height={height}
-        style={{ margin: "20px" }}
-        fill="red"
-      >
-        <Layer>
-          <Rect
+      <ReactReduxContext.Consumer>
+        {({ store }) => (
+          <Stage
             width={width}
             height={height}
-            fill="#e6e6e6"
-            draggable={true}
-            dragBoundFunc={pos => ({ x: 0, y: 0 })}
-            onDragMove={this.drag_grid.bind(this)}
-            onDragStart={this.drag_grid_start.bind(this)}
-          />
-        </Layer>
-        <Layer>{grid}</Layer>
-        <Tiles
-          zero_x={this.state.zero_x}
-          zero_y={this.state.zero_y}
-          pixelWidth={pixelWidth}
-          tileWidth={tileWidth}
-        />
-        <Layer>
-          <Group
-            onClick={this.clickExpander.bind(this)}
-            onTap={this.clickExpander.bind(this)}
+            style={{ margin: "20px" }}
+            fill="red"
           >
-            <Rect
-              width={40}
-              height={40}
-              x={width - 40}
-              y={0}
-              fill="#ffffff5c"
-            />
-            <Line
-              strokeWidth={3}
-              stroke="black"
-              points={[
-                width - 35,
-                5,
-                width - 5,
-                5,
-                width - 5,
-                35,
-                width - 35,
-                35,
-                width - 35,
-                5
-              ]}
-            />
-            <Line
-              strokeWidth={3}
-              stroke="black"
-              points={[
-                width - 35,
-                25,
-                width - 25,
-                25,
-                width - 25,
-                35,
-                width - 35,
-                35,
-                width - 35,
-                25
-              ]}
-            />
-          </Group>
-        </Layer>
-      </Stage>
+            <Provider store={store}>
+              <Layer>
+                <Rect
+                  width={width}
+                  height={height}
+                  fill="#e6e6e6"
+                  draggable={true}
+                  dragBoundFunc={pos => ({ x: 0, y: 0 })}
+                  onDragMove={this.drag_grid.bind(this)}
+                  onDragStart={this.drag_grid_start.bind(this)}
+                />
+              </Layer>
+              <Layer>{grid}</Layer>
+              <Tiles
+                zero_x={this.state.zero_x}
+                zero_y={this.state.zero_y}
+                pixelWidth={pixelWidth}
+                tileWidth={tileWidth}
+              />
+              <Layer>
+                <Group
+                  onClick={this.clickExpander.bind(this)}
+                  onTap={this.clickExpander.bind(this)}
+                >
+                  <Rect
+                    width={40}
+                    height={40}
+                    x={width - 40}
+                    y={0}
+                    fill="#ffffff5c"
+                  />
+                  <Line
+                    strokeWidth={3}
+                    stroke="black"
+                    points={[
+                      width - 35,
+                      5,
+                      width - 5,
+                      5,
+                      width - 5,
+                      35,
+                      width - 35,
+                      35,
+                      width - 35,
+                      5
+                    ]}
+                  />
+                  <Line
+                    strokeWidth={3}
+                    stroke="black"
+                    points={[
+                      width - 35,
+                      25,
+                      width - 25,
+                      25,
+                      width - 25,
+                      35,
+                      width - 35,
+                      35,
+                      width - 35,
+                      25
+                    ]}
+                  />
+                </Group>
+              </Layer>
+            </Provider>
+          </Stage>
+        )}
+      </ReactReduxContext.Consumer>
     );
   }
 }

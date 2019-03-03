@@ -1,66 +1,57 @@
-var ExtractTextPlugin = require("extract-text-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 var webpack = require("webpack");
 var path = require("path");
 
-const NODE_ENV = process.env.NODE_ENV || "development";
-
-var plugins = [
-  new ExtractTextPlugin({ filename: "static/app.css" }),
-  new webpack.DefinePlugin({
-    "process.env.NODE_ENV": JSON.stringify(NODE_ENV)
-  }),
-  new webpack.ProvidePlugin({ React: "react" })
-];
+var mode = process.env.NODE_ENV || "development";
 
 module.exports = {
-  entry: ["./js/index.js", "./css/app.scss"],
-  mode: NODE_ENV,
-  devtool: "eval-source-map",
-  output: { filename: "static/app.js", path: path.resolve(__dirname, "dist") },
-  plugins: plugins,
-  resolve: { symlinks: false },
+  mode: mode,
+  entry: ["./js/index.js"],
+  output: {
+    filename: "static/app.js",
+    path: path.resolve(__dirname, "dist")
+  },
   optimization: {
-    namedChunks: true,
     splitChunks: {
-      cacheGroups: {
-        commons: {
-          test: /[\\/]node_modules[\\/]/,
-          name: "vendor",
-          chunks: "all",
-          enforce: true
-        }
-      }
+      chunks: "all"
     }
   },
+  devtool: "eval-source-map",
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: "static/[name].css"
+    }),
+    new webpack.DefinePlugin({
+      "process.env.NODE_ENV": JSON.stringify(mode)
+    }),
+    new webpack.ProvidePlugin({ React: "react" })
+  ],
   module: {
     rules: [
       {
-        test: /.s?css$/,
-        use: ExtractTextPlugin.extract({
-          use: [{ loader: "css-loader" }, { loader: "sass-loader" }]
-        })
+        test: /\.(sa|sc|c)ss$/,
+        use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
       },
       {
         test: /\.woff2?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
         use: "url-loader"
       },
       {
-        test: /.js$/,
+        test: /\.jsx?$/,
         exclude: /node_modules/,
-        use: {
-          loader: "babel-loader",
-          options: {
-            presets: ["env", "react"],
-            plugins: [
-              "transform-object-rest-spread",
-              "syntax-export-extensions",
-              "transform-decorators-legacy",
-              "transform-function-bind",
-              "transform-class-properties",
-              "transform-es2015-template-literals"
-            ]
+        use: [
+          {
+            loader: "babel-loader",
+            options: {
+              presets: ["@babel/preset-env", "@babel/preset-react"],
+              plugins: [
+                ["@babel/plugin-proposal-decorators", { legacy: true }],
+                "@babel/transform-runtime",
+                "@babel/plugin-proposal-class-properties"
+              ]
+            }
           }
-        }
+        ]
       }
     ]
   }
