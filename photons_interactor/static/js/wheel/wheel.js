@@ -97,7 +97,7 @@ class Power extends React.Component {
   constructor(props) {
     super(props);
     this.state = { on: props.on };
-    props.events.onPowerChange = ::this.clicked;
+    props.events.onPowerChange = this.clicked.bind(this);
   }
 
   clicked(click) {
@@ -114,8 +114,8 @@ class Power extends React.Component {
     return (
       <Group>
         <Arc
-          onClick={::this.clicked}
-          onTap={::this.clicked}
+          onClick={this.clicked.bind(this)}
+          onTap={this.clicked.bind(this)}
           angle={70}
           rotation={90 - 35}
           x={center_x}
@@ -125,8 +125,8 @@ class Power extends React.Component {
           outerRadius={outer_radius}
         />
         <Arc
-          onClick={::this.clicked}
-          onTap={::this.clicked}
+          onClick={this.clicked.bind(this)}
+          onTap={this.clicked.bind(this)}
           x={this.props.width / 2}
           y={arc_top}
           angle={280}
@@ -136,8 +136,8 @@ class Power extends React.Component {
           fill={this.state.on ? "#009EFD" : "white"}
         />
         <Line
-          onClick={::this.clicked}
-          onTap={::this.clicked}
+          onClick={this.clicked.bind(this)}
+          onTap={this.clicked.bind(this)}
           points={[
             this.props.width / 2,
             arc_top - 10,
@@ -232,8 +232,8 @@ class DraggableArc extends React.Component {
           angle={360}
           x={center_x}
           y={center_y}
-          onClick={::this.clickArcs}
-          onTap={::this.clickArcs}
+          onClick={this.clickArcs.bind(this)}
+          onTap={this.clickArcs.bind(this)}
           innerRadius={inner_radius}
           outerRadius={outer_radius}
           fillRadialGradientStartRadius={inner_radius}
@@ -665,7 +665,7 @@ export class ColourPicker extends React.Component {
               width={this.props.width}
               height={this.props.height}
               brightness={this.state.brightness}
-              onDragMove={::this.drag_brightness}
+              onDragMove={this.drag_brightness.bind(this)}
             />
           </Layer>
           <Layer>
@@ -678,16 +678,16 @@ export class ColourPicker extends React.Component {
               refs={this.extra_refs}
               center_x={this.center_x}
               center_y={this.center_y}
-              onClick={::this.clickColours}
-              onTap={::this.clickColours}
-              onDragStart={::this.dragstart}
-              onDragMove={::this.dragmove}
-              onDragEnd={::this.dragend}
+              onClick={this.clickColours.bind(this)}
+              onTap={this.clickColours.bind(this)}
+              onDragStart={this.dragstart.bind(this)}
+              onDragMove={this.dragmove.bind(this)}
+              onDragEnd={this.dragend.bind(this)}
             />
             <Power
               on={this.state.on}
-              onClick={::this.power_clicked}
-              onTap={::this.power_clicked}
+              onClick={this.power_clicked.bind(this)}
+              onTap={this.power_clicked.bind(this)}
               events={this.events}
               width={this.props.width}
               height={this.props.height}
@@ -716,7 +716,7 @@ export class ColourPicker extends React.Component {
               center_y={this.center_y}
               inner_radius={this.inner_radius}
               outer_radius={this.outer_radius}
-              onDragMove={::this.drag_saturation}
+              onDragMove={this.drag_saturation.bind(this)}
               refs={this.extra_refs}
               on={this.state.on}
               hue={this.tweener.getTweeningValue("hue")}
