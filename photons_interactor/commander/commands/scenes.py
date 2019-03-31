@@ -266,7 +266,7 @@ class SceneCaptureCommand(store.Command):
             if "multizone" in info["cap"]:
                 msgs.append(MultiZoneMessages.GetColorZones(start_index=0, end_index=255, target=serial))
             elif "chain" in info["cap"]:
-                msgs.append(TileMessages.GetState64(tile_index=0, length=5, x=0, y=0, width=8, target=serial))
+                msgs.append(TileMessages.Get64(tile_index=0, length=5, x=0, y=0, width=8, target=serial))
             else:
                 msgs.append(LightMessages.GetColor(target=serial))
 

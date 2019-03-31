@@ -152,7 +152,7 @@ def make_spec(storing=True):
                 duration = self.determine_duration(overrides)
                 for i, lst in enumerate(self.chain):
                     colors = self.colors_from_hsbks(lst, overrides)
-                    yield TileMessages.SetState64(tile_index=i, length=1, x=0, y=0, width=8, duration=duration, colors=colors
+                    yield TileMessages.Set64(tile_index=i, length=1, x=0, y=0, width=8, duration=duration, colors=colors
                         , res_required = False
                         )
 

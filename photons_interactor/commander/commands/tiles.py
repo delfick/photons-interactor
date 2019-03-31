@@ -10,13 +10,13 @@ from photons_app import helpers as hp
 from photons_tile_paint.animation import (
       coords_for_horizontal_line
     , tile_serials_from_reference
-    , canvas_to_msgs, orientations_from
+    , canvas_to_msgs
     )
-from photons_tile_paint.orientation import reorient, Orientation as O
+from photons_control.orientation import reorient, Orientation as O
+from photons_control.tile import tiles_from, orientations_from
 from photons_themes.coords import user_coords_to_pixel_coords
 from photons_messages import DeviceMessages, TileMessages
 from photons_themes.theme import ThemeColor as Color
-from photons_control.tile import tiles_from
 from photons_themes.canvas import Canvas
 
 from input_algorithms.dictobj import dictobj
@@ -132,7 +132,7 @@ class ArrangeState:
                     else:
                         colors.extend([{"hue": 0, "saturation": 0, "brightness": 0, "kelvin": 3500}] * 8)
 
-                msg = TileMessages.SetState64(
+                msg = TileMessages.Set64(
                       tile_index = tile_index
                     , length = 1
                     , x = 0
@@ -156,7 +156,7 @@ class ArrangeState:
                         passed += 1
 
             if not afr.stop_fut.done():
-                msg = TileMessages.SetState64(
+                msg = TileMessages.Set64(
                       tile_index = tile_index
                     , length = 1
                     , x = 0
@@ -191,7 +191,7 @@ class ArrangeState:
         msgs = [TileMessages.GetDeviceChain()]
         if info.get("initial") is None:
             info["initial"] = {"colors": [], "power": 65535}
-            msgs.append(TileMessages.GetState64(tile_index=0, length=5, x=0, y=0, width=8))
+            msgs.append(TileMessages.Get64(tile_index=0, length=5, x=0, y=0, width=8))
             msgs.append(DeviceMessages.GetPower())
 
         async for pkt, _, _ in target.script(msgs).run_with(serial, afr, error_catcher=errors):
@@ -202,7 +202,7 @@ class ArrangeState:
                       ]
                     )
             elif pkt | TileMessages.StateDeviceChain:
-                length = pkt.total_count
+                length = pkt.tile_devices_count
                 orientations = orientations_from(pkt)
                 coords = [((c.user_x, c.user_y), (c.width, c.height)) for c in tiles_from(pkt)]
                 info["coords"] = [top_left for top_left, _ in user_coords_to_pixel_coords(coords)]
@@ -233,7 +233,7 @@ class ArrangeState:
         msgs = [DeviceMessages.SetPower(level=initial["power"])]
 
         for i, colors in enumerate(initial["colors"]):
-            msgs.append(TileMessages.SetState64(
+            msgs.append(TileMessages.Set64(
                   tile_index = i
                 , length = 1
                 , width = 8

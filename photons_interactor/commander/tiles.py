@@ -1,9 +1,10 @@
 from photons_tile_paint.animation import (
       coords_for_horizontal_line
     , put_characters_on_canvas
-    , canvas_to_msgs, orientations_from
+    , canvas_to_msgs
     )
 from photons_themes.theme import ThemeColor as Color
+from photons_control.tile import orientations_from
 from photons_tile_paint.font.dice import dice
 from photons_messages import TileMessages
 from photons_themes.canvas import Canvas
