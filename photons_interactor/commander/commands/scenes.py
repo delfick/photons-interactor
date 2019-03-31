@@ -189,21 +189,21 @@ class SceneApplyCommand(store.Command):
         msg = Transformer.using(options)
         script = self.target.script(msg)
         try:
-            await chp.run(script, fltr, self.finder, add_replies=False, timeout=self.timeout, result=result)
+            await chp.run(script, fltr, self.finder, add_replies=False, message_timeout=self.timeout, result=result)
         except FoundNoDevices:
             pass
 
     async def apply_zones(self, fltr, scene, result):
         script = self.target.script(list(scene.zone_msgs(self.overrides)))
         try:
-            await chp.run(script, fltr, self.finder, add_replies=False, timeout=self.timeout, result=result)
+            await chp.run(script, fltr, self.finder, add_replies=False, message_timeout=self.timeout, result=result)
         except FoundNoDevices:
             pass
 
     async def apply_chain(self, fltr, scene, result):
         script = self.target.script(list(scene.chain_msgs(self.overrides)))
         try:
-            await chp.run(script, fltr, self.finder, add_replies=False, timeout=self.timeout, result=result)
+            await chp.run(script, fltr, self.finder, add_replies=False, message_timeout=self.timeout, result=result)
         except FoundNoDevices:
             pass
 

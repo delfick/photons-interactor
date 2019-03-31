@@ -94,15 +94,15 @@ class ArrangeState:
             )
 
         errors = []
-        await target.script(msg).run_with_all(serial, afr, error_catcher=errors, timeout=5)
-        hp.async_as_background(self.highlight(serial, tile_index, target, afr, error_catcher=[], timeout=3))
+        await target.script(msg).run_with_all(serial, afr, error_catcher=errors, message_timeout=5)
+        hp.async_as_background(self.highlight(serial, tile_index, target, afr, error_catcher=[], message_timeout=3))
 
         if errors:
             return {"serial": serial, "data": None}
 
         coords = []
         get_chain = TileMessages.GetDeviceChain()
-        async for pkt, _, _ in target.script(get_chain).run_with(serial, afr, error_catcher=errors, timeout=5):
+        async for pkt, _, _ in target.script(get_chain).run_with(serial, afr, error_catcher=errors, message_timeout=5):
             if pkt | TileMessages.StateDeviceChain:
                 coords = [((c.user_x, c.user_y), (c.width, c.height)) for c in tiles_from(pkt)]
                 coords = [top_left for top_left, _ in user_coords_to_pixel_coords(coords)]
@@ -110,7 +110,7 @@ class ArrangeState:
 
         return {"serial": serial, "data": self.info_for_browser(serial)}
 
-    async def highlight(self, serial, tile_index, target, afr, error_catcher=None, timeout=3):
+    async def highlight(self, serial, tile_index, target, afr, error_catcher=None, message_timeout=3):
         if serial not in self.serials or self.serials[serial]["highlightlock"].locked():
             return
 
@@ -166,7 +166,7 @@ class ArrangeState:
                     , res_required = False
                     , ack_required = True
                     )
-                await target.script(msg).run_with_all(serial, afr, error_catcher=[], timeout=1)
+                await target.script(msg).run_with_all(serial, afr, error_catcher=[], message_timeout=1)
 
     async def leave_arrange(self, ref, target, afr):
         log.info(hp.lc("Leaving arrange", ref=ref))

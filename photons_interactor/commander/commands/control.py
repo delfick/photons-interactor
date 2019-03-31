@@ -56,7 +56,7 @@ class QueryCommand(store.Command):
         fltr = chp.filter_from_matcher(self.matcher, self.refresh)
         msg = chp.make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         script = self.target.script(msg)
-        return await chp.run(script, fltr, self.finder, timeout=self.timeout)
+        return await chp.run(script, fltr, self.finder, message_timeout=self.timeout)
 
 @store.command(name="transform")
 class TransformCommand(store.Command):
@@ -86,7 +86,7 @@ class TransformCommand(store.Command):
         fltr = chp.filter_from_matcher(self.matcher, self.refresh)
         msg = Transformer.using(self.transform)
         script = self.target.script(msg)
-        return await chp.run(script, fltr, self.finder, add_replies=False, timeout=self.timeout)
+        return await chp.run(script, fltr, self.finder, add_replies=False, message_timeout=self.timeout)
 
 @store.command(name="set")
 class SetCommand(store.Command):
@@ -110,4 +110,4 @@ class SetCommand(store.Command):
         msg = chp.make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         msg.res_required = False
         script = self.target.script(msg)
-        return await chp.run(script, fltr, self.finder, timeout=self.timeout)
+        return await chp.run(script, fltr, self.finder, message_timeout=self.timeout)
