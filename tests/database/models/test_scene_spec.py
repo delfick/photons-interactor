@@ -579,15 +579,15 @@ describe TestCase, "make_spec":
                     ):
                     itr = iter(self.obj.chain_msgs(self.overrides))
                     m = next(itr)
-                    self.assertIs(type(m), TileMessages.SetState64)
+                    self.assertIs(type(m), TileMessages.Set64)
 
                 power_message.assert_called_once_with(self.overrides)
                 colors_from_hsbks.assert_called_once_with(self.obj.chain[0], self.overrides)
                 determine_duration.assert_called_once_with(self.overrides)
 
-            describe "yielding SetState64 messages":
+            describe "yielding Set64 messages":
                 def setter(self, **kwargs):
-                    return TileMessages.SetState64(
+                    return TileMessages.Set64(
                           length=1
                         , x=0
                         , y=0
