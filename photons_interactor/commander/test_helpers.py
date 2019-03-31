@@ -52,7 +52,7 @@ class Color(dictobj):
     fields = ["hue", "saturation", "brightness", "kelvin"]
 
 class Firmware(dictobj):
-    fields = ["version", "build_time"]
+    fields = ["version_major", "version_minor", "build_time"]
 
 class FakeDevices(dictobj.Spec):
     groups = dictobj.Field(sb.dictof(sb.string_spec(), sb.any_spec()))
@@ -93,7 +93,7 @@ def fake_devices(protocol_register):
         , color = Color(0, 1, 1, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCM2_A19.value
-        , firmware = Firmware("2.75", 1521690429)
+        , firmware = Firmware(2, 75, 1521690429)
         )
 
     a19_2 = Device("d073d5000002", protocol_register
@@ -104,7 +104,7 @@ def fake_devices(protocol_register):
         , color = Color(100, 1, 1, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCM2_A19.value
-        , firmware = Firmware("2.75", 1521690429)
+        , firmware = Firmware(2, 75, 1521690429)
         )
 
     color1000 = Device("d073d5000003", protocol_register
@@ -115,7 +115,7 @@ def fake_devices(protocol_register):
         , color = Color(100, 0, 1, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCMV4_A19_COLOR.value
-        , firmware = Firmware("1.1", 1530327089)
+        , firmware = Firmware(1, 1, 1530327089)
         )
 
     white800 = Device("d073d5000004", protocol_register
@@ -126,7 +126,7 @@ def fake_devices(protocol_register):
         , color = Color(100, 0, 1, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCMV4_A19_WHITE_LV.value
-        , firmware = Firmware("1.1", 1530327089)
+        , firmware = Firmware(1, 1, 1530327089)
         )
 
     strip1 = Device("d073d5000005", protocol_register
@@ -137,7 +137,7 @@ def fake_devices(protocol_register):
         , color = Color(200, 0.5, 0.5, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCM2_Z.value
-        , firmware = Firmware("2.75", 1521690429)
+        , firmware = Firmware(2, 75, 1521690429)
         )
 
     strip2 = Device("d073d5000006", protocol_register
@@ -148,7 +148,7 @@ def fake_devices(protocol_register):
         , color = Color(200, 0.5, 0.5, 2500)
         , vendor_id = 1
         , product_id = LIFIProductRegistry.LCM1_Z.value
-        , firmware = Firmware("1.1", 1530327089)
+        , firmware = Firmware(1, 1, 1530327089)
         )
 
     return FakeDevices.FieldSpec().empty_normalise(
@@ -216,7 +216,8 @@ class Device(FakeDevice):
         self.location_updated_at = location.updated_at
 
     def change_firmware(self, firmware):
-        self.firmware_version = firmware.version
+        self.firmware_version_major = firmware.version_major
+        self.firmware_version_minor = firmware.version_minor
         self.firmware_build_time = firmware.build_time
 
     def change_version(self, vendor_id, product_id):
@@ -300,7 +301,8 @@ class Device(FakeDevice):
 
         elif pkt | DeviceMessages.GetHostFirmware:
             return DeviceMessages.StateHostFirmware(
-                  version = self.firmware_version
+                  version_major = self.firmware_version_major
+                , version_minor = self.firmware_version_minor
                 , build = self.firmware_build_time
                 )
 

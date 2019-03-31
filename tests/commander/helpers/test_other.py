@@ -222,7 +222,7 @@ describe AsyncTestCase, "run":
                 if self.index == 0:
                     return (DeviceMessages.StatePower(level=0, target="d073d5000001"), ("192.168.0.1", 56700), "192.168.0.1")
                 elif self.index == 1:
-                    return (DeviceMessages.StateHostFirmware(build=0, version=1.2, target="d073d5000002"), ("`92.168.0.2", 56700), "192.168.0.2")
+                    return (DeviceMessages.StateHostFirmware(build=0, version_major=1, version_minor=2, target="d073d5000002"), ("`92.168.0.2", 56700), "192.168.0.2")
                 else:
                     raise StopAsyncIteration
         script.run_with = RunWith

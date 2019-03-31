@@ -63,11 +63,11 @@ describe TestCase, "ResultBuilder":
         it "makes a list if already have packet for that bulb":
             packet1 = DeviceMessages.StatePower(level=0, target="d073d5000001")
             packet2 = DeviceMessages.StatePower(level=65535, target="d073d5000001")
-            packet3 = DeviceMessages.StateHostFirmware(build=0, version="1.2", target="d073d5000001")
+            packet3 = DeviceMessages.StateHostFirmware(build=0, version_major=1, version_minor=2, target="d073d5000001")
 
             info1 = {"pkt_type": 22, "pkt_name": "StatePower", "payload": {"level": 0}}
             info2 = {"pkt_type": 22, "pkt_name": "StatePower", "payload": {"level": 65535}}
-            info3 = {"pkt_type": 15, "pkt_name": "StateHostFirmware", "payload": {"build": 0, "version": "1.2"}}
+            info3 = {"pkt_type": 15, "pkt_name": "StateHostFirmware", "payload": {"build": 0, "version_major": 1, "version_minor": 2}}
 
             builder = chp.ResultBuilder(["d073d5000001"])
             builder.add_packet(packet1)
