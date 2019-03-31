@@ -1,5 +1,7 @@
 language: python
 
+dist: xenial
+
 python: 3.6
 
 install:
@@ -11,7 +13,7 @@ env:
   - CYPRESS_VIDEO=false
 
 before_script:
-  - npm install -g npm
+  - npm install -g npm@6.4.1
   - |
     echo '{"interactor": {"database": {"uri": "sqlite:///:memory:"}}}' > interactor.yml
   - photons-interactor npm run -- ci
