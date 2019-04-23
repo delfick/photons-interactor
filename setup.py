@@ -9,9 +9,9 @@ setup(
     , include_package_data = True
 
     , install_requires =
-      [ "lifx-photons-core==0.13.2"
+      [ "lifx-photons-core==0.13.3"
       , "tornado==5.1.1"
-      , "SQLAlchemy==1.2.10"
+      , "SQLAlchemy==1.3.3"
       , "alembic==1.0.0"
       , "whirlwind-web==0.5.3"
       ]
