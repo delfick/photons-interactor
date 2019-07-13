@@ -1,355 +1,126 @@
-from photons_app.formatter import MergedOptionStringFormatter
-from photons_app.test_helpers import print_packet_difference
-from photons_app.errors import PhotonsAppError
-
-from photons_messages import DeviceMessages, MultiZoneMessages, LightMessages, protocol_register
-from photons_products_registry import LIFIProductRegistry, capability_for_ids
-from photons_socket.fake import FakeDevice, MemorySocketTarget
+from photons_messages import DeviceMessages, protocol_register
+from photons_products_registry import LIFIProductRegistry
+from photons_transport.fake import FakeDevice, Responder
+from photons_control import test_helpers as chp
 
 from input_algorithms.dictobj import dictobj
-from input_algorithms import spec_base as sb
-from input_algorithms.meta import Meta
-
-from contextlib import contextmanager
 from unittest import mock
 import uuid
 
-class NotFound(PhotonsAppError):
-    desc = "Couldn't find device"
+class Collection(dictobj):
+    fields = ["uuid", "label", "updated_at"]
 
-def make_memory_target(final_future):
-    everything = {
-          "final_future": final_future
-        , "protocol_register": protocol_register
-        }
-    meta = Meta(everything, []).at("target")
-    return MemorySocketTarget.FieldSpec(formatter=MergedOptionStringFormatter).normalise(meta, {})
+class CollectionResponder(Responder):
+    _fields = ["group", "location"]
 
-class MemoryTargetRunner:
-    def __init__(self, target, devices):
-        self.target = target
-        self.devices = devices
-
-    async def __aenter__(self):
-        await self.start()
-
-    async def start(self):
-        for device in self.devices:
-            await device.start()
-            self.target.add_device(device)
-
-    async def __aexit__(self, typ, exc, tb):
-        await self.close()
-
-    async def close(self):
-        for device in self.target.devices.values():
-            await device.finish()
-
-class Group(dictobj):
-    fields = ["name", "uuid", "updated_at"]
-
-class Color(dictobj):
-    fields = ["hue", "saturation", "brightness", "kelvin"]
-
-class Firmware(dictobj):
-    fields = ["version_major", "version_minor", "build_time"]
-
-class FakeDevices(dictobj.Spec):
-    groups = dictobj.Field(sb.dictof(sb.string_spec(), sb.any_spec()))
-    locations = dictobj.Field(sb.dictof(sb.string_spec(), sb.any_spec()))
-    devices = dictobj.Field(sb.listof(sb.any_spec()))
-
-    def for_serial(self, serial):
-        return self.for_attribute("serial", serial, expect=1)[0]
-
-    def for_attribute(self, attr, value, expect=1):
-        found = []
-        for d in self.devices:
-            if getattr(d, attr) == value:
-                found.append(d)
-        if len(found) != expect:
-            raise NotFound(wanted=(attr, value), found=found, expected=expect)
-        return found
-
-    def reset_devices(self):
-        for device in self.devices:
-            device.reset()
-
-def fake_devices(protocol_register):
-    identifier = lambda : str(uuid.uuid4()).replace('-', "")
-
-    group_one = Group("Living Room", identifier(), 0)
-    group_two = Group("Bathroom", identifier(), 0)
-    location_one = Group("Home", identifier(), 0)
-
-    location_two = Group("Work", identifier(), 0)
-    group_three = Group("desk", identifier(), 0)
-
-    a19_1 = Device("d073d5000001", protocol_register
-        , label = "kitchen"
-        , power = 0
-        , group = group_one
-        , location = location_one
-        , color = Color(0, 1, 1, 2500)
-        , vendor_id = 1
-        , product_id = LIFIProductRegistry.LCM2_A19.value
-        , firmware = Firmware(2, 75, 1521690429)
-        )
-
-    a19_2 = Device("d073d5000002", protocol_register
-        , label = "bathroom"
-        , power = 65535
-        , group = group_two
-        , location = location_one
-        , color = Color(100, 1, 1, 2500)
-        , vendor_id = 1
-        , product_id = LIFIProductRegistry.LCM2_A19.value
-        , firmware = Firmware(2, 75, 1521690429)
-        )
-
-    color1000 = Device("d073d5000003", protocol_register
-        , label = "lamp"
-        , power = 65535
-        , group = group_three
-        , location = location_two
-        , color = Color(100, 0, 1, 2500)
-        , vendor_id = 1
-        , product_id = LIFIProductRegistry.LCMV4_A19_COLOR.value
-        , firmware = Firmware(1, 1, 1530327089)
-        )
-
-    white800 = Device("d073d5000004", protocol_register
-        , label = "lamp"
-        , power = 65535
-        , group = group_three
-        , location = location_two
-        , color = Color(100, 0, 1, 2500)
-        , vendor_id = 1
-        , product_id = LIFIProductRegistry.LCMV4_A19_WHITE_LV.value
-        , firmware = Firmware(1, 1, 1530327089)
-        )
-
-    strip1 = Device("d073d5000005", protocol_register
-        , label = "desk"
-        , power = 65535
-        , group = group_one
-        , location = location_one
-        , color = Color(200, 0.5, 0.5, 2500)
-        , vendor_id = 1
-        , product_id = LIFIProductRegistry.LCM2_Z.value
-        , firmware = Firmware(2, 75, 1521690429)
-        )
-
-    strip2 = Device("d073d5000006", protocol_register
-        , label = "tv"
-        , power = 65535
-        , group = group_three
-        , location = location_two
-        , color = Color(200, 0.5, 0.5, 2500)
-        , vendor_id = 1
-        , product_id = LIFIProductRegistry.LCM1_Z.value
-        , firmware = Firmware(1, 1, 1530327089)
-        )
-
-    return FakeDevices.FieldSpec().empty_normalise(
-          groups = {
-            group_one.name: group_one
-          , group_two.name: group_two
-          , group_three.name: group_three
-          }
-        , locations = {
-              location_one.name: location_one
-            , location_two.name: location_two
-            }
-        , devices = [a19_1, a19_2, color1000, white800, strip1, strip2]
-        )
-
-class Device(FakeDevice):
-    def __init__(self, serial, protocol_register, *, label, power, group, location, color, vendor_id, product_id, firmware):
-        super().__init__(serial, protocol_register)
-
-        def reset():
-            self.gets = []
-            self.sets = []
-
-            self.change_hsbk(color)
-            self.change_label(label)
-            self.change_power(power)
-            self.change_infrared(0)
-
-            for k, v in [("group", group), ("location", location)]:
-                setattr(self, k, "")
-                setattr(self, f"{k}_label", "")
-                setattr(self, f"{k}_updated_at", 0)
-                if v:
-                    getattr(self, f"change_{k}")(v)
-
-            self.change_firmware(firmware)
-            self.change_version(vendor_id, product_id)
-
-        self.reset = reset
-        reset()
-
-    def change_infrared(self, level):
-        self.infrared = level
-
-    def change_label(self, label):
-        self.label = label
-
-    def change_power(self, power):
-        self.power = power
-
-    def change_hsbk(self, color):
-        self.hue = color.hue
-        self.saturation = color.saturation
-        self.brightness = color.brightness
-        self.kelvin = color.kelvin
-
-    def change_group(self, group):
-        self.group = group.uuid
-        self.group_label = group.name
-        self.group_updated_at = group.updated_at
-
-    def change_location(self, location):
-        self.location = location.uuid
-        self.location_label = location.name
-        self.location_updated_at = location.updated_at
-
-    def change_firmware(self, firmware):
-        self.firmware_version_major = firmware.version_major
-        self.firmware_version_minor = firmware.version_minor
-        self.firmware_build_time = firmware.build_time
-
-    def change_version(self, vendor_id, product_id):
-        self.vendor_id = vendor_id
-        self.product_id = product_id
-
-    @contextmanager
-    def offline(self):
-        try:
-            self.online = False
-            yield
-        finally:
-            self.online = True
-
-    @property
-    def capability(self):
-        return capability_for_ids(self.product_id, self.vendor_id)
-
-    def light_state_message(self):
-        return LightMessages.LightState(
-              hue = self.hue
-            , saturation = self.saturation
-            , brightness = self.brightness
-            , power = self.power
-            , label = self.label
-            )
-
-    def clearGetMessages(self):
-        self.gets = []
-
-    def clearSetMessages(self):
-        self.sets = []
-
-    def expectNoSetMessages(self):
-        assert len(self.sets) == 0, f"Expected no set messages, have {self.sets}"
-
-    def expectNoGetMessages(self):
-        assert len(self.gets) == 0, f"Expected no get messages, have {self.gets}"
-
-    def expectSetMessages(self, *msgs):
-        return self.expectMessages("sets", *msgs)
-
-    def expectGetMessages(self, *msgs):
-        return self.expectMessages("gets", *msgs)
-
-    def expectMessages(self, typ, *msgs):
-        lst = getattr(self, typ)
-
-        assert len(lst) == len(msgs), f"{self.serial}: Expected same messages, got {[type(s) for s in self.sets]}, want {[type(m) for m in msgs]}"
-        for i, (got, want) in enumerate(zip(lst, msgs)):
-            if type(got) != type(want):
-                assert type(got) == type(want), f"{self.serial}: msg#{i}: Message of different type, got {type(got)} wanted {type(want)}"
-
-            if repr(got.payload) != repr(want.payload):
-                print_packet_difference(got, want)
-            assert got.simplify().payload == want.simplify().payload, f"{self.serial}: msg#{i}: Expected payloads to be the same, got {repr(got.payload)}, want {repr(want.payload)}"
-
-            assert got.res_required == want.res_required, f"{self.serial}: msg#{i}: Expected same res_required, got {got}, want {want}"
-            assert got.ack_required == want.ack_required, f"{self.serial}: msg#{i}: Expected same ack_required, got {got}, want {want}"
-
-        setattr(self, typ, [])
-
-    def make_response(self, pkt, protocol):
-        if pkt.__class__.__name__.startswith("Get"):
-            self.gets.append(pkt)
-        else:
-            self.sets.append(pkt)
-
-        if pkt | LightMessages.GetInfrared:
-            return LightMessages.StateInfrared(level=self.infrared)
-
-        if pkt | LightMessages.GetColor:
-            return self.light_state_message()
-
-        elif pkt | DeviceMessages.GetVersion:
-            return DeviceMessages.StateVersion(
-                  vendor = self.vendor_id
-                , product = self.product_id
-                , version = 0
-                )
-
-        elif pkt | DeviceMessages.GetHostFirmware:
-            return DeviceMessages.StateHostFirmware(
-                  version_major = self.firmware_version_major
-                , version_minor = self.firmware_version_minor
-                , build = self.firmware_build_time
-                )
-
-        elif pkt | DeviceMessages.GetGroup:
-            return DeviceMessages.StateGroup(
-                  group = self.group
-                , label = self.group_label
-                , updated_at = self.group_updated_at
+    async def respond(self, device, pkt, source):
+        if pkt | DeviceMessages.GetGroup:
+            yield DeviceMessages.StateGroup(
+                  group = device.attrs.group.uuid
+                , label = device.attrs.group.label
+                , updated_at = device.attrs.group.updated_at
                 )
 
         elif pkt | DeviceMessages.GetLocation:
-            return DeviceMessages.StateLocation(
-                  location = self.location
-                , label = self.location_label
-                , updated_at = self.location_updated_at
+            yield DeviceMessages.StateLocation(
+                  location = device.attrs.location.uuid
+                , label = device.attrs.location.label
+                , updated_at = device.attrs.location.updated_at
                 )
 
-        elif pkt | LightMessages.SetWaveformOptional or pkt | LightMessages.SetColor:
-            self.change_hsbk(Color(pkt.hue, pkt.saturation, pkt.brightness, pkt.kelvin))
-            return self.light_state_message()
+identifier = lambda : str(uuid.uuid4()).replace('-', "")
+group_one = Collection(identifier(), "Living Room", 0)
+group_two = Collection(identifier(), "Bathroom", 0)
+location_one = Collection(identifier(), "Home", 0)
+location_two = Collection(identifier(), "Work", 0)
+group_three = Collection(identifier(), "desk", 0)
 
-        elif pkt | DeviceMessages.SetLabel:
-            self.change_label(pkt.label)
-            return DeviceMessages.StateLabel(label=pkt.label)
+zones = []
+for i in range(16):
+    zones.append(chp.Color(i * 10, 1, 1, 2500))
 
-        elif pkt | DeviceMessages.GetLabel:
-            return DeviceMessages.StateLabel(label=self.label)
+class FakeDevice(FakeDevice):
+    def compare_received_set(self, expected, keep_duplicates=False):
+        self.received = [m for m in self.received if m.__class__.__name__.startswith("Set")]
+        super().compare_received(expected, keep_duplicates=keep_duplicates)
 
-        elif pkt | DeviceMessages.SetPower:
-            res = DeviceMessages.StatePower(level=pkt.level)
-            self.change_power(pkt.level)
-            return res
+    def expect_no_set_messages(self):
+        assert not any([m for m in self.received if m.__class__.__name__.startswith("Set")])
 
-        elif pkt | LightMessages.SetLightPower:
-            res = LightMessages.StateLightPower(level=pkt.level)
-            self.change_power(pkt.level)
-            return res
+a19_1 = FakeDevice("d073d5000001"
+    , chp.default_responders(LIFIProductRegistry.LCM2_A19
+        , label = "kitchen"
+        , power = 0
+        , color = chp.Color(0, 1, 1, 2500)
+        , firmware = chp.Firmware(2, 75, 1521690429)
+        ) + [CollectionResponder(group=group_one, location=location_one)]
+    )
 
-        elif pkt | MultiZoneMessages.GetColorZones and self.capability.has_multizone:
-            colors = []
-            for i in range(16):
-                colors.append(Color(i * 10, 1, 1, 2500).as_dict())
+a19_2 = FakeDevice("d073d5000002"
+    , chp.default_responders(LIFIProductRegistry.LCM2_A19
+        , label = "bathroom"
+        , power = 65535
+        , color = chp.Color(100, 1, 1, 2500)
+        , firmware = chp.Firmware(2, 75, 1521690429)
+        ) + [CollectionResponder(group=group_two, location=location_one)]
+    )
 
-            return [
-                  MultiZoneMessages.StateMultiZone(zones_count=16, zone_index=0, colors=colors[:8])
-                , MultiZoneMessages.StateMultiZone(zones_count=16, zone_index=8, colors=colors[8:])
-                ]
+color1000 = FakeDevice("d073d5000003"
+    , chp.default_responders(LIFIProductRegistry.LCMV4_A19_COLOR
+        , label = "lamp"
+        , power = 65535
+        , color = chp.Color(100, 0, 1, 2500)
+        , firmware = chp.Firmware(1, 1, 1530327089)
+        ) + [CollectionResponder(group=group_three, location=location_two)]
+    )
+
+white800 = FakeDevice("d073d5000004"
+    , chp.default_responders(LIFIProductRegistry.LCMV4_A19_WHITE_LV
+        , label = "lamp"
+        , power = 65535
+        , color = chp.Color(100, 0, 1, 2500)
+        , firmware = chp.Firmware(1, 1, 1530327089)
+        ) + [CollectionResponder(group=group_three, location=location_two)]
+    )
+
+strip1 = FakeDevice("d073d5000005"
+    , chp.default_responders(LIFIProductRegistry.LCM2_Z
+        , label = "desk"
+        , power = 65535
+        , zones = zones
+        , color = chp.Color(200, 0.5, 0.5, 2500)
+        , firmware = chp.Firmware(2, 75, 1521690429)
+        ) + [CollectionResponder(group=group_one, location=location_one)]
+    )
+
+strip2 = FakeDevice("d073d5000006"
+    , chp.default_responders(LIFIProductRegistry.LCM1_Z
+        , label = "tv"
+        , power = 65535
+        , zones = zones
+        , color = chp.Color(200, 0.5, 0.5, 2500)
+        , firmware = chp.Firmware(1, 1, 1530327089)
+        ) + [CollectionResponder(group=group_three, location=location_two)]
+    )
+
+class Fakery:
+    def __init__(self):
+        self.devices = [a19_1, a19_2, color1000, white800, strip1, strip2]
+
+    def for_attribute(self, key, value, expect=1):
+        got = []
+        for d in self.devices:
+            if d.attrs[key] == value:
+                got.append(d)
+        assert len(got) == expect, f"Expected {expect} devices, got {len(got)}: {got}"
+        return got
+
+    def for_serial(self, serial):
+        for d in self.devices:
+            if d.serial == serial:
+                return d
+        assert False, f"Expected one device with serial {serial}"
+fakery = Fakery()
 
 class Around:
     def __init__(self, val, gap=0.05):
@@ -376,7 +147,7 @@ discovery_response = {
         "group_id": mock.ANY,
         "group_name": "Living Room",
         "hue": 0.0,
-        "kelvin": 3500,
+        "kelvin": 2500,
         "label": "kitchen",
         "location_id": mock.ANY,
         "location_name": "Home",
@@ -399,7 +170,7 @@ discovery_response = {
         "group_id": mock.ANY,
         "group_name": "Bathroom",
         "hue": Around(100),
-        "kelvin": 3500,
+        "kelvin": 2500,
         "label": "bathroom",
         "location_id": mock.ANY,
         "location_name": "Home",
@@ -422,7 +193,7 @@ discovery_response = {
         "group_id": mock.ANY,
         "group_name": "desk",
         "hue": Around(100),
-        "kelvin": 3500,
+        "kelvin": 2500,
         "label": "lamp",
         "location_id": mock.ANY,
         "location_name": "Work",
@@ -445,7 +216,7 @@ discovery_response = {
         "group_id": mock.ANY,
         "group_name": "desk",
         "hue": Around(100),
-        "kelvin": 3500,
+        "kelvin": 2500,
         "label": "lamp",
         "location_id": mock.ANY,
         "location_name": "Work",
@@ -468,7 +239,7 @@ discovery_response = {
         "group_id": mock.ANY,
         "group_name": "Living Room",
         "hue": Around(200),
-        "kelvin": 3500,
+        "kelvin": 2500,
         "label": "desk",
         "location_id": mock.ANY,
         "location_name": "Home",
@@ -491,7 +262,7 @@ discovery_response = {
         "group_id": mock.ANY,
         "group_name": "desk",
         "hue": Around(200),
-        "kelvin": 3500,
+        "kelvin": 2500,
         "label": "tv",
         "location_id": mock.ANY,
         "location_name": "Work",
@@ -509,7 +280,7 @@ light_state_responses = {
             "payload": {
                 "brightness": 1.0,
                 "hue": 0.0,
-                "kelvin": 3500,
+                "kelvin": 2500,
                 "label": "kitchen",
                 "power": 0,
                 "saturation": 1.0
@@ -521,7 +292,7 @@ light_state_responses = {
             "payload": {
                 "brightness": 1.0,
                 "hue": Around(100),
-                "kelvin": 3500,
+                "kelvin": 2500,
                 "label": "bathroom",
                 "power": 65535,
                 "saturation": 1.0
@@ -533,7 +304,7 @@ light_state_responses = {
             "payload": {
                 "brightness": 1.0,
                 "hue": Around(100),
-                "kelvin": 3500,
+                "kelvin": 2500,
                 "label": "lamp",
                 "power": 65535,
                 "saturation": 0.0
@@ -545,7 +316,7 @@ light_state_responses = {
             "payload": {
                 "brightness": 1.0,
                 "hue": Around(100),
-                "kelvin": 3500,
+                "kelvin": 2500,
                 "label": "lamp",
                 "power": 65535,
                 "saturation": 0.0
@@ -557,7 +328,7 @@ light_state_responses = {
             "payload": {
                 "brightness": Around(0.5),
                 "hue": Around(200),
-                "kelvin": 3500,
+                "kelvin": 2500,
                 "label": "desk",
                 "power": 65535,
                 "saturation": Around(0.5)
@@ -569,7 +340,7 @@ light_state_responses = {
             "payload": {
                 "brightness": Around(0.5),
                 "hue": Around(200),
-                "kelvin": 3500,
+                "kelvin": 2500,
                 "label": "tv",
                 "power": 65535,
                 "saturation": Around(0.5)

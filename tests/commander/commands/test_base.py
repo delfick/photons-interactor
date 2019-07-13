@@ -5,6 +5,7 @@ from photons_interactor.commander import test_helpers as cthp
 from photons_interactor import test_helpers as thp
 
 from photons_app.test_helpers import AsyncTestCase
+
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 from textwrap import dedent

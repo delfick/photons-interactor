@@ -9,7 +9,7 @@ setup(
     , include_package_data = True
 
     , install_requires =
-      [ "lifx-photons-core==0.20.0"
+      [ "lifx-photons-core==0.20.1"
       , "tornado==5.1.1"
       , "SQLAlchemy==1.3.3"
       , "alembic==1.0.0"
@@ -19,7 +19,7 @@ setup(
     , extras_require =
       { "tests":
         [ "noseOfYeti>=1.7"
-        , "asynctest==0.10.0"
+        , "asynctest==0.12.2"
         , "nose"
         , "mock"
         ]

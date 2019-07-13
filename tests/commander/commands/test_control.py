@@ -34,7 +34,7 @@ describe AsyncTestCase, "Control Commands":
         j = json.loads(res.decode())
         wanted = {device.serial: cthp.discovery_response[device.serial]
               for device in fake.devices
-              if device.group_label == "Living Room"
+              if device.attrs.group.label == "Living Room"
             }
         self.assertEqual(len(wanted), 2)
         self.assertEqual(j, wanted)
@@ -94,7 +94,8 @@ describe AsyncTestCase, "Control Commands":
             )
 
         for device in fake.devices:
-            device.expectSetMessages(DeviceMessages.SetPower(level=0, res_required=False))
+            device.compare_received_set([DeviceMessages.SetPower(level=0)])
+            device.reset_received()
 
         # With an offline light
         bathroom_light = fake.for_serial("d073d5000002")
@@ -112,7 +113,8 @@ describe AsyncTestCase, "Control Commands":
 
             for device in fake.devices:
                 if device is not bathroom_light:
-                    device.expectSetMessages(DeviceMessages.SetPower(level=65535, res_required=False))
+                    device.compare_received_set([DeviceMessages.SetPower(level=65535)])
+                    device.reset_received()
 
         # With a matcher
         kitchen_light = fake.for_attribute("label", "kitchen", expect=1)[0]
@@ -123,10 +125,10 @@ describe AsyncTestCase, "Control Commands":
             , json_output = expected
             )
 
-        kitchen_light.expectSetMessages(DeviceMessages.SetLabel(label="blah", res_required=False))
+        kitchen_light.compare_received_set([DeviceMessages.SetLabel(label="blah")])
         for device in fake.devices:
             if device is not kitchen_light:
-                device.expectNoSetMessages()
+                device.expect_no_set_messages()
 
     @test_server.test
     async it "has transform command", options, fake, server:
@@ -138,7 +140,8 @@ describe AsyncTestCase, "Control Commands":
             )
 
         for device in fake.devices:
-            device.expectSetMessages(DeviceMessages.SetPower(level=0, res_required=False))
+            device.compare_received_set([DeviceMessages.SetPower(level=0)])
+            device.reset_received()
 
         # Just color
         await server.assertPUT(self, "/v1/lifx/command", {"command": "transform", "args": {"transform": {"color": "red", "effect": "sine"}}}
@@ -146,14 +149,15 @@ describe AsyncTestCase, "Control Commands":
             )
 
         for device in fake.devices:
-            device.expectSetMessages(Parser.color_to_msg("red", overrides={"effect": "sine", "res_required": False}))
+            device.compare_received_set([Parser.color_to_msg("red", overrides={"effect": "sine", "res_required": False})])
+            device.reset_received()
 
         # Power on and color
         for device in fake.devices:
-            device.change_power(0)
-            device.brightness = 0.5
-        fake.for_serial("d073d5000001").change_power(65535)
-        fake.for_serial("d073d5000003").change_power(65535)
+            device.attrs.power = 0
+            device.attrs.color.brightness = 0.5
+        fake.for_serial("d073d5000001").attrs.power = 65535
+        fake.for_serial("d073d5000003").attrs.power = 65535
 
         tv_light = fake.for_attribute("label", "tv", expect=1)[0]
         with tv_light.offline():
@@ -164,15 +168,17 @@ describe AsyncTestCase, "Control Commands":
                 )
 
         for device in fake.devices:
-            if device.label == "tv":
-                device.expectNoSetMessages()
+            if device.attrs.label == "tv":
+                device.expect_no_set_messages()
             elif device.serial in ("d073d5000001", "d073d5000003"):
-                device.expectSetMessages(
-                      Parser.color_to_msg("blue", overrides={"res_required": False})
+                device.compare_received_set(
+                      [ Parser.color_to_msg("blue", overrides={"res_required": False})
+                      ]
                     )
             else:
-                device.expectSetMessages(
-                      Parser.color_to_msg("blue", overrides={"brightness": 0, "res_required": False})
-                    , DeviceMessages.SetPower(level=65535, res_required=False)
-                    , Parser.color_to_msg("blue", overrides={"brightness": 0.5, "res_required": False})
+                device.compare_received_set(
+                      [ Parser.color_to_msg("blue", overrides={"brightness": 0, "res_required": False})
+                      , DeviceMessages.SetPower(level=65535, res_required=False)
+                      , Parser.color_to_msg("blue", overrides={"brightness": 0.5, "res_required": False})
+                      ]
                     )

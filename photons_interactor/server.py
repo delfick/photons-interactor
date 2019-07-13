@@ -56,10 +56,9 @@ class Server(Server):
         test_devices = None
         if self.server_options.fake_devices:
             from photons_interactor.commander import test_helpers as cthp
-            test_devices = cthp.fake_devices(self.protocol_register)
-            target = cthp.make_memory_target(self.final_future)
-
-            runner = cthp.MemoryTargetRunner(target, test_devices["devices"])
+            from photons_control import test_helpers as chp
+            runner = chp.MemoryTargetRunner(self.final_future, cthp.fakery.devices)
+            target = runner.target
             await runner.start()
 
             async def clean_memory_target():

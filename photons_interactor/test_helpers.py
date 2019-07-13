@@ -3,8 +3,8 @@ from photons_interactor.options import Options
 from photons_interactor.server import Server
 
 from photons_app.formatter import MergedOptionStringFormatter
-from photons_app.test_helpers import AsyncTestCase
 
+from photons_control import test_helpers as chp
 from photons_messages import protocol_register
 
 from whirlwind import test_helpers as thp
@@ -58,34 +58,35 @@ class ServerRunner(thp.ServerRunner):
     async def started_test(self):
         self.fake.reset_devices()
 
-def make_server(store, wrapper, **kwargs):
+async def make_server(store, wrapper, **kwargs):
     final_future = asyncio.Future()
 
     if "device_finder_options" not in kwargs:
         kwargs["device_finder_options"] = {"repeat_spread": 0.01}
     options = make_options("127.0.0.1", thp.free_port(), **kwargs)
 
-    lan_target = cthp.make_memory_target(final_future)
+    targetrunner = chp.MemoryTargetRunner(final_future, cthp.fakery.devices)
+    await targetrunner.start()
 
     target_register = mock.Mock(name="target_register")
-    target_register.resolve.return_value = lan_target
 
-    fake = cthp.fake_devices(protocol_register)
+    def resolve(name):
+        assert name == "lan", name
+        return targetrunner.target
+    target_register.resolve.side_effect = resolve
 
     cleaners = []
     server = Server(final_future, store=store)
 
-    targetrunner = cthp.MemoryTargetRunner(lan_target, fake["devices"])
     server = ServerRunner(final_future, options.port, server, wrapper
-        , fake, options, cleaners, target_register, protocol_register
+        , cthp.fakery, options, cleaners, target_register, protocol_register
         )
     return targetrunner, server
 
 class ModuleLevelServer(thp.ModuleLevelServer):
     async def server_runner(self, store, wrapper=None):
         self.reportdir = tempfile.mkdtemp()
-        targetrunner, runner = make_server(store, wrapper)
-        await targetrunner.start()
+        targetrunner, runner = await make_server(store, wrapper)
         await runner.start()
 
         async def closer():
@@ -100,3 +101,7 @@ class ModuleLevelServer(thp.ModuleLevelServer):
 
     async def run_test(self, func):
         return await func(self.runner.options, self.runner.fake, self.runner)
+
+    async def started_test(self):
+        for device in cthp.fakery.devices:
+            await device.reset()
