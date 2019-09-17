@@ -7,12 +7,16 @@ from photons_app.errors import PhotonsAppError
 from photons_app.actions import an_action
 from photons_app import helpers as hp
 
+from photons_transport.session.network import NetworkSession
+from photons_transport.targets import LanTarget
+
 from option_merge_addons import option_merge_addon_hook
 from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
 from functools import partial
 import pkg_resources
 import subprocess
+import binascii
 import logging
 import asyncio
 import shlex
@@ -33,6 +37,20 @@ def __lifx__(collector, *args, **kwargs):
 async def serve(collector, **kwargs):
     conf = collector.configuration
     await migrate(collector, extra="upgrade head")
+
+    if "DISCOVERY_FILTER" in os.environ:
+        serials = os.environ["DISCOVERY_FILTER"].split(",")
+
+        class ModifiedNetworkSession(NetworkSession):
+            async def add_service(s, serial, service, **kwargs):
+                if serial in serials:
+                    await super().add_service(serial, service, **kwargs)
+
+            async def _do_search(s, *args, **kwargs):
+                fn = await super()._do_search(*args, **kwargs)
+                return [s for s in fn if binascii.hexlify(s).decode() in serials]
+
+        LanTarget.session_kls = ModifiedNetworkSession
 
     options = conf["interactor"]
     await Server(conf["photons_app"].final_future).serve(options.host, options.port
