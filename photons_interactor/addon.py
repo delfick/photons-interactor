@@ -9,6 +9,7 @@ from photons_app import helpers as hp
 
 from photons_transport.session.network import NetworkSession
 from photons_transport.targets import LanTarget
+from photons_messages import Services
 
 from option_merge_addons import option_merge_addon_hook
 from input_algorithms import spec_base as sb
@@ -47,8 +48,16 @@ async def serve(collector, **kwargs):
                     await super().add_service(serial, service, **kwargs)
 
             async def _do_search(s, *args, **kwargs):
-                fn = await super()._do_search(*args, **kwargs)
-                return [s for s in fn if binascii.hexlify(s).decode() in serials]
+                if serials[0] == ":":
+                    found_now = set()
+                    for serial in serials[1:]:
+                        serial, ip = serial.split(":")
+                        await super().add_service(serial, Services.UDP, port=56700, host=ip)
+                        found_now.add(binascii.unhexlify(serial)[:6])
+                    return list(found_now)
+                else:
+                    fn = await super()._do_search(*args, **kwargs)
+                    return [s for s in fn if binascii.hexlify(s).decode() in serials]
 
         LanTarget.session_kls = ModifiedNetworkSession
 
