@@ -5,6 +5,7 @@ from photons_app import helpers as hp
 
 from delfick_error import DelfickError
 from bitarray import bitarray
+import binascii
 import logging
 
 

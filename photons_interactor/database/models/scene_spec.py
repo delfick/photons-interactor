@@ -136,8 +136,6 @@ def make_spec(storing=True):
                 colors = self.colors_from_hsbks(self.zones, overrides)
                 duration = self.determine_duration(overrides)
 
-                groups = []
-
                 start = 0
                 color = None
                 i = -1

@@ -13,7 +13,6 @@ from delfick_app import ArgumentError
 from textwrap import dedent
 import logging
 import json
-import sys
 
 log = logging.getLogger("photons_interactor.executor")
 

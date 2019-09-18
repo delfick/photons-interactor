@@ -71,8 +71,8 @@ async def migrate(database, extra=""):
 
 
 # And make all the models available so that the migrate command knows about them
-from photons_interactor.database.models.scene_info import SceneInfo
-from photons_interactor.database.models.scene import Scene
+from photons_interactor.database.models.scene_info import SceneInfo  # noqa
+from photons_interactor.database.models.scene import Scene  # noqa
 
 # And make vim quiet about unused imports
 Scene = Scene

@@ -1,7 +1,7 @@
-from photons_messages import DeviceMessages, protocol_register
 from photons_products_registry import LIFIProductRegistry
 from photons_transport.fake import FakeDevice, Responder
 from photons_control import test_helpers as chp
+from photons_messages import DeviceMessages
 
 from input_algorithms.dictobj import dictobj
 from unittest import mock

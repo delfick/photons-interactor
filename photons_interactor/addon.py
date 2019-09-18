@@ -115,7 +115,7 @@ async def npm(collector, reference, **kwargs):
 
     async def cypress(typ):
         try:
-            import asynctest
+            import asynctest  # noqa
         except ImportError:
             raise PhotonsAppError(
                 'You must `pip install -e ".[tests]"` before you can run integration tests'

@@ -6,4 +6,4 @@ store = Store(default_path="/v1/lifx/command", formatter=MergedOptionStringForma
 
 
 def load_commands():
-    import photons_interactor.commander.commands
+    import photons_interactor.commander.commands  # noqa

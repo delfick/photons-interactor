@@ -9,7 +9,6 @@ from photons_device_finder import DeviceFinder
 from whirlwind.server import Server, wait_for_futures
 from whirlwind.commander import Commander
 from tornado.web import StaticFileHandler
-from functools import partial
 import logging
 import time
 
