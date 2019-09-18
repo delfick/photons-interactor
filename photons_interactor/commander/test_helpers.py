@@ -3,7 +3,7 @@ from photons_transport.fake import FakeDevice, Responder
 from photons_control import test_helpers as chp
 from photons_messages import DeviceMessages
 
-from input_algorithms.dictobj import dictobj
+from delfick_project.norms import dictobj
 from unittest import mock
 import uuid
 

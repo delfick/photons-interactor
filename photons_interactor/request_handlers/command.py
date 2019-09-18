@@ -3,7 +3,7 @@ from whirlwind.request_handlers.base import reprer, MessageFromExc
 
 from photons_app import helpers as hp
 
-from delfick_error import DelfickError
+from delfick_project.errors import DelfickError
 from bitarray import bitarray
 import binascii
 import logging

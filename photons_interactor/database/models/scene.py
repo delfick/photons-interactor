@@ -2,7 +2,7 @@ from photons_interactor.database.models.scene_spec import make_spec
 from photons_interactor.database.connection import Base
 
 from sqlalchemy import Column, Integer, String, Text, Boolean
-from input_algorithms import spec_base as sb
+from delfick_project.norms import sb
 
 
 class Scene(Base):

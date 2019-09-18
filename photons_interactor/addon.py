@@ -11,9 +11,8 @@ from photons_transport.session.network import NetworkSession
 from photons_transport.targets import LanTarget
 from photons_messages import Services
 
-from option_merge_addons import option_merge_addon_hook
-from input_algorithms import spec_base as sb
-from input_algorithms.meta import Meta
+from delfick_project.addons import addon_hook
+from delfick_project.norms import sb
 from functools import partial
 import pkg_resources
 import subprocess
@@ -27,13 +26,10 @@ import os
 log = logging.getLogger("photons_interactor.addon")
 
 
-@option_merge_addon_hook(extras=[("lifx.photons", "__all__")])
+@addon_hook(extras=[("lifx.photons", "__all__")])
 def __lifx__(collector, *args, **kwargs):
     collector.register_converters(
-        {(0, ("interactor",)): Options.FieldSpec(formatter=MergedOptionStringFormatter)},
-        Meta,
-        collector.configuration,
-        sb.NotSpecified,
+        {"interactor": Options.FieldSpec(formatter=MergedOptionStringFormatter)}
     )
 
 

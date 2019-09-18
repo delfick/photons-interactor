@@ -2,6 +2,8 @@ from photons_interactor import VERSION
 
 from setuptools import setup, find_packages
 
+# fmt: off
+
 setup(
       name = "photons-interactor"
     , version = VERSION
@@ -9,11 +11,11 @@ setup(
     , include_package_data = True
 
     , install_requires =
-      [ "lifx-photons-core==0.20.5"
+      [ "lifx-photons-core==0.21.0"
       , "tornado==5.1.1"
       , "SQLAlchemy==1.3.3"
       , "alembic==1.0.0"
-      , "whirlwind-web==0.5.3"
+      , "whirlwind-web==0.6"
       ]
 
     , extras_require =
@@ -40,3 +42,5 @@ setup(
     , license = "cc-by-nc-sa-4.0"
     , keywords = "lifx photons"
     )
+
+# fmt: on

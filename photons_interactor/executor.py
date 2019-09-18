@@ -8,11 +8,12 @@ from photons_interactor import VERSION
 from photons_app import helpers as hp
 from photons_app.executor import App
 
-from input_algorithms import spec_base as sb
-from delfick_app import ArgumentError
+from delfick_project.norms import sb
 from textwrap import dedent
+import argparse
 import logging
 import json
+import os
 
 log = logging.getLogger("photons_interactor.executor")
 
@@ -23,6 +24,44 @@ other_cli_environment_defaults = {
     "LIFX_CONFIG": ("--config", "./interactor.yml"),
 }
 cli_environment_defaults.update(other_cli_environment_defaults)
+
+
+class DefaultConfigFile(argparse.FileType):
+    def __call__(self, location):
+        if not os.path.exists(location):
+            self.make_location(location)
+        return super().__call__(location)
+
+    def make_location(self, location):
+        print(
+            dedent(
+                f"""
+            Photons interactor needs a configuration file. This can be specified with
+            the --config cli option or the LIFX_CONFIG environment variable.
+
+            We tried looking at {location} but didn't see a config file.
+
+            By pressing enter we will create a config file at {location} for you.
+
+            Press ctrl-c to not go forward with this.
+            """
+            )
+        )
+
+        input()
+
+        with open(location, "w") as fle:
+            fle.write(
+                dedent(
+                    """
+                ---
+
+                interactor:
+                  database:
+                    uri: "sqlite:///{config_root}/interactor.db"
+            """
+                )
+            )
 
 
 class App(App):
@@ -39,51 +78,11 @@ class App(App):
             ),
         }
 
-        self.ensure_config(args_obj.photons_app_config)
-
         with hp.a_temp_file() as fle:
             fle.write(json.dumps(data).encode())
             fle.flush()
             return super(App, self).execute(
                 args_obj, args_dict, extra_args, logging_handler, extra_files=[fle.name]
-            )
-
-    def ensure_config(self, config):
-        """Make sure we have a config file so that we have database options"""
-        try:
-            config()
-            return
-        except ArgumentError as error:
-            filename = error.kwargs["location"]
-
-        print(
-            dedent(
-                f"""
-            Photons interactor needs a configuration file. This can be specified with
-            the --config cli option or the LIFX_CONFIG environment variable.
-
-            We tried looking at {filename} but didn't see a config file.
-
-            By pressing enter we will create a config file at {filename} for you.
-
-            Press ctrl-c to not go forward with this.
-            """
-            )
-        )
-
-        input()
-
-        with open(filename, "w") as fle:
-            fle.write(
-                dedent(
-                    """
-                ---
-
-                interactor:
-                  database:
-                    uri: "sqlite:///{config_root}/interactor.db"
-            """
-                )
             )
 
     def specify_other_args(self, parser, defaults):
@@ -109,6 +108,9 @@ class App(App):
             dest="interactor_fake_devices",
             action="store_true",
         )
+
+        config_option = [p for p in parser._actions if "--config" in p.option_strings][0]
+        config_option.type = DefaultConfigFile("r")
 
         return parser
 

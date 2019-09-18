@@ -1,4 +1,4 @@
-from input_algorithms import spec_base as sb
+from delfick_project.norms import sb
 
 
 def signature(spec, default=None):

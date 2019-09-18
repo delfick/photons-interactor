@@ -4,8 +4,7 @@ from photons_interactor.assets import Assets
 
 from photons_app.formatter import MergedOptionStringFormatter
 
-from input_algorithms.dictobj import dictobj
-from input_algorithms import spec_base as sb
+from delfick_project.norms import dictobj, sb
 import secrets
 
 

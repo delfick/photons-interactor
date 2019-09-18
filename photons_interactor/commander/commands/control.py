@@ -4,8 +4,7 @@ from photons_interactor.commander.store import store
 
 from photons_control.transform import Transformer
 
-from input_algorithms.dictobj import dictobj
-from input_algorithms import spec_base as sb
+from delfick_project.norms import dictobj, sb
 
 
 @store.command(name="status")

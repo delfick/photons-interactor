@@ -1,8 +1,7 @@
 from photons_interactor.database.connection import Base, DatabaseConnection
 
 from alembic.config import CommandLine as AlembicCommandLine, Config as AlembicConfig
-from input_algorithms.dictobj import dictobj
-from input_algorithms import spec_base as sb
+from delfick_project.norms import dictobj, sb
 from alembic.script import ScriptDirectory
 from sqlalchemy import pool
 import shlex

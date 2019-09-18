@@ -6,7 +6,7 @@ from photons_interactor.database.test_helpers import DBTestRunner
 from photons_app.test_helpers import TestCase
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp, noy_sup_tearDown
-from input_algorithms.meta import Meta
+from delfick_project.norms import Meta
 import sqlalchemy.exc
 import uuid
 

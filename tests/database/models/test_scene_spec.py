@@ -6,11 +6,8 @@ from photons_app.test_helpers import TestCase, print_packet_difference
 
 from photons_messages import LightMessages, MultiZoneMessages, TileMessages
 
+from delfick_project.norms import dictobj, sb, Meta, BadSpecValue
 from noseOfYeti.tokeniser.support import noy_sup_setUp
-from input_algorithms.errors import BadSpecValue
-from input_algorithms import spec_base as sb
-from input_algorithms.dictobj import dictobj
-from input_algorithms.meta import Meta
 from unittest import mock
 import random
 import json

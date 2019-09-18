@@ -5,8 +5,7 @@ from photons_interactor.commander import helpers as chp
 
 from photons_app.test_helpers import TestCase
 
-from input_algorithms.dictobj import dictobj
-from input_algorithms import spec_base as sb
+from delfick_project.norms import dictobj, sb
 from textwrap import dedent
 
 describe TestCase, "fields_description":

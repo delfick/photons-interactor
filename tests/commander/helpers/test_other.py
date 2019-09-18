@@ -10,7 +10,7 @@ from photons_app.errors import PhotonsAppError
 from photons_messages import DeviceMessages, LightMessages, LIFXPacket
 
 from noseOfYeti.tokeniser.support import noy_sup_setUp
-from input_algorithms import spec_base as sb
+from delfick_project.norms import sb
 from unittest import mock
 import asynctest
 

@@ -1,7 +1,6 @@
 from photons_app.errors import PhotonsAppError
 
-from input_algorithms.dictobj import dictobj
-from input_algorithms import spec_base as sb
+from delfick_project.norms import dictobj, sb
 import subprocess
 import shutil
 import os

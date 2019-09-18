@@ -10,8 +10,7 @@ from photons_app import helpers as hp
 from photons_messages import DeviceMessages, MultiZoneMessages, TileMessages, LightMessages
 from photons_control.transform import Transformer
 
-from input_algorithms.dictobj import dictobj
-from input_algorithms import spec_base as sb
+from delfick_project.norms import dictobj, sb
 from collections import defaultdict
 import uuid
 

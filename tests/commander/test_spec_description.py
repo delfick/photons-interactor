@@ -4,7 +4,7 @@ from photons_interactor.commander.spec_description import signature
 
 from photons_app.test_helpers import TestCase
 
-from input_algorithms import spec_base as sb
+from delfick_project.norms import sb
 
 describe TestCase, "signature":
 

@@ -6,9 +6,7 @@ from photons_app.formatter import MergedOptionStringFormatter
 
 from photons_device_finder import Filter
 
-from input_algorithms.dictobj import dictobj
-from input_algorithms import spec_base as sb
-from input_algorithms.meta import Meta
+from delfick_project.norms import dictobj, sb, Meta
 from textwrap import dedent
 
 
