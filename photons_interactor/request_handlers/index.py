@@ -22,7 +22,9 @@ Cyv9DAsr/QwLK/0MCyv9DAsr/QwLK/0MCyv9DAsr/QwLK/0QDy/89AMn/ZS/U/2Q10/80AMb/PgLJ/zw
 yP88AMj/PADI/zwAyP88AMj/PADI/zwAyP88AMj/PADI/zwAyP89Asn/NQDG/14u0v+8pOz/YyzT/2Qu0
 /9kLtT/ZC3T/2Qt0/9kLdP/ZC3T/2Qt0/9kLdP/ZC3T/2Qt0/9kLtP/ZC7U/2Eq0/+rjuj/AAAAAAAAAA
 AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
-""".replace("\n", "").strip()
+""".replace(
+    "\n", ""
+).strip()
 
 template = """
 <!DOCTYPE html>
@@ -46,6 +48,7 @@ template = """
   </body>
 </html>
 """.strip()
+
 
 class Index(Simple):
     def initialize(self):

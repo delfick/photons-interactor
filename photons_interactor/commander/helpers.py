@@ -11,6 +11,7 @@ from input_algorithms import spec_base as sb
 from input_algorithms.meta import Meta
 from textwrap import dedent
 
+
 def filter_from_matcher(matcher, refresh=None):
     """
     Return a Filter instance for our matcher
@@ -38,11 +39,13 @@ def filter_from_matcher(matcher, refresh=None):
 
     return fltr
 
+
 def clone_filter(fltr, **kwargs):
     """Clone a Filter with additional settings"""
     dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
     dct.update(**kwargs)
     return Filter.from_options(dct)
+
 
 def find_packet(protocol_register, pkt_type):
     """
@@ -61,6 +64,7 @@ def find_packet(protocol_register, pkt_type):
 
     raise NoSuchPacket(wanted=pkt_type)
 
+
 def make_message(protocol_register, pkt_type, pkt_args):
     """
     Find the packet class for this ``pkt_type`` and instantiate it with
@@ -71,6 +75,7 @@ def make_message(protocol_register, pkt_type, pkt_args):
         return kls.normalise(Meta.empty(), pkt_args)
     else:
         return kls()
+
 
 async def run(script, fltr, finder, add_replies=True, result=None, **kwargs):
     """
@@ -89,11 +94,14 @@ async def run(script, fltr, finder, add_replies=True, result=None, **kwargs):
         result = ResultBuilder()
     result.add_serials(serials)
 
-    async for pkt, _, _ in script.run_with(finder.find(filtr=find_fltr), afr, error_catcher=result.error, **kwargs):
+    async for pkt, _, _ in script.run_with(
+        finder.find(filtr=find_fltr), afr, error_catcher=result.error, **kwargs
+    ):
         if add_replies:
             result.add_packet(pkt)
 
     return result
+
 
 class ResultBuilder:
     """
@@ -143,6 +151,7 @@ class ResultBuilder:
     with an additional ``None`` key holding a list of ``(<error_type>, <error>, <traceback>)`` for errors
     that couldn't be associated with a serial
     """
+
     def __init__(self, serials=None):
         self.serials = [] if serials is None else serials
         self.result = {"results": {}}
@@ -163,10 +172,12 @@ class ResultBuilder:
 
     def add_packet(self, pkt):
         info = {
-              "pkt_type": pkt.__class__.Payload.message_type
-            , "pkt_name": pkt.__class__.__name__
-            , "payload": {key: val for key, val in pkt.payload.as_dict().items() if "reserved" not in key}
-            }
+            "pkt_type": pkt.__class__.Payload.message_type,
+            "pkt_name": pkt.__class__.__name__,
+            "payload": {
+                key: val for key, val in pkt.payload.as_dict().items() if "reserved" not in key
+            },
+        }
 
         if pkt.serial in self.result["results"]:
             existing = self.result["results"][pkt.serial]
@@ -185,7 +196,7 @@ class ResultBuilder:
             serial = e.kwargs["serial"]
 
         if type(msg["error"]) is dict and "serial" in msg["error"]:
-            del msg['error']['serial']
+            del msg["error"]["serial"]
 
         if serial:
             self.result["results"][serial] = msg
@@ -199,6 +210,7 @@ class ResultBuilder:
                 self.exc_info[None] = []
             self.exc_info[None].append((type(e), e, e.__traceback__))
 
+
 def fields_description(kls):
     """
     yield (name, type_info, help) for all the fields on our kls
@@ -207,7 +219,9 @@ def fields_description(kls):
 
     and fields that have no help are skipped
     """
-    final_specs = kls.FieldSpec(formatter=MergedOptionStringFormatter).make_spec(Meta.empty()).kwargs
+    final_specs = (
+        kls.FieldSpec(formatter=MergedOptionStringFormatter).make_spec(Meta.empty()).kwargs
+    )
 
     for name, field in kls.fields.items():
         hlp = ""

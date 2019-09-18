@@ -26,13 +26,16 @@ import os
 
 log = logging.getLogger("photons_interactor.addon")
 
+
 @option_merge_addon_hook(extras=[("lifx.photons", "__all__")])
 def __lifx__(collector, *args, **kwargs):
     collector.register_converters(
-          { (0, ("interactor", )): Options.FieldSpec(formatter=MergedOptionStringFormatter)
-          }
-        , Meta, collector.configuration, sb.NotSpecified
-        )
+        {(0, ("interactor",)): Options.FieldSpec(formatter=MergedOptionStringFormatter)},
+        Meta,
+        collector.configuration,
+        sb.NotSpecified,
+    )
+
 
 @an_action(label="Interactor")
 async def serve(collector, **kwargs):
@@ -62,12 +65,15 @@ async def serve(collector, **kwargs):
         LanTarget.session_kls = ModifiedNetworkSession
 
     options = conf["interactor"]
-    await Server(conf["photons_app"].final_future).serve(options.host, options.port
-        , conf["interactor"]
-        , conf["photons_app"].cleaners
-        , conf["target_register"]
-        , conf["protocol_register"]
-        )
+    await Server(conf["photons_app"].final_future).serve(
+        options.host,
+        options.port,
+        conf["interactor"],
+        conf["photons_app"].cleaners,
+        conf["target_register"],
+        conf["protocol_register"],
+    )
+
 
 @an_action(label="Interactor")
 async def migrate(collector, extra=None, **kwargs):
@@ -92,6 +98,7 @@ async def migrate(collector, extra=None, **kwargs):
         extra = collector.configuration["photons_app"].extra
     await database.migrate(collector.configuration["interactor"].database, extra)
 
+
 @an_action(label="Interactor")
 async def npm(collector, reference, **kwargs):
     if not os.path.exists(pkg_resources.resource_filename("photons_interactor", "static/js")):
@@ -110,9 +117,12 @@ async def npm(collector, reference, **kwargs):
         try:
             import asynctest
         except ImportError:
-            raise PhotonsAppError('You must `pip install -e ".[tests]"` before you can run integration tests')
+            raise PhotonsAppError(
+                'You must `pip install -e ".[tests]"` before you can run integration tests'
+            )
 
         from whirlwind.test_helpers import free_port, port_connected
+
         port = free_port()
         env = {"CYPRESS_BASE_URL": f"http://127.0.0.1:{port}"}
 
@@ -142,7 +152,9 @@ async def npm(collector, reference, **kwargs):
                 await loop.run_in_executor(None, partial(assets.run, "run-script", "build"))
 
             log.info("Running cypress")
-            await loop.run_in_executor(None, partial(assets.run, "run-script", f"cypress:{typ}", extra_env=env))
+            await loop.run_in_executor(
+                None, partial(assets.run, "run-script", f"cypress:{typ}", extra_env=env)
+            )
         except Exception as error:
             if not final_future.done():
                 final_future.set_exception(error)
@@ -183,6 +195,8 @@ async def npm(collector, reference, **kwargs):
             assets.run("run-script", "test:watch")
 
         else:
-            raise PhotonsAppError("Didn't get a recognised command", want=reference, available=available)
+            raise PhotonsAppError(
+                "Didn't get a recognised command", want=reference, available=available
+            )
     except subprocess.CalledProcessError as error:
         raise PhotonsAppError("Failed to run command", error=error)

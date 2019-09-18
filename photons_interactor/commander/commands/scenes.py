@@ -15,20 +15,22 @@ from input_algorithms import spec_base as sb
 from collections import defaultdict
 import uuid
 
+
 @store.command(name="scene_info")
 class SceneInfoCommand(store.Command):
     """
     Retrieve information about scenes in the database
     """
+
     db_queue = store.injected("db_queue")
 
-    uuid = dictobj.NullableField(sb.listof(sb.string_spec())
-        , help = "Only get information for scene with these uuid"
-        )
+    uuid = dictobj.NullableField(
+        sb.listof(sb.string_spec()), help="Only get information for scene with these uuid"
+    )
 
-    only_meta = dictobj.Field(sb.boolean, default=False
-        , help = "Only return meta info about the scenes"
-        )
+    only_meta = dictobj.Field(
+        sb.boolean, default=False, help="Only return meta info about the scenes"
+    )
 
     async def execute(self):
         def get(db):
@@ -56,30 +58,29 @@ class SceneInfoCommand(store.Command):
                     del data["scene"]
 
             return dict(info)
+
         return await self.db_queue.request(get)
+
 
 @store.command(name="scene_change")
 class SceneChangeCommand(store.Command):
     """
     Set all the options for a scene
     """
+
     db_queue = store.injected("db_queue")
 
-    uuid = dictobj.NullableField(sb.string_spec
-        , help = "The uuid of the scene to change, if None we create a new scene"
-        )
+    uuid = dictobj.NullableField(
+        sb.string_spec, help="The uuid of the scene to change, if None we create a new scene"
+    )
 
-    label = dictobj.NullableField(sb.string_spec
-        , help = "The label to give this scene"
-        )
+    label = dictobj.NullableField(sb.string_spec, help="The label to give this scene")
 
-    description = dictobj.NullableField(sb.string_spec
-        , help = "The description to give this scene"
-        )
+    description = dictobj.NullableField(sb.string_spec, help="The description to give this scene")
 
-    scene = dictobj.NullableField(sb.listof(Scene.DelayedSpec(storing=True))
-        , help = "The options for the scene"
-        )
+    scene = dictobj.NullableField(
+        sb.listof(Scene.DelayedSpec(storing=True)), help="The options for the scene"
+    )
 
     async def execute(self):
         def make(db):
@@ -101,18 +102,21 @@ class SceneChangeCommand(store.Command):
             db.add(info)
 
             return scene_uuid
+
         return await self.db_queue.request(make)
+
 
 @store.command(name="scene_delete")
 class SceneDeleteCommand(store.Command):
     """
     Delete a scene
     """
+
     db_queue = store.injected("db_queue")
 
-    uuid = dictobj.Field(sb.string_spec, wrapper=sb.required
-        , help = "The uuid of the scene to delete"
-        )
+    uuid = dictobj.Field(
+        sb.string_spec, wrapper=sb.required, help="The uuid of the scene to delete"
+    )
 
     async def execute(self):
         def delete(db):
@@ -120,13 +124,16 @@ class SceneDeleteCommand(store.Command):
                 db.delete(thing)
 
             return {"deleted": True}
+
         return await self.db_queue.request(delete)
+
 
 @store.command(name="scene_apply")
 class SceneApplyCommand(store.Command):
     """
     Apply a scene
     """
+
     finder = store.injected("finder")
     target = store.injected("targets.lan")
     db_queue = store.injected("db_queue")
@@ -134,13 +141,9 @@ class SceneApplyCommand(store.Command):
     matcher = df.matcher_field
     timeout = df.timeout_field
 
-    uuid = dictobj.Field(sb.string_spec, wrapper=sb.required
-        , help = "The uuid of the scene to apply"
-        )
+    uuid = dictobj.Field(sb.string_spec, wrapper=sb.required, help="The uuid of the scene to apply")
 
-    overrides = dictobj.Field(sb.dictionary_spec
-        , help = "Overrides to the scene"
-        )
+    overrides = dictobj.Field(sb.dictionary_spec, help="Overrides to the scene")
 
     async def execute(self):
         ts = []
@@ -189,21 +192,42 @@ class SceneApplyCommand(store.Command):
         msg = Transformer.using(options)
         script = self.target.script(msg)
         try:
-            await chp.run(script, fltr, self.finder, add_replies=False, message_timeout=self.timeout, result=result)
+            await chp.run(
+                script,
+                fltr,
+                self.finder,
+                add_replies=False,
+                message_timeout=self.timeout,
+                result=result,
+            )
         except FoundNoDevices:
             pass
 
     async def apply_zones(self, fltr, scene, result):
         script = self.target.script(list(scene.zone_msgs(self.overrides)))
         try:
-            await chp.run(script, fltr, self.finder, add_replies=False, message_timeout=self.timeout, result=result)
+            await chp.run(
+                script,
+                fltr,
+                self.finder,
+                add_replies=False,
+                message_timeout=self.timeout,
+                result=result,
+            )
         except FoundNoDevices:
             pass
 
     async def apply_chain(self, fltr, scene, result):
         script = self.target.script(list(scene.chain_msgs(self.overrides)))
         try:
-            await chp.run(script, fltr, self.finder, add_replies=False, message_timeout=self.timeout, result=result)
+            await chp.run(
+                script,
+                fltr,
+                self.finder,
+                add_replies=False,
+                message_timeout=self.timeout,
+                result=result,
+            )
         except FoundNoDevices:
             pass
 
@@ -225,11 +249,13 @@ class SceneApplyCommand(store.Command):
             clone.cap = [c for c in clone.cap if c != f"not_{cap}"]
         return clone
 
+
 @store.command(name="scene_capture")
 class SceneCaptureCommand(store.Command):
     """
     Capture a scene
     """
+
     path = store.injected("path")
     finder = store.injected("finder")
     target = store.injected("targets.lan")
@@ -239,21 +265,19 @@ class SceneCaptureCommand(store.Command):
     matcher = df.matcher_field
     refresh = df.refresh_field
 
-    uuid = dictobj.NullableField(sb.string_spec
-        , help = "The uuid of the scene to change, if None we create a new scene"
-        )
+    uuid = dictobj.NullableField(
+        sb.string_spec, help="The uuid of the scene to change, if None we create a new scene"
+    )
 
-    label = dictobj.NullableField(sb.string_spec
-        , help = "The label to give this scene"
-        )
+    label = dictobj.NullableField(sb.string_spec, help="The label to give this scene")
 
-    description = dictobj.NullableField(sb.string_spec
-        , help = "The description to give this scene"
-        )
+    description = dictobj.NullableField(sb.string_spec, help="The description to give this scene")
 
-    just_return = dictobj.Field(sb.boolean, default=False
-        , help = "Just return the scene rather than storing it in the database"
-        )
+    just_return = dictobj.Field(
+        sb.boolean,
+        default=False,
+        help="Just return the scene rather than storing it in the database",
+    )
 
     async def execute(self):
         fltr = chp.filter_from_matcher(self.matcher, self.refresh)
@@ -264,15 +288,21 @@ class SceneCaptureCommand(store.Command):
             msgs.append(DeviceMessages.GetPower(target=serial))
 
             if "multizone" in info["cap"]:
-                msgs.append(MultiZoneMessages.GetColorZones(start_index=0, end_index=255, target=serial))
+                msgs.append(
+                    MultiZoneMessages.GetColorZones(start_index=0, end_index=255, target=serial)
+                )
             elif "chain" in info["cap"]:
-                msgs.append(TileMessages.Get64(tile_index=0, length=5, x=0, y=0, width=8, target=serial))
+                msgs.append(
+                    TileMessages.Get64(tile_index=0, length=5, x=0, y=0, width=8, target=serial)
+                )
             else:
                 msgs.append(LightMessages.GetColor(target=serial))
 
         state = defaultdict(dict)
         afr = await self.finder.args_for_run()
-        async for pkt, _, _ in self.target.script(msgs).run_with(None, afr, multiple_replies=True, first_wait=0.5):
+        async for pkt, _, _ in self.target.script(msgs).run_with(
+            None, afr, multiple_replies=True, first_wait=0.5
+        ):
             if pkt | DeviceMessages.StatePower:
                 state[pkt.serial]["power"] = pkt.level != 0
             elif pkt | LightMessages.LightState:
@@ -303,9 +333,9 @@ class SceneCaptureCommand(store.Command):
             return scene
 
         args = {
-              "uuid": self.uuid
-            , "scene": scene
-            , "label": self.label
-            , "description": self.description
-            }
+            "uuid": self.uuid,
+            "scene": scene,
+            "label": self.label,
+            "description": self.description,
+        }
         return await self.executor.execute(self.path, {"command": "scene_change", "args": args})

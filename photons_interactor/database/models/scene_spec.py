@@ -5,6 +5,7 @@ from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 import json
 
+
 class range_spec(sb.Spec):
     def __init__(self, minimum, maximum, spec=None):
         self.minimum = minimum
@@ -14,13 +15,15 @@ class range_spec(sb.Spec):
     def normalise_filled(self, meta, val):
         val = self.spec.normalise(meta, val)
         if val < self.minimum or val > self.maximum:
-            raise BadSpecValue("Number must be between min and max"
-                , minimum=self.minimum
-                , maximum=self.maximum
-                , got=val
-                , meta=meta
-                )
+            raise BadSpecValue(
+                "Number must be between min and max",
+                minimum=self.minimum,
+                maximum=self.maximum,
+                got=val,
+                meta=meta,
+            )
         return val
+
 
 class sized_list_spec(sb.Spec):
     def __init__(self, spec, length):
@@ -30,17 +33,20 @@ class sized_list_spec(sb.Spec):
     def normalise_filled(self, meta, val):
         val = sb.listof(self.spec).normalise(meta, val)
         if len(val) != self.length:
-            raise BadSpecValue("Expected certain number of parts", want=self.length, got=len(val), meta=meta)
+            raise BadSpecValue(
+                "Expected certain number of parts", want=self.length, got=len(val), meta=meta
+            )
         return val
+
 
 class hsbk(sb.Spec):
     def __init__(self):
         self.specs = [
-              range_spec(0, 360)
-            , range_spec(0, 1)
-            , range_spec(0, 1)
-            , range_spec(2500, 9000, spec=sb.integer_spec())
-            ]
+            range_spec(0, 360),
+            range_spec(0, 1),
+            range_spec(0, 1),
+            range_spec(2500, 9000, spec=sb.integer_spec()),
+        ]
 
     def normalise_filled(self, meta, val):
         val = sized_list_spec(sb.any_spec(), 4).normalise(meta, val)
@@ -49,7 +55,9 @@ class hsbk(sb.Spec):
             res.append(s.normalise(meta.at(i), v))
         return res
 
+
 chain_spec = sized_list_spec(hsbk(), 64)
+
 
 class json_string_spec(sb.Spec):
     def __init__(self, spec, storing):
@@ -74,10 +82,13 @@ class json_string_spec(sb.Spec):
                 return v
             return json.dumps(v)
 
+
 def make_spec(storing=True):
     class Fields(dictobj.Spec):
         uuid = dictobj.Field(sb.string_spec, wrapper=sb.required)
-        matcher = dictobj.Field(json_string_spec(sb.dictionary_spec(), storing), wrapper=sb.required)
+        matcher = dictobj.Field(
+            json_string_spec(sb.dictionary_spec(), storing), wrapper=sb.required
+        )
         power = dictobj.NullableField(sb.boolean)
         color = dictobj.NullableField(sb.string_spec)
         zones = dictobj.NullableField(json_string_spec(sb.listof(hsbk()), storing))
@@ -85,6 +96,7 @@ def make_spec(storing=True):
         duration = dictobj.NullableField(sb.integer_spec)
 
     if not storing:
+
         class Fields(Fields):
             @property
             def transform_options(self):
@@ -96,12 +108,14 @@ def make_spec(storing=True):
 
             def colors_from_hsbks(self, hsbks, overrides):
                 return [
-                        { "hue": overrides.get("hue", h)
-                        , "saturation": overrides.get("saturation", s)
-                        , "brightness": overrides.get("brightness", b)
-                        , "kelvin": overrides.get("kelvin", k)
-                        } for h, s, b, k in hsbks
-                    ]
+                    {
+                        "hue": overrides.get("hue", h),
+                        "saturation": overrides.get("saturation", s),
+                        "brightness": overrides.get("brightness", b),
+                        "kelvin": overrides.get("kelvin", k),
+                    }
+                    for h, s, b, k in hsbks
+                ]
 
             def power_message(self, overrides):
                 power = overrides.get("power", self.power)
@@ -133,16 +147,20 @@ def make_spec(storing=True):
                         color = colors[i]
                         continue
                     if colors[i] != color:
-                        yield MultiZoneMessages.SetColorZones(start_index=start, end_index=i - 1, **color, duration=duration
-                            , res_required = False
-                            )
+                        yield MultiZoneMessages.SetColorZones(
+                            start_index=start,
+                            end_index=i - 1,
+                            **color,
+                            duration=duration,
+                            res_required=False
+                        )
                         color = colors[i]
                         start = i
 
                 color = colors[i]
-                yield MultiZoneMessages.SetColorZones(start_index=start, end_index=i, **color, duration=duration
-                    , res_required = False
-                    )
+                yield MultiZoneMessages.SetColorZones(
+                    start_index=start, end_index=i, **color, duration=duration, res_required=False
+                )
 
             def chain_msgs(self, overrides):
                 power_message = self.power_message(overrides)
@@ -152,8 +170,15 @@ def make_spec(storing=True):
                 duration = self.determine_duration(overrides)
                 for i, lst in enumerate(self.chain):
                     colors = self.colors_from_hsbks(lst, overrides)
-                    yield TileMessages.Set64(tile_index=i, length=1, x=0, y=0, width=8, duration=duration, colors=colors
-                        , res_required = False
-                        )
+                    yield TileMessages.Set64(
+                        tile_index=i,
+                        length=1,
+                        x=0,
+                        y=0,
+                        width=8,
+                        duration=duration,
+                        colors=colors,
+                        res_required=False,
+                    )
 
     return Fields.FieldSpec()

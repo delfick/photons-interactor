@@ -25,14 +25,18 @@ import uuid
 
 log = logging.getLogger("photons_interactor.commander.commands.animations")
 
+
 class NoSuchAnimation(PhotonsAppError):
     desc = "No such animation"
+
 
 class FoundNoTiles(PhotonsAppError):
     desc = "No tiles could be found"
 
+
 class AllSerialsAlreadyAnimating(PhotonsAppError):
     desc = "Can't start animation on already animating devices"
+
 
 class valid_animation_name(sb.Spec):
     def normalise_filled(self, meta, val):
@@ -40,9 +44,13 @@ class valid_animation_name(sb.Spec):
         available = list(animations.presets) + list(animations.animators)
         return sb.string_choice_spec(available).normalise(meta, val)
 
+
 class PresetAnimation(dictobj.Spec):
-    animation = dictobj.Field(sb.string_choice_spec(list(dict(Animations.animators()))), wrapper=sb.required)
+    animation = dictobj.Field(
+        sb.string_choice_spec(list(dict(Animations.animators()))), wrapper=sb.required
+    )
     options = dictobj.Field(sb.dictionary_spec())
+
 
 class non_empty_list_spec(sb.Spec):
     def setup(self, spec):
@@ -57,7 +65,9 @@ class non_empty_list_spec(sb.Spec):
             raise BadSpecValue("Preset must have a non empty list of animations", meta=meta)
         return val
 
+
 presets_spec = lambda: sb.dictof(sb.string_spec(), non_empty_list_spec(PresetAnimation.FieldSpec()))
+
 
 class TileTransitionAnimation(Animation):
     def setup(self):
@@ -108,10 +118,17 @@ class TileTransitionAnimation(Animation):
 
         return canvas
 
-class TileTransitionOptions(dictobj.Spec):
-    background = dictobj.Field(sb.overridden(BackgroundOption.FieldSpec().empty_normalise(type="current")))
 
-transition_animation = Animator(TileTransitionAnimation, TileTransitionOptions, "Transition animation")
+class TileTransitionOptions(dictobj.Spec):
+    background = dictobj.Field(
+        sb.overridden(BackgroundOption.FieldSpec().empty_normalise(type="current"))
+    )
+
+
+transition_animation = Animator(
+    TileTransitionAnimation, TileTransitionOptions, "Transition animation"
+)
+
 
 class AnimationsStore:
     _merged_options_formattable = True
@@ -174,13 +191,13 @@ class AnimationsStore:
         pauser = asyncio.Condition()
         final_future = hp.ChildOfFuture(afr.stop_fut)
         info = {
-              "pauser": pauser
-            , "paused": False
-            , "final_future": final_future
-            , "started": time.time()
-            , "serials": serials
-            , "name": animations[0].animation
-            }
+            "pauser": pauser,
+            "paused": False,
+            "final_future": final_future,
+            "started": time.time(),
+            "serials": serials,
+            "name": animations[0].animation,
+        }
 
         async def coro():
             while True:
@@ -200,9 +217,9 @@ class AnimationsStore:
                         opts["combine_tiles"] = True
 
                     try:
-                        await self.animators[a.animation].animate(target, afr, final_future, reference, opts
-                            , pauser=info["pauser"]
-                            )
+                        await self.animators[a.animation].animate(
+                            target, afr, final_future, reference, opts, pauser=info["pauser"]
+                        )
                     except Finish:
                         pass
                     except Exception as error:
@@ -216,7 +233,9 @@ class AnimationsStore:
                         info["name"] = "transition"
                         self.activate_listeners()
                         try:
-                            await transition_animation.animate(target, afr, final_future, reference, options)
+                            await transition_animation.animate(
+                                target, afr, final_future, reference, options
+                            )
                         except Finish:
                             pass
                         except Exception as error:
@@ -225,6 +244,7 @@ class AnimationsStore:
 
                 if not repeat:
                     return
+
         task_future = asyncio.ensure_future(hp.async_as_background(coro()))
 
         info["task_future"] = task_future
@@ -238,6 +258,7 @@ class AnimationsStore:
             if "stopped" not in info:
                 info["stopped"] = time.time()
             hp.async_as_background(remove_after_a_minute())
+
         info["task_future"].add_done_callback(activate)
 
         self.animations[animation_id] = info
@@ -318,16 +339,18 @@ class AnimationsStore:
         num_running = sum(1 for an in self.animations.values() if not an["task_future"].done())
 
         return {
-              "num_animations": len(self.animations)
-            , "running_animations": num_running
-            , "statuses": status
-            }
+            "num_animations": len(self.animations),
+            "running_animations": num_running,
+            "statuses": status,
+        }
+
 
 @store.command(name="animate/available")
 class AvailableAnimateCommand(store.Command):
     """
     Return available animations
     """
+
     animations = store.injected("animations")
 
     async def execute(self):
@@ -337,11 +360,13 @@ class AvailableAnimateCommand(store.Command):
 
         return {"animations": response}
 
+
 @store.command(name="animate/start")
 class StartAnimateCommand(store.Command):
     """
     Start a tile animation
     """
+
     finder = store.injected("finder")
     target = store.injected("targets.lan")
     animations = store.injected("animations")
@@ -371,17 +396,24 @@ class StartAnimateCommand(store.Command):
         find_fltr = chp.clone_filter(fltr, force_refresh=False)
         reference = self.finder.find(filtr=find_fltr)
 
-        animation_id = self.animations.start(self.animation
-            , self.target, serials, reference, afr, self.options
-            , stop_conflicting = self.stop_conflicting
-            )
+        animation_id = self.animations.start(
+            self.animation,
+            self.target,
+            serials,
+            reference,
+            afr,
+            self.options,
+            stop_conflicting=self.stop_conflicting,
+        )
         return {"animation_id": animation_id}
+
 
 @store.command(name="animate/stop")
 class StopAnimateCommand(store.Command):
     """
     Stop a tile animation
     """
+
     animations = store.injected("animations")
 
     animation_id = dictobj.Field(sb.string_spec, wrapper=sb.required)
@@ -390,11 +422,13 @@ class StopAnimateCommand(store.Command):
         self.animations.stop(self.animation_id)
         return {"success": True}
 
+
 @store.command(name="animate/pause")
 class PauseAnimateCommand(store.Command):
     """
     Pause a tile animation
     """
+
     animations = store.injected("animations")
 
     animation_id = dictobj.Field(sb.string_spec, wrapper=sb.required)
@@ -403,11 +437,13 @@ class PauseAnimateCommand(store.Command):
         await self.animations.pause(self.animation_id)
         return {"success": True}
 
+
 @store.command(name="animate/resume")
 class ResumeAnimateCommand(store.Command):
     """
     Resume a tile animation
     """
+
     animations = store.injected("animations")
 
     animation_id = dictobj.Field(sb.string_spec, wrapper=sb.required)
@@ -416,11 +452,13 @@ class ResumeAnimateCommand(store.Command):
         self.animations.resume(self.animation_id)
         return {"success": True}
 
+
 @store.command(name="animate/remove")
 class RemoveAnimateCommand(store.Command):
     """
     Stop and remove a tile animation
     """
+
     animations = store.injected("animations")
 
     animation_id = dictobj.Field(sb.string_spec, wrapper=sb.required)
@@ -429,22 +467,26 @@ class RemoveAnimateCommand(store.Command):
         self.animations.remove(self.animation_id)
         return {"success": True}
 
+
 @store.command(name="animate/remove_all")
 class RemoveAllAnimateCommand(store.Command):
     """
     Stop and remove all animations
     """
+
     animations = store.injected("animations")
 
     async def execute(self):
         self.animations.remove_all()
         return {"success": True}
 
+
 @store.command(name="animate/status")
 class StatusAnimateCommand(store.Command):
     """
     Return status of an animation
     """
+
     animations = store.injected("animations")
 
     animation_id = dictobj.Field(sb.string_spec, wrapper=sb.optional_spec)
@@ -452,11 +494,13 @@ class StatusAnimateCommand(store.Command):
     async def execute(self):
         return self.animations.status(self.animation_id)
 
+
 @store.command(name="animate/status_stream")
 class StatusStreamAnimateCommand(store.Command):
     """
     An endless stream of updates to animation status
     """
+
     finder = store.injected("finder")
     target = store.injected("targets.lan")
     animations = store.injected("animations")

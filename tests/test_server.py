@@ -32,19 +32,17 @@ describe AsyncTestCase, "Server":
         async def assertIndex(self, options):
             client = AsyncHTTPClient()
 
-            response = await client.fetch(f"http://127.0.0.1:{options.port}/"
-                , raise_error=False
-                )
+            response = await client.fetch(f"http://127.0.0.1:{options.port}/", raise_error=False)
 
             self.assertEqual(response.code, 200, response.body)
             assert response.body.startswith(b"<!DOCTYPE html>"), response.body
 
-            self.assertEqual(response.headers['Content-Type'], "text/html; charset=UTF-8")
+            self.assertEqual(response.headers["Content-Type"], "text/html; charset=UTF-8")
 
         async it "works":
-            options = thp.make_options("127.0.0.1", wthp.free_port()
-                , device_finder_options = {"arg1": 0.1, "arg2": True}
-                )
+            options = thp.make_options(
+                "127.0.0.1", wthp.free_port(), device_finder_options={"arg1": 0.1, "arg2": True}
+            )
 
             lan_target = mock.Mock(name="lan_target")
             self.target_register.resolve.return_value = lan_target
@@ -70,8 +68,20 @@ describe AsyncTestCase, "Server":
                         with mock.patch("photons_interactor.server.DBQueue", FakeDBQueue):
                             yield
 
-            async with thp.ServerRunner(self.final_future, options.port, server, wrapper(), None, options, cleaners,self.target_register, self.protocol_register) as s:
-                commander.executor.return_value.execute = asynctest.mock.CoroutineMock(name="execute", return_value={})
+            async with thp.ServerRunner(
+                self.final_future,
+                options.port,
+                server,
+                wrapper(),
+                None,
+                options,
+                cleaners,
+                self.target_register,
+                self.protocol_register,
+            ) as s:
+                commander.executor.return_value.execute = asynctest.mock.CoroutineMock(
+                    name="execute", return_value={}
+                )
                 await s.assertPUT(self, "/v1/lifx/command", {"command": "wat"}, json_output={})
 
                 await self.assertIndex(options)
@@ -82,19 +92,22 @@ describe AsyncTestCase, "Server":
 
             from photons_interactor.commander.store import store
 
-            FakeCommander.assert_called_once_with(store
-                , finder = finder
-                , db_queue = db_queue
-                , arranger = server.arranger
-                , animations = server.animations
-                , test_devices = None
-                , final_future = self.final_future
-                , server_options = options
-                , target_register = self.target_register
-                , protocol_register = self.protocol_register
-                )
+            FakeCommander.assert_called_once_with(
+                store,
+                finder=finder,
+                db_queue=db_queue,
+                arranger=server.arranger,
+                animations=server.animations,
+                test_devices=None,
+                final_future=self.final_future,
+                server_options=options,
+                target_register=self.target_register,
+                protocol_register=self.protocol_register,
+            )
             FakeDeviceFinder.assert_called_once_with(lan_target, arg1=0.1, arg2=True)
-            FakeDBQueue.assert_called_once_with(self.final_future, 5, mock.ANY, "sqlite:///:memory:")
+            FakeDBQueue.assert_called_once_with(
+                self.final_future, 5, mock.ANY, "sqlite:///:memory:"
+            )
 
             self.target_register.resolve.assert_called_once_with("lan")
             finder.start.assert_called_once_with()

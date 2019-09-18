@@ -13,6 +13,7 @@ import sqlalchemy.exc
 Test = None
 test_runner = DBTestRunner()
 
+
 def setUp():
     global Test
 
@@ -25,11 +26,13 @@ def setUp():
         def as_dict(self):
             return {"one": self.one, "two": self.two}
 
+
 def tearDown():
     del Base._decl_class_registry["Test"]
     tables = dict(Base.metadata.tables)
     del tables["test"]
     Base.metadata.tables = tables
+
 
 describe TestCase, "DatabaseConnection":
     before_each:
@@ -46,20 +49,16 @@ describe TestCase, "DatabaseConnection":
             self.database.commit()
 
             made = self.database.query(Test).order_by(Test.one.asc()).all()
-            self.assertEqual([t.as_dict() for t in made]
-                , [ Test(one="one", two=True).as_dict()
-                  , Test(one="two", two=False).as_dict()
-                  ]
-                )
+            self.assertEqual(
+                [t.as_dict() for t in made],
+                [Test(one="one", two=True).as_dict(), Test(one="two", two=False).as_dict()],
+            )
 
             self.database.delete(made[0])
             self.database.commit()
 
             made = self.database.query(Test).order_by(Test.one.asc()).all()
-            self.assertEqual([t.as_dict() for t in made]
-                , [ Test(one="two", two=False).as_dict()
-                  ]
-                )
+            self.assertEqual([t.as_dict() for t in made], [Test(one="two", two=False).as_dict()])
 
         it "can refresh items":
             one = Test(one="one", two=True)
@@ -94,7 +93,9 @@ describe TestCase, "DatabaseConnection":
             self.database.add(one)
             self.database.commit()
 
-            result = list(self.database.execute("SELECT * FROM test WHERE one=:one", {"one": "one"}))
+            result = list(
+                self.database.execute("SELECT * FROM test WHERE one=:one", {"one": "one"})
+            )
             self.assertEqual(result, [(1, "one", 1)])
 
     describe "queries":

@@ -17,13 +17,13 @@ describe TestCase, "Scene":
             identifier = str(uuid.uuid1())
 
             kwargs = dict(
-                  matcher = {"label": "den"}
-                , power = True
-                , color = "red"
-                , zones = [[0, 0, 0, 3500], [1, 1, 1, 3500]]
-                , chain = None
-                , duration = 1
-                )
+                matcher={"label": "den"},
+                power=True,
+                color="red",
+                zones=[[0, 0, 0, 3500], [1, 1, 1, 3500]],
+                chain=None,
+                duration=1,
+            )
 
             scene = Scene.DelayedSpec(storing=False).normalise(Meta.empty(), kwargs)
             normalised = scene(identifier)
@@ -37,14 +37,14 @@ describe TestCase, "Scene":
             normalised = scene_for_storing(identifier)
 
             expect = dict(
-                  uuid = identifier
-                , matcher = '{"label": "den"}'
-                , power = True
-                , color = "red"
-                , zones = '[[0.0, 0.0, 0.0, 3500], [1.0, 1.0, 1.0, 3500]]'
-                , chain = None
-                , duration = 1
-                )
+                uuid=identifier,
+                matcher='{"label": "den"}',
+                power=True,
+                color="red",
+                zones="[[0.0, 0.0, 0.0, 3500], [1.0, 1.0, 1.0, 3500]]",
+                chain=None,
+                duration=1,
+            )
 
             self.assertEqual(normalised.as_dict(), expect)
 
@@ -67,14 +67,14 @@ describe TestCase, "Scene":
                 chain.append(tile)
 
             kwargs = dict(
-                  uuid = identifier
-                , matcher = {"label": "den"}
-                , power = True
-                , color = "red"
-                , zones = [[0, 0, 0, 3500], [1, 1, 1, 3500]]
-                , chain = chain
-                , duration = 1
-                )
+                uuid=identifier,
+                matcher={"label": "den"},
+                power=True,
+                color="red",
+                zones=[[0, 0, 0, 3500], [1, 1, 1, 3500]],
+                chain=chain,
+                duration=1,
+            )
 
             scene = Scene.Spec(storing=True).empty_normalise(**kwargs)
             self.database.add(self.database.queries.create_scene(**scene))

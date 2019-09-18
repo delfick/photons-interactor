@@ -15,6 +15,7 @@ from unittest import mock
 import asynctest
 
 describe TestCase, "filter_from_matcher":
+
     def assertFilter(self, fltr, **kwargs):
         dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
         self.assertEqual(dct, kwargs)
@@ -55,33 +56,57 @@ describe TestCase, "filter_from_matcher":
         fltr = chp.filter_from_matcher({"label": ["one", "two"], "hue": [(20, 20)]})
         self.assertFilter(fltr, force_refresh=False, label=["one", "two"], hue=[(20.0, 20.0)])
 
-        fltr = chp.filter_from_matcher({"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": True})
+        fltr = chp.filter_from_matcher(
+            {"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": True}
+        )
         self.assertFilter(fltr, force_refresh=True, label=["one", "two"], hue=[(20.0, 20.0)])
 
-        fltr = chp.filter_from_matcher({"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": True}, refresh=False)
+        fltr = chp.filter_from_matcher(
+            {"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": True}, refresh=False
+        )
         self.assertFilter(fltr, force_refresh=False, label=["one", "two"], hue=[(20.0, 20.0)])
 
-        fltr = chp.filter_from_matcher({"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": False})
+        fltr = chp.filter_from_matcher(
+            {"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": False}
+        )
         self.assertFilter(fltr, force_refresh=False, label=["one", "two"], hue=[(20.0, 20.0)])
 
-        fltr = chp.filter_from_matcher({"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": False}, refresh=True)
+        fltr = chp.filter_from_matcher(
+            {"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": False}, refresh=True
+        )
         self.assertFilter(fltr, force_refresh=True, label=["one", "two"], hue=[(20.0, 20.0)])
 
 describe TestCase, "clone_filter":
+
     def assertFilter(self, fltr, **kwargs):
         dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
         self.assertEqual(dct, kwargs)
 
     it "clones with additional kwargs":
-        fltr = chp.filter_from_matcher({"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": True}, refresh=True)
+        fltr = chp.filter_from_matcher(
+            {"label": ["one", "two"], "hue": [(20, 20)], "force_refresh": True}, refresh=True
+        )
         self.assertFilter(fltr, force_refresh=True, label=["one", "two"], hue=[(20.0, 20.0)])
-        self.assertFilter(chp.clone_filter(fltr, force_refresh=False), force_refresh=False, label=["one", "two"], hue=[(20.0, 20.0)])
+        self.assertFilter(
+            chp.clone_filter(fltr, force_refresh=False),
+            force_refresh=False,
+            label=["one", "two"],
+            hue=[(20.0, 20.0)],
+        )
         # Make sure the original isn't modified
         self.assertFilter(fltr, force_refresh=True, label=["one", "two"], hue=[(20.0, 20.0)])
 
-        fltr = chp.filter_from_matcher({"label": "one", "hue": [(20, 20)], "force_refresh": True}, refresh=True)
+        fltr = chp.filter_from_matcher(
+            {"label": "one", "hue": [(20, 20)], "force_refresh": True}, refresh=True
+        )
         clone = chp.clone_filter(fltr, label=["three", "four"], location_name="blah")
-        self.assertFilter(clone, force_refresh=True, label=["three", "four"], hue=[(20.0, 20.0)], location_name=["blah"])
+        self.assertFilter(
+            clone,
+            force_refresh=True,
+            label=["three", "four"],
+            hue=[(20.0, 20.0)],
+            location_name=["blah"],
+        )
         # Make sure the original isn't modified
         self.assertFilter(fltr, force_refresh=True, label=["one"], hue=[(20.0, 20.0)])
 
@@ -98,7 +123,9 @@ describe TestCase, "find_packet":
 
     it "can find a packet based on pkt_type name":
         self.assertIs(chp.find_packet(self.protocol_register, "GetLabel"), DeviceMessages.GetLabel)
-        self.assertIs(chp.find_packet(self.protocol_register, "StatePower"), DeviceMessages.StatePower)
+        self.assertIs(
+            chp.find_packet(self.protocol_register, "StatePower"), DeviceMessages.StatePower
+        )
 
     it "complains if we can't find the packet":
         with self.fuzzyAssertRaisesError(NoSuchPacket, wanted="GetWat"):
@@ -164,23 +191,38 @@ describe AsyncTestCase, "run":
             async def __anext__(self):
                 self.index += 1
                 if self.index == 0:
-                    return (DeviceMessages.StatePower(level=0, target="d073d5000001"), ("192.168.0.1", 56700), "192.168.0.1")
+                    return (
+                        DeviceMessages.StatePower(level=0, target="d073d5000001"),
+                        ("192.168.0.1", 56700),
+                        "192.168.0.1",
+                    )
                 elif self.index == 1:
                     self.kwargs["error_catcher"](PhotonsAppError("failure", serial="d073d5000002"))
                     raise StopAsyncIteration
+
         script.run_with = RunWith
 
         with mock.patch("photons_interactor.commander.helpers.clone_filter", clone_filter):
             result = await self.wait_for(chp.run(script, fltr, finder, one=1))
 
-        self.assertEqual(result.as_dict()
-            , { "results":
-                { "d073d5000001": {"pkt_type": 22, "pkt_name": "StatePower", "payload": {"level": 0}}
-                , "d073d5000002": {"error": {"message": "failure"}, "error_code": "PhotonsAppError", "status": 400}
-                , "d073d5000003": "ok"
+        self.assertEqual(
+            result.as_dict(),
+            {
+                "results": {
+                    "d073d5000001": {
+                        "pkt_type": 22,
+                        "pkt_name": "StatePower",
+                        "payload": {"level": 0},
+                    },
+                    "d073d5000002": {
+                        "error": {"message": "failure"},
+                        "error_code": "PhotonsAppError",
+                        "status": 400,
+                    },
+                    "d073d5000003": "ok",
                 }
-              }
-            )
+            },
+        )
 
         finder.args_for_run.assert_called_once_with()
         finder.serials.assert_called_once_with(filtr=fltr)
@@ -220,23 +262,30 @@ describe AsyncTestCase, "run":
             async def __anext__(self):
                 self.index += 1
                 if self.index == 0:
-                    return (DeviceMessages.StatePower(level=0, target="d073d5000001"), ("192.168.0.1", 56700), "192.168.0.1")
+                    return (
+                        DeviceMessages.StatePower(level=0, target="d073d5000001"),
+                        ("192.168.0.1", 56700),
+                        "192.168.0.1",
+                    )
                 elif self.index == 1:
-                    return (DeviceMessages.StateHostFirmware(build=0, version_major=1, version_minor=2, target="d073d5000002"), ("`92.168.0.2", 56700), "192.168.0.2")
+                    return (
+                        DeviceMessages.StateHostFirmware(
+                            build=0, version_major=1, version_minor=2, target="d073d5000002"
+                        ),
+                        ("`92.168.0.2", 56700),
+                        "192.168.0.2",
+                    )
                 else:
                     raise StopAsyncIteration
+
         script.run_with = RunWith
 
         with mock.patch("photons_interactor.commander.helpers.clone_filter", clone_filter):
             result = await self.wait_for(chp.run(script, fltr, finder, add_replies=False, one=1))
-        self.assertEqual(result.as_dict()
-            , { "results":
-                { "d073d5000001": "ok"
-                , "d073d5000002": "ok"
-                , "d073d5000003": "ok"
-                }
-              }
-            )
+        self.assertEqual(
+            result.as_dict(),
+            {"results": {"d073d5000001": "ok", "d073d5000002": "ok", "d073d5000003": "ok"}},
+        )
 
         finder.args_for_run.assert_called_once_with()
         finder.serials.assert_called_once_with(filtr=fltr)

@@ -30,6 +30,7 @@ import sys
 
 log = logging.getLogger("photosn_interactor.database.db_queue")
 
+
 class DBQueue(hp.ThreadToAsyncQueue):
     """Connect asyncio to threaded database connections"""
 
@@ -40,14 +41,15 @@ class DBQueue(hp.ThreadToAsyncQueue):
 
     def start_thread(self):
         """This is run for every thread, the return is what is passed into requested functions"""
-        return (DatabaseConnection(self.database, poolclass=StaticPool), )
+        return (DatabaseConnection(self.database, poolclass=StaticPool),)
 
     def wrap_request(self, proc, args):
         """We create a new session for every database request"""
+
         def ret():
             tries = 0
             while True:
-                db, = args
+                (db,) = args
 
                 # Clone our database with a new session
                 database = db.new_session()
@@ -60,7 +62,11 @@ class DBQueue(hp.ThreadToAsyncQueue):
 
                 except sqlalchemy.exc.OperationalError as error:
                     database.rollback()
-                    log.error(hp.lc("Failed to use database, will rollback and maybe try again", error=error))
+                    log.error(
+                        hp.lc(
+                            "Failed to use database, will rollback and maybe try again", error=error
+                        )
+                    )
                     tries += 1
 
                     if tries > 1:
@@ -79,7 +85,9 @@ class DBQueue(hp.ThreadToAsyncQueue):
                 except:
                     database.rollback()
                     exc_info = sys.exc_info()
-                    log.exception(hp.lc("Unexpected failure when using database", error=exc_info[1]))
+                    log.exception(
+                        hp.lc("Unexpected failure when using database", error=exc_info[1])
+                    )
                     raise
 
                 finally:

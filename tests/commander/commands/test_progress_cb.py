@@ -18,6 +18,7 @@ store = Store(default_path="/v1/lifx/command", formatter=MergedOptionStringForma
 
 serial_field = dictobj.Field(sb.string_spec, wrapper=sb.required)
 
+
 @store.command("test_done_progress")
 class TestDoneProgress(store.Command):
     serial = serial_field
@@ -26,6 +27,7 @@ class TestDoneProgress(store.Command):
     async def execute(self):
         self.progress_cb(None, serial=self.serial)
         return {"serial": self.serial}
+
 
 @store.command("test_no_error")
 class TestNoError(store.Command):
@@ -36,6 +38,7 @@ class TestNoError(store.Command):
         self.progress_cb("hello", serial=self.serial)
         self.progress_cb("there")
         return {"serial": self.serial}
+
 
 @store.command("test_error")
 class TestError(store.Command):
@@ -48,8 +51,10 @@ class TestError(store.Command):
 
         class Problem(InteractorError):
             desc = "a problem"
+
         self.progress_cb(Problem("wat", one=1), serial=self.serial)
         return {"serial": self.serial}
+
 
 test_server = thp.ModuleLevelServer(store)
 
@@ -67,19 +72,19 @@ describe AsyncTestCase, "Commands":
     @test_server.test
     async it "has progress cb functionality for http", options, fake, server:
         command, serial = self.command("test_no_error")
-        await server.assertPUT(self, "/v1/lifx/command", command, status=200
-            , json_output = {"serial": serial}
-            )
+        await server.assertPUT(
+            self, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
+        )
 
         command, serial = self.command("test_error")
-        await server.assertPUT(self, "/v1/lifx/command", command, status=200
-            , json_output = {"serial": serial}
-            )
+        await server.assertPUT(
+            self, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
+        )
 
         command, serial = self.command("test_done_progress")
-        await server.assertPUT(self, "/v1/lifx/command", command, status=200
-            , json_output = {"serial": serial}
-            )
+        await server.assertPUT(
+            self, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
+        )
 
     @test_server.test
     async it "has progress cb functionality for websockets", options, fake, server:
@@ -101,14 +106,17 @@ describe AsyncTestCase, "Commands":
             # With error
             command, serial = self.command("test_error")
             await stream.start("/v1/lifx/command", command)
-            await stream.check_reply({"progress": {"error": "Nope", "error_code": "Exception", "serial": serial}})
+            await stream.check_reply(
+                {"progress": {"error": "Nope", "error_code": "Exception", "serial": serial}}
+            )
             await stream.check_reply({"progress": {"error": "Yeap", "error_code": "ValueError"}})
             await stream.check_reply(
-                  { "progress":
-                    { "error": {"message": "a problem. wat", "one": 1}
-                    , "error_code": "Problem"
-                    , "serial": serial
+                {
+                    "progress": {
+                        "error": {"message": "a problem. wat", "one": 1},
+                        "error_code": "Problem",
+                        "serial": serial,
                     }
-                  }
-                )
+                }
+            )
             await stream.check_reply({"serial": serial})

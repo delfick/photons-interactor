@@ -6,17 +6,17 @@ from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 from textwrap import dedent
 
+
 @store.command(name="help")
 class HelpCommand(store.Command):
     """
     Display the documentation for the specified command
     """
+
     path = store.injected("path")
     store = store.injected("store")
 
-    command = dictobj.Field(sb.string_spec, default="help"
-        , help = "The command to show help for"
-        )
+    command = dictobj.Field(sb.string_spec, default="help", help="The command to show help for")
 
     @property
     def command_kls(self):
@@ -47,7 +47,7 @@ class HelpCommand(store.Command):
         extra = ""
         if self.command == "help":
             extra = "\nAvailable commands:\n{}".format(
-                  "\n".join(f" * {name}" for name in sorted(self.store.paths[self.path]))
-                )
+                "\n".join(f" * {name}" for name in sorted(self.store.paths[self.path]))
+            )
 
         return f"{header}\n{'=' * len(header)}\n{doc}{fields_string}{extra}"

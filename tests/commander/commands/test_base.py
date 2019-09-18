@@ -14,27 +14,30 @@ from unittest import mock
 load_commands()
 store = store.clone()
 
+
 @store.command("test")
 class TestCommand(store.Command):
     """
     A test command to test help output
     """
-    one = dictobj.Field(sb.integer_spec, default=20
-        , help = """
+
+    one = dictobj.Field(
+        sb.integer_spec,
+        default=20,
+        help="""
             one is the first number
 
             it is the best number
-          """
-        )
+          """,
+    )
 
-    two = dictobj.Field(sb.string_spec, wrapper=sb.required
-        , help = "two is the second best number"
-        )
+    two = dictobj.Field(sb.string_spec, wrapper=sb.required, help="two is the second best number")
 
     three = dictobj.Field(sb.boolean, default=True)
 
     async def execute(self):
         return self.as_dict()
+
 
 test_server = thp.ModuleLevelServer(store)
 
@@ -46,7 +49,8 @@ describe AsyncTestCase, "commands":
 
     @test_server.test
     async it "has a help command", options, fake, server:
-        want = dedent("""
+        want = dedent(
+            """
         Command test
         ============
 
@@ -62,28 +66,45 @@ describe AsyncTestCase, "commands":
 
         two: string (required)
         \ttwo is the second best number
-        """).lstrip()
+        """
+        ).lstrip()
 
-        await server.assertPUT(self, "/v1/lifx/command", {"command": "help", "args": {"command": "test"}}, text_output=want.encode())
+        await server.assertPUT(
+            self,
+            "/v1/lifx/command",
+            {"command": "help", "args": {"command": "test"}},
+            text_output=want.encode(),
+        )
 
     @test_server.test
     async it "has a test command", options, fake, server:
-        await server.assertPUT(self, "/v1/lifx/command", {"command": "test"}
-            , status=400
-            , json_output = {
-                  'error':
-                  { 'errors': [{'message': 'Bad value. Expected a value but got none', 'meta': '{path=<input>.body.args.two}'}]
-                  , 'message': 'Bad value'
-                  , 'meta': '{path=<input>.body.args}'
-                  }
-                , "error_code": "BadSpecValue"
-                , 'status': 400
-                }
-            )
+        await server.assertPUT(
+            self,
+            "/v1/lifx/command",
+            {"command": "test"},
+            status=400,
+            json_output={
+                "error": {
+                    "errors": [
+                        {
+                            "message": "Bad value. Expected a value but got none",
+                            "meta": "{path=<input>.body.args.two}",
+                        }
+                    ],
+                    "message": "Bad value",
+                    "meta": "{path=<input>.body.args}",
+                },
+                "error_code": "BadSpecValue",
+                "status": 400,
+            },
+        )
 
-        await server.assertPUT(self, "/v1/lifx/command", {"command": "test", "args": {"one": 1, "two": "TWO", "three": True}}
-            , json_output = {"one": 1, "two": "TWO", "three": True}
-            )
+        await server.assertPUT(
+            self,
+            "/v1/lifx/command",
+            {"command": "test", "args": {"one": 1, "two": "TWO", "three": True}},
+            json_output={"one": 1, "two": "TWO", "three": True},
+        )
 
     @test_server.test
     async it "has websocket commands", options, fake, server:
@@ -91,7 +112,14 @@ describe AsyncTestCase, "commands":
             # Invalid path
             await stream.start("/blah", {"stuff": True})
             error = "Specified path is invalid"
-            await stream.check_reply({"error": error, "wanted": "/blah", "available": ["/v1/lifx/command"], "status": 404})
+            await stream.check_reply(
+                {
+                    "error": error,
+                    "wanted": "/blah",
+                    "available": ["/v1/lifx/command"],
+                    "status": 404,
+                }
+            )
 
             # invalid command
             await stream.start("/v1/lifx/command", {"command": "nope"})
@@ -99,19 +127,19 @@ describe AsyncTestCase, "commands":
             assert "test" in reply["error"]["available"]
             reply["error"]["available"] = ["test"]
 
-            self.assertEqual(reply
-                , { "error":
-                    { "message": 'Bad value. Unknown command'
-                    , "wanted": "nope"
-                    , "meta": '{path=<input>.body.command}'
-                    , "available":
-                      [ "test"
-                      ]
-                    }
-                  , "error_code": "BadSpecValue"
-                  , "status": 400
-                  }
-                )
+            self.assertEqual(
+                reply,
+                {
+                    "error": {
+                        "message": "Bad value. Unknown command",
+                        "wanted": "nope",
+                        "meta": "{path=<input>.body.command}",
+                        "available": ["test"],
+                    },
+                    "error_code": "BadSpecValue",
+                    "status": 400,
+                },
+            )
 
             # valid command
             args = {"one": 1, "two": "TWO", "three": True}

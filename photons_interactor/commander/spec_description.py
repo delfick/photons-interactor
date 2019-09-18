@@ -1,5 +1,6 @@
 from input_algorithms import spec_base as sb
 
+
 def signature(spec, default=None):
     """
     yield parts of a type information for this spec
@@ -24,11 +25,11 @@ def signature(spec, default=None):
         yield "string"
 
     elif isinstance(spec, sb.dictof):
-        yield '{'
+        yield "{"
         yield from signature(spec.name_spec, default="<item>")
-        yield ':'
+        yield ":"
         yield from signature(spec.value_spec, default="<item>")
-        yield '}'
+        yield "}"
     elif isinstance(spec, sb.dictionary_spec):
         yield "dictionary"
 
@@ -56,9 +57,9 @@ def signature(spec, default=None):
         yield from signature(spec.spec)
         yield "(required)"
     elif isinstance(spec, sb.listof):
-        yield '['
+        yield "["
         yield from signature(spec.spec, default="<item>")
-        yield ', ... ]'
+        yield ", ... ]"
     elif isinstance(spec, (sb.container_spec, sb.formatted)):
         yield from signature(spec.spec)
     elif default is not None:

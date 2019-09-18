@@ -36,14 +36,27 @@ describe TestCase, "range_spec":
 
     it "complains if less than minimum":
         for val in (-1.0, -2.0, -3.0):
-            with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=0, maximum=1, got=val, meta=meta):
+            with self.fuzzyAssertRaisesError(
+                BadSpecValue,
+                "Number must be between min and max",
+                minimum=0,
+                maximum=1,
+                got=val,
+                meta=meta,
+            ):
                 scene_spec.range_spec(0, 1).normalise(meta, val)
 
     it "complains if greater than maximum":
         for val in (1.1, 2.0, 3.0):
-            with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=0, maximum=1, got=val, meta=meta):
+            with self.fuzzyAssertRaisesError(
+                BadSpecValue,
+                "Number must be between min and max",
+                minimum=0,
+                maximum=1,
+                got=val,
+                meta=meta,
+            ):
                 scene_spec.range_spec(0, 1).normalise(meta, val)
-
 
     it "works if number is between min and max":
         for val in (0.1, 0.5, 0.9):
@@ -58,13 +71,19 @@ describe TestCase, "sized_list_spec":
 
     it "complains if list is not the correct length":
         spec = scene_spec.sized_list_spec(sb.integer_spec(), 2)
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Expected certain number of parts", want=2, got=1):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Expected certain number of parts", want=2, got=1
+        ):
             spec.normalise(meta, 1)
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Expected certain number of parts", want=2, got=1):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Expected certain number of parts", want=2, got=1
+        ):
             spec.normalise(meta, [1])
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Expected certain number of parts", want=2, got=3):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Expected certain number of parts", want=2, got=3
+        ):
             spec.normalise(meta, [1, 2, 3])
 
     it "returns the list if correct length":
@@ -90,37 +109,53 @@ describe TestCase, "hsbk":
     it "complains if hue is outside 0 and 360":
         spec = scene_spec.hsbk()
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=0, maximum=360):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Number must be between min and max", minimum=0, maximum=360
+        ):
             spec.normalise(meta, [-1, 1, 1, 3500])
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=0, maximum=360):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Number must be between min and max", minimum=0, maximum=360
+        ):
             spec.normalise(meta, [361, 1, 1, 3500])
 
     it "complains if saturation is outside 0 and 1":
         spec = scene_spec.hsbk()
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=0, maximum=1):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Number must be between min and max", minimum=0, maximum=1
+        ):
             spec.normalise(meta, [1, -0.1, 1, 3500])
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=0, maximum=1):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Number must be between min and max", minimum=0, maximum=1
+        ):
             spec.normalise(meta, [360, 1.1, 1, 3500])
 
     it "complains if brightness is outside 0 and 1":
         spec = scene_spec.hsbk()
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=0, maximum=1):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Number must be between min and max", minimum=0, maximum=1
+        ):
             spec.normalise(meta, [1, 0, -0.1, 3500])
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=0, maximum=1):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Number must be between min and max", minimum=0, maximum=1
+        ):
             spec.normalise(meta, [360, 1, 1.1, 3500])
 
     it "complains if kelvin is outside 2500 and 9000":
         spec = scene_spec.hsbk()
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=2500, maximum=9000):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Number must be between min and max", minimum=2500, maximum=9000
+        ):
             spec.normalise(meta, [1, 0, 0, 2499])
 
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Number must be between min and max", minimum=2500, maximum=9000):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Number must be between min and max", minimum=2500, maximum=9000
+        ):
             spec.normalise(meta, [360, 1, 1, 9001])
 
 describe TestCase, "chain_spec":
@@ -130,11 +165,15 @@ describe TestCase, "chain_spec":
             chain.append([0, 0, 0, 2500])
 
         spec = scene_spec.chain_spec
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Expected certain number of parts", want=64, got=63):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Expected certain number of parts", want=64, got=63
+        ):
             spec.normalise(meta, chain)
 
         chain.extend([[0, 0, 0, 2500], [1, 1, 1, 9000]])
-        with self.fuzzyAssertRaisesError(BadSpecValue, "Expected certain number of parts", want=64, got=65):
+        with self.fuzzyAssertRaisesError(
+            BadSpecValue, "Expected certain number of parts", want=64, got=65
+        ):
             spec.normalise(meta, chain)
 
 describe TestCase, "json_string_spec":
@@ -155,7 +194,7 @@ describe TestCase, "json_string_spec":
             spec = sb.set_options(one=sb.integer_spec())
             spec = scene_spec.json_string_spec(spec, True)
             with self.fuzzyAssertRaisesError(BadSpecValue, "Value was not valid json"):
-                spec.normalise(meta, '{')
+                spec.normalise(meta, "{")
 
         it "complains if we don't match our spec":
             spec = sb.set_options(one=sb.required(sb.integer_spec()))
@@ -187,16 +226,18 @@ describe TestCase, "make_spec":
         it "has nullable fields for everything but uuid and matcher":
             spec = scene_spec.make_spec(storing=True)
             obj = spec.normalise(meta, {"uuid": "one", "matcher": {"label": "kitchen"}})
-            self.assertEqual(obj.as_dict()
-                , { "uuid": "one"
-                  , "matcher": '{"label": "kitchen"}'
-                  , "power": None
-                  , "color": None
-                  , "zones": None
-                  , "chain": None
-                  , "duration": None
-                  }
-                )
+            self.assertEqual(
+                obj.as_dict(),
+                {
+                    "uuid": "one",
+                    "matcher": '{"label": "kitchen"}',
+                    "power": None,
+                    "color": None,
+                    "zones": None,
+                    "chain": None,
+                    "duration": None,
+                },
+            )
 
             with self.fuzzyAssertRaisesError(BadSpecValue):
                 obj = spec.normalise(meta, {"uuid": "one"})
@@ -219,34 +260,40 @@ describe TestCase, "make_spec":
             spec = scene_spec.make_spec(storing=True)
             identifier = str(uuid.uuid1())
 
-            obj = spec.normalise(meta
-                , { "uuid": identifier
-                  , "matcher": {"label": "den"}
-                  , "power": True
-                  , "color": "red"
-                  , "zones": zones
-                  , "chain": chain
-                  , "duration": 1
-                  }
-                )
+            obj = spec.normalise(
+                meta,
+                {
+                    "uuid": identifier,
+                    "matcher": {"label": "den"},
+                    "power": True,
+                    "color": "red",
+                    "zones": zones,
+                    "chain": chain,
+                    "duration": 1,
+                },
+            )
 
             class base(dictobj.Spec):
                 pass
 
             got = dir(obj)
             diff = set(got) - set(dir(base()))
-            self.assertEqual(diff, set(["uuid", "matcher", "power", "color", "zones", "chain", "duration"]))
+            self.assertEqual(
+                diff, set(["uuid", "matcher", "power", "color", "zones", "chain", "duration"])
+            )
 
-            self.assertEqual(obj.as_dict()
-                , { "uuid": identifier
-                  , "matcher": '{"label": "den"}'
-                  , "power": True
-                  , "color": "red"
-                  , "zones": json.dumps(zones)
-                  , "chain": json.dumps(chain)
-                  , "duration": 1
-                  }
-                )
+            self.assertEqual(
+                obj.as_dict(),
+                {
+                    "uuid": identifier,
+                    "matcher": '{"label": "den"}',
+                    "power": True,
+                    "color": "red",
+                    "zones": json.dumps(zones),
+                    "chain": json.dumps(chain),
+                    "duration": 1,
+                },
+            )
 
     describe "not storing":
         before_each:
@@ -265,30 +312,32 @@ describe TestCase, "make_spec":
             self.identifier = str(uuid.uuid1())
 
             self.kwargs = {
-                    "uuid": self.identifier
-                  , "matcher": {"label": "den"}
-                  , "power": True
-                  , "color": "red"
-                  , "zones": self.zones
-                  , "chain": self.chain
-                  , "duration": 1
-                  }
+                "uuid": self.identifier,
+                "matcher": {"label": "den"},
+                "power": True,
+                "color": "red",
+                "zones": self.zones,
+                "chain": self.chain,
+                "duration": 1,
+            }
 
             self.obj = self.spec.normalise(meta, self.kwargs)
 
         it "has nullable fields for everything but uuid and matcher":
             spec = scene_spec.make_spec(storing=False)
             obj = spec.normalise(meta, {"uuid": "one", "matcher": {"label": "kitchen"}})
-            self.assertEqual(obj.as_dict()
-                , { "uuid": "one"
-                  , "matcher": {"label": "kitchen"}
-                  , "power": None
-                  , "color": None
-                  , "zones": None
-                  , "chain": None
-                  , "duration": None
-                  }
-                )
+            self.assertEqual(
+                obj.as_dict(),
+                {
+                    "uuid": "one",
+                    "matcher": {"label": "kitchen"},
+                    "power": None,
+                    "color": None,
+                    "zones": None,
+                    "chain": None,
+                    "duration": None,
+                },
+            )
 
             with self.fuzzyAssertRaisesError(BadSpecValue):
                 obj = spec.normalise(meta, {"uuid": "one"})
@@ -302,33 +351,20 @@ describe TestCase, "make_spec":
 
         describe "transform_options":
             it "takes into account power, color and duration":
-                self.assertEqual(self.obj.transform_options
-                    , { "power": "on"
-                      , "color": "red"
-                      , "duration": 1
-                      }
-                    )
+                self.assertEqual(
+                    self.obj.transform_options, {"power": "on", "color": "red", "duration": 1}
+                )
 
                 self.obj.power = False
-                self.assertEqual(self.obj.transform_options
-                    , { "power": "off"
-                      , "color": "red"
-                      , "duration": 1
-                      }
-                    )
+                self.assertEqual(
+                    self.obj.transform_options, {"power": "off", "color": "red", "duration": 1}
+                )
 
                 self.obj.color = None
-                self.assertEqual(self.obj.transform_options
-                    , { "power": "off"
-                      , "duration": 1
-                      }
-                    )
+                self.assertEqual(self.obj.transform_options, {"power": "off", "duration": 1})
 
                 self.obj.duration = None
-                self.assertEqual(self.obj.transform_options
-                    , { "power": "off"
-                      }
-                    )
+                self.assertEqual(self.obj.transform_options, {"power": "off"})
 
                 self.obj.power = None
                 self.assertEqual(self.obj.transform_options, {})
@@ -345,12 +381,13 @@ describe TestCase, "make_spec":
 
                     hsbks.append([hue, saturation, brightness, kelvin])
                     result.append(
-                          { "hue": hue
-                          , "saturation": saturation
-                          , "brightness": brightness
-                          , "kelvin": kelvin
-                          }
-                        )
+                        {
+                            "hue": hue,
+                            "saturation": saturation,
+                            "brightness": brightness,
+                            "kelvin": kelvin,
+                        }
+                    )
 
                     self.assertEqual(self.obj.colors_from_hsbks(hsbks, {}), result)
 
@@ -378,18 +415,15 @@ describe TestCase, "make_spec":
 
                         hsbks.append([hue, saturation, brightness, kelvin])
                         want = {
-                             "hue": hue
-                           , "saturation": saturation
-                           , "brightness": brightness
-                           , "kelvin": kelvin
-                           }
+                            "hue": hue,
+                            "saturation": saturation,
+                            "brightness": brightness,
+                            "kelvin": kelvin,
+                        }
                         want.update(overrides)
                         result.append(want)
 
-                    self.assertEqual(
-                          self.obj.colors_from_hsbks(hsbks, overrides)
-                        , result
-                        )
+                    self.assertEqual(self.obj.colors_from_hsbks(hsbks, overrides), result)
 
         describe "power_message":
             it "does not provide SetLightPower if we have no power":
@@ -402,45 +436,31 @@ describe TestCase, "make_spec":
                 self.obj.duration = None
 
                 msg = self.obj.power_message({"power": "on"})
-                self.assertEqual(msg
-                    , LightMessages.SetLightPower(level = 65535, duration=0)
-                    )
+                self.assertEqual(msg, LightMessages.SetLightPower(level=65535, duration=0))
 
                 msg = self.obj.power_message({"power": True})
-                self.assertEqual(msg
-                    , LightMessages.SetLightPower(level = 65535, duration=0)
-                    )
+                self.assertEqual(msg, LightMessages.SetLightPower(level=65535, duration=0))
 
                 msg = self.obj.power_message({"power": False})
-                self.assertEqual(msg
-                    , LightMessages.SetLightPower(level = 0, duration=0)
-                    )
+                self.assertEqual(msg, LightMessages.SetLightPower(level=0, duration=0))
 
                 msg = self.obj.power_message({"power": "off"})
-                self.assertEqual(msg
-                    , LightMessages.SetLightPower(level = 0, duration=0)
-                    )
+                self.assertEqual(msg, LightMessages.SetLightPower(level=0, duration=0))
 
                 self.obj.duration = 2
                 msg = self.obj.power_message({"power": "off"})
-                self.assertEqual(msg
-                    , LightMessages.SetLightPower(level = 0, duration=2)
-                    )
+                self.assertEqual(msg, LightMessages.SetLightPower(level=0, duration=2))
 
             it "provides power if on the object":
                 self.obj.power = True
                 self.obj.duration = 3
 
                 msg = self.obj.power_message({})
-                self.assertEqual(msg
-                    , LightMessages.SetLightPower(level = 65535, duration=3)
-                    )
+                self.assertEqual(msg, LightMessages.SetLightPower(level=65535, duration=3))
 
                 self.obj.power = False
                 msg = self.obj.power_message({})
-                self.assertEqual(msg
-                    , LightMessages.SetLightPower(level = 0, duration=3)
-                    )
+                self.assertEqual(msg, LightMessages.SetLightPower(level=0, duration=3))
 
         describe "zone_msgs":
             before_each:
@@ -463,11 +483,12 @@ describe TestCase, "make_spec":
                 colors_from_hsbks = mock.Mock(name="colors_from_hsbks", return_value=colors)
                 determine_duration = mock.Mock(name="determine_duration", return_value=1)
 
-                with mock.patch.multiple(self.obj
-                    , power_message = power_message
-                    , colors_from_hsbks = colors_from_hsbks
-                    , determine_duration = determine_duration
-                    ):
+                with mock.patch.multiple(
+                    self.obj,
+                    power_message=power_message,
+                    colors_from_hsbks=colors_from_hsbks,
+                    determine_duration=determine_duration,
+                ):
                     itr = iter(self.obj.zone_msgs(self.overrides))
                     m = next(itr)
                     self.assertIs(type(m), MultiZoneMessages.SetColorZones)
@@ -477,11 +498,10 @@ describe TestCase, "make_spec":
                 determine_duration.assert_called_once_with(self.overrides)
 
             describe "Yielding SetMultiZoneColorZones messages":
+
                 def setter(self, h, s, b, k, **kwargs):
                     return MultiZoneMessages.SetColorZones(
-                      hue = h, saturation = s, brightness = b, kelvin = k
-                    , res_required=False
-                    , **kwargs
+                        hue=h, saturation=s, brightness=b, kelvin=k, res_required=False, **kwargs
                     )
 
                 def assertCorrect(self, zones, *want):
@@ -492,11 +512,12 @@ describe TestCase, "make_spec":
 
                     determine_duration = mock.Mock(name="determine_duration", return_value=1)
 
-                    with mock.patch.multiple(self.obj
-                        , power_message = power_message
-                        , colors_from_hsbks = colors_from_hsbks
-                        , determine_duration = determine_duration
-                        ):
+                    with mock.patch.multiple(
+                        self.obj,
+                        power_message=power_message,
+                        colors_from_hsbks=colors_from_hsbks,
+                        determine_duration=determine_duration,
+                    ):
                         msgs = list(self.obj.zone_msgs(self.overrides))
 
                     if msgs != want:
@@ -514,42 +535,44 @@ describe TestCase, "make_spec":
 
             it "works":
                 zones = [
-                      [0, 0, 0, 3500]
-                    , [0, 0, 0, 3500]
-                    , [0, 0, 0, 3500]
-                    , [100, 1, 0, 3500]
-                    , [100, 0.5, 0, 3500]
-                    , [100, 0.5, 0, 3500]
-                    , [100, 0.5, 1, 3500]
-                    , [100, 0.5, 1, 9000]
-                    , [100, 0.5, 1, 9000]
-                    ]
+                    [0, 0, 0, 3500],
+                    [0, 0, 0, 3500],
+                    [0, 0, 0, 3500],
+                    [100, 1, 0, 3500],
+                    [100, 0.5, 0, 3500],
+                    [100, 0.5, 0, 3500],
+                    [100, 0.5, 1, 3500],
+                    [100, 0.5, 1, 9000],
+                    [100, 0.5, 1, 9000],
+                ]
 
-                self.assertCorrect(zones
-                    , self.setter(0, 0, 0, 3500, start_index=0, end_index=2, duration=1)
-                    , self.setter(100, 1, 0, 3500, start_index=3, end_index=3, duration=1)
-                    , self.setter(100, 0.5, 0, 3500, start_index=4, end_index=5, duration=1)
-                    , self.setter(100, 0.5, 1, 3500, start_index=6, end_index=6, duration=1)
-                    , self.setter(100, 0.5, 1, 9000, start_index=7, end_index=8, duration=1)
-                    )
+                self.assertCorrect(
+                    zones,
+                    self.setter(0, 0, 0, 3500, start_index=0, end_index=2, duration=1),
+                    self.setter(100, 1, 0, 3500, start_index=3, end_index=3, duration=1),
+                    self.setter(100, 0.5, 0, 3500, start_index=4, end_index=5, duration=1),
+                    self.setter(100, 0.5, 1, 3500, start_index=6, end_index=6, duration=1),
+                    self.setter(100, 0.5, 1, 9000, start_index=7, end_index=8, duration=1),
+                )
 
             it "works2":
                 zones = [
-                      [0, 0, 0, 3500]
-                    , [100, 1, 0, 3500]
-                    , [100, 0.5, 0, 3500]
-                    , [100, 0.5, 0, 3500]
-                    , [100, 0.5, 1, 3500]
-                    , [100, 0.5, 1, 9000]
-                    ]
+                    [0, 0, 0, 3500],
+                    [100, 1, 0, 3500],
+                    [100, 0.5, 0, 3500],
+                    [100, 0.5, 0, 3500],
+                    [100, 0.5, 1, 3500],
+                    [100, 0.5, 1, 9000],
+                ]
 
-                self.assertCorrect(zones
-                    , self.setter(0, 0, 0, 3500, start_index=0, end_index=0, duration=1)
-                    , self.setter(100, 1, 0, 3500, start_index=1, end_index=1, duration=1)
-                    , self.setter(100, 0.5, 0, 3500, start_index=2, end_index=3, duration=1)
-                    , self.setter(100, 0.5, 1, 3500, start_index=4, end_index=4, duration=1)
-                    , self.setter(100, 0.5, 1, 9000, start_index=5, end_index=5, duration=1)
-                    )
+                self.assertCorrect(
+                    zones,
+                    self.setter(0, 0, 0, 3500, start_index=0, end_index=0, duration=1),
+                    self.setter(100, 1, 0, 3500, start_index=1, end_index=1, duration=1),
+                    self.setter(100, 0.5, 0, 3500, start_index=2, end_index=3, duration=1),
+                    self.setter(100, 0.5, 1, 3500, start_index=4, end_index=4, duration=1),
+                    self.setter(100, 0.5, 1, 9000, start_index=5, end_index=5, duration=1),
+                )
 
         describe "chain_msgs":
             before_each:
@@ -572,11 +595,12 @@ describe TestCase, "make_spec":
                 colors_from_hsbks = mock.Mock(name="colors_from_hsbks", return_value=colors)
                 determine_duration = mock.Mock(name="determine_duration", return_value=1)
 
-                with mock.patch.multiple(self.obj
-                    , power_message = power_message
-                    , colors_from_hsbks = colors_from_hsbks
-                    , determine_duration = determine_duration
-                    ):
+                with mock.patch.multiple(
+                    self.obj,
+                    power_message=power_message,
+                    colors_from_hsbks=colors_from_hsbks,
+                    determine_duration=determine_duration,
+                ):
                     itr = iter(self.obj.chain_msgs(self.overrides))
                     m = next(itr)
                     self.assertIs(type(m), TileMessages.Set64)
@@ -586,15 +610,11 @@ describe TestCase, "make_spec":
                 determine_duration.assert_called_once_with(self.overrides)
 
             describe "yielding Set64 messages":
+
                 def setter(self, **kwargs):
                     return TileMessages.Set64(
-                          length=1
-                        , x=0
-                        , y=0
-                        , width=8
-                        , res_required=False
-                        , **kwargs
-                        )
+                        length=1, x=0, y=0, width=8, res_required=False, **kwargs
+                    )
 
                 it "works":
                     power_message = mock.Mock(name="power_message", return_value=None)
@@ -605,24 +625,28 @@ describe TestCase, "make_spec":
                     def colors_from_hsbks(c, o):
                         self.assertIs(o, self.overrides)
                         return original(c, {})
-                    colors_from_hsbks = mock.Mock(name="colors_from_hsbks", side_effect=colors_from_hsbks)
+
+                    colors_from_hsbks = mock.Mock(
+                        name="colors_from_hsbks", side_effect=colors_from_hsbks
+                    )
 
                     determine_duration = mock.Mock(name="determine_duration", return_value=1)
 
-                    with mock.patch.multiple(self.obj
-                        , power_message = power_message
-                        , colors_from_hsbks = colors_from_hsbks
-                        , determine_duration = determine_duration
-                        ):
+                    with mock.patch.multiple(
+                        self.obj,
+                        power_message=power_message,
+                        colors_from_hsbks=colors_from_hsbks,
+                        determine_duration=determine_duration,
+                    ):
                         msgs = list(self.obj.chain_msgs(self.overrides))
 
                     want = [
-                          self.setter(tile_index=0, duration=1, colors=returned[0])
-                        , self.setter(tile_index=1, duration=1, colors=returned[1])
-                        , self.setter(tile_index=2, duration=1, colors=returned[2])
-                        , self.setter(tile_index=3, duration=1, colors=returned[3])
-                        , self.setter(tile_index=4, duration=1, colors=returned[4])
-                        ]
+                        self.setter(tile_index=0, duration=1, colors=returned[0]),
+                        self.setter(tile_index=1, duration=1, colors=returned[1]),
+                        self.setter(tile_index=2, duration=1, colors=returned[2]),
+                        self.setter(tile_index=3, duration=1, colors=returned[3]),
+                        self.setter(tile_index=4, duration=1, colors=returned[4]),
+                    ]
 
                     if msgs != want:
                         for i, (w, m) in enumerate(zip(want, msgs)):
@@ -636,11 +660,13 @@ describe TestCase, "make_spec":
                     power_message.assert_called_once_with(self.overrides)
                     determine_duration.assert_called_once_with(self.overrides)
 
-                    self.assertEqual(colors_from_hsbks.mock_calls
-                        , [ mock.call(self.obj.chain[0], self.overrides)
-                          , mock.call(self.obj.chain[1], self.overrides)
-                          , mock.call(self.obj.chain[2], self.overrides)
-                          , mock.call(self.obj.chain[3], self.overrides)
-                          , mock.call(self.obj.chain[4], self.overrides)
-                          ]
-                        )
+                    self.assertEqual(
+                        colors_from_hsbks.mock_calls,
+                        [
+                            mock.call(self.obj.chain[0], self.overrides),
+                            mock.call(self.obj.chain[1], self.overrides),
+                            mock.call(self.obj.chain[2], self.overrides),
+                            mock.call(self.obj.chain[3], self.overrides),
+                            mock.call(self.obj.chain[4], self.overrides),
+                        ],
+                    )

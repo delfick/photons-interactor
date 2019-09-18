@@ -21,12 +21,9 @@ describe TestCase, "SceneInfo":
         self.assertEqual(info.as_dict(), {"uuid": "two", "label": "kitchen"})
 
         info = SceneInfo(uuid="three", label="bathroom", description="blah")
-        self.assertEqual(info.as_dict()
-            , { "uuid": "three"
-              , "label": "bathroom"
-              , "description": "blah"
-              }
-            )
+        self.assertEqual(
+            info.as_dict(), {"uuid": "three", "label": "bathroom", "description": "blah"}
+        )
 
     describe "Interaction with database":
         before_each:
@@ -39,11 +36,7 @@ describe TestCase, "SceneInfo":
         it "Must have unique uuid":
             identifier = str(uuid.uuid1())
 
-            kwargs = dict(
-                  uuid = identifier
-                , label = "blah"
-                , description = "described"
-                )
+            kwargs = dict(uuid=identifier, label="blah", description="described")
 
             info = self.database.queries.create_scene_info(**kwargs)
             self.database.add(info)
@@ -57,7 +50,7 @@ describe TestCase, "SceneInfo":
             finally:
                 self.database.rollback()
 
-            info3 = self.database.queries.create_scene_info(uuid = identifier)
+            info3 = self.database.queries.create_scene_info(uuid=identifier)
             self.database.add(info3)
             try:
                 with self.fuzzyAssertRaisesError(sqlalchemy.exc.IntegrityError):

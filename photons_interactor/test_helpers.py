@@ -14,10 +14,11 @@ import asyncio
 import shutil
 import os
 
-def make_options(host=None, port=None, device_finder_options=None, database=None, cookie_secret=None):
-    options = {
-          "database": database or {"uri": "sqlite:///:memory:"}
-        }
+
+def make_options(
+    host=None, port=None, device_finder_options=None, database=None, cookie_secret=None
+):
+    options = {"database": database or {"uri": "sqlite:///:memory:"}}
 
     if device_finder_options is not None:
         options["device_finder_options"] = device_finder_options
@@ -26,12 +27,13 @@ def make_options(host=None, port=None, device_finder_options=None, database=None
         options["cookie_secret"] = cookie_secret
 
     if host is not None:
-        options['host'] = host
+        options["host"] = host
 
     if port is not None:
-        options['port'] = port
+        options["port"] = port
 
     return Options.FieldSpec(formatter=MergedOptionStringFormatter).empty_normalise(**options)
+
 
 class ServerRunner(thp.ServerRunner):
     def setup(self, fake, *args, **kwargs):
@@ -58,6 +60,7 @@ class ServerRunner(thp.ServerRunner):
     async def started_test(self):
         self.fake.reset_devices()
 
+
 async def make_server(store, wrapper, **kwargs):
     final_future = asyncio.Future()
 
@@ -73,15 +76,25 @@ async def make_server(store, wrapper, **kwargs):
     def resolve(name):
         assert name == "lan", name
         return targetrunner.target
+
     target_register.resolve.side_effect = resolve
 
     cleaners = []
     server = Server(final_future, store=store)
 
-    server = ServerRunner(final_future, options.port, server, wrapper
-        , cthp.fakery, options, cleaners, target_register, protocol_register
-        )
+    server = ServerRunner(
+        final_future,
+        options.port,
+        server,
+        wrapper,
+        cthp.fakery,
+        options,
+        cleaners,
+        target_register,
+        protocol_register,
+    )
     return targetrunner, server
+
 
 class ModuleLevelServer(thp.ModuleLevelServer):
     async def server_runner(self, store, wrapper=None):

@@ -9,29 +9,39 @@ import shlex
 import sys
 import os
 
+
 class Database(dictobj.Spec):
-    uri = dictobj.Field(sb.string_spec, wrapper=sb.required, formatted=True
-        , help = "Uri to our database"
-        )
-    db_migrations = dictobj.Field(sb.overridden(os.path.join("{photons_interactor:resource}", "database", "migrations"))
-        , format_into=sb.directory_spec
-        )
+    uri = dictobj.Field(
+        sb.string_spec, wrapper=sb.required, formatted=True, help="Uri to our database"
+    )
+    db_migrations = dictobj.Field(
+        sb.overridden(os.path.join("{photons_interactor:resource}", "database", "migrations")),
+        format_into=sb.directory_spec,
+    )
+
 
 async def migrate(database, extra=""):
     class Script(ScriptDirectory):
         def run_env(script):
             from alembic import context as alembic_context
+
             target_metadata = Base.metadata
 
             def run_migrations_offline():
-                alembic_context.configure(url=database.uri, target_metadata=target_metadata, literal_binds=True)
+                alembic_context.configure(
+                    url=database.uri, target_metadata=target_metadata, literal_binds=True
+                )
                 with alembic_context.begin_transaction():
                     alembic_context.run_migrations()
 
             def run_migrations_online():
-                connectable = DatabaseConnection(database=database.uri, poolclass=pool.NullPool).engine
+                connectable = DatabaseConnection(
+                    database=database.uri, poolclass=pool.NullPool
+                ).engine
                 with connectable.connect() as connection:
-                    alembic_context.configure(connection=connection, target_metadata=target_metadata)
+                    alembic_context.configure(
+                        connection=connection, target_metadata=target_metadata
+                    )
                     with alembic_context.begin_transaction():
                         alembic_context.run_migrations()
 
@@ -42,6 +52,7 @@ async def migrate(database, extra=""):
 
     def from_config(cfg):
         return Script(database.db_migrations)
+
     ScriptDirectory.from_config = from_config
 
     parts = []
@@ -57,6 +68,7 @@ async def migrate(database, extra=""):
     else:
         cfg = AlembicConfig(cmd_opts=options)
         commandline.run_cmd(cfg, options)
+
 
 # And make all the models available so that the migrate command knows about them
 from photons_interactor.database.models.scene_info import SceneInfo

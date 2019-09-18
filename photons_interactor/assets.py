@@ -6,10 +6,13 @@ import subprocess
 import shutil
 import os
 
+
 class Assets(dictobj.Spec):
-    src = dictobj.Field(sb.overridden("{photons_interactor/static:resource}"), formatted=True
-        , help = "Folder where we can find the source of the assets"
-        )
+    src = dictobj.Field(
+        sb.overridden("{photons_interactor/static:resource}"),
+        formatted=True,
+        help="Folder where we can find the source of the assets",
+    )
 
     @property
     def assets_folder(self):
@@ -21,7 +24,10 @@ class Assets(dictobj.Spec):
 
     @property
     def needs_install(self):
-        return not os.path.exists(os.path.join(self.src, "node_modules")) or os.environ.get("REBUILD") == 1
+        return (
+            not os.path.exists(os.path.join(self.src, "node_modules"))
+            or os.environ.get("REBUILD") == 1
+        )
 
     def run(self, *args, extra_env=None):
         env = dict(os.environ)

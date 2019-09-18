@@ -13,7 +13,9 @@ describe AsyncTestCase, "DatabaseMigration":
     async it "can create a database":
         with hp.a_temp_file() as fle:
             uri = f"sqlite:///{fle.name}"
-            options = Database.FieldSpec(formatter=MergedOptionStringFormatter).empty_normalise(uri=uri)
+            options = Database.FieldSpec(formatter=MergedOptionStringFormatter).empty_normalise(
+                uri=uri
+            )
             await self.wait_for(migrate(options, "upgrade head"))
 
             database = DatabaseConnection(database=options.uri)

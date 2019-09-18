@@ -21,11 +21,13 @@ import types
 import time
 import uuid
 
+
 class SimpleWebSocketBase(SimpleWebSocketBase):
     def initialize(self, *args, **kwargs):
         super().initialize(*args, **kwargs)
         self.reprer = better_reprer
         self.message_from_exc = MessageFromExc()
+
 
 class WSServer(thp.ServerRunner):
     def __init__(self, Handler, handler_args=None):
@@ -61,14 +63,26 @@ class WSServer(thp.ServerRunner):
             with mock.patch("photons_interactor.server.DeviceFinder", FakeDeviceFinder):
                 yield
 
-        super().__init__(self.final_future, self.options.port, self.server, wrapper(), None, self.options, self.cleaners, self.target_register, self.protocol_register)
+        super().__init__(
+            self.final_future,
+            self.options.port,
+            self.server,
+            wrapper(),
+            None,
+            self.options,
+            self.cleaners,
+            self.target_register,
+            self.protocol_register,
+        )
 
     async def after_close(self, exc_type, exc, tb):
         await super().after_close(exc_type, exc, tb)
         await wait_for_futures(self.wsconnections)
 
+
 describe AsyncTestCase, "SimpleWebSocketBase":
     async it "can handle a ResultBuilder":
+
         class Handler(SimpleWebSocketBase):
             async def process_message(s, path, body, message_id, message_key, progress_cb):
                 return chp.ResultBuilder(serials=["d073d5000001"])
@@ -78,14 +92,13 @@ describe AsyncTestCase, "SimpleWebSocketBase":
                 connection = await server.ws_connect()
 
                 msg_id = str(uuid.uuid1())
-                await server.ws_write(connection
-                    , {"path": "/thing", "body": {}, "message_id": msg_id}
-                    )
-                self.assertEqual(await server.ws_read(connection)
-                    , { "message_id": msg_id
-                      , "reply": {"results": {"d073d5000001": "ok"}}
-                      }
-                    )
+                await server.ws_write(
+                    connection, {"path": "/thing", "body": {}, "message_id": msg_id}
+                )
+                self.assertEqual(
+                    await server.ws_read(connection),
+                    {"message_id": msg_id, "reply": {"results": {"d073d5000001": "ok"}}},
+                )
 
                 connection.close()
                 self.assertIs(await server.ws_read(connection), None)
@@ -142,104 +155,129 @@ describe AsyncTestCase, "SimpleWebSocketBase":
                 ### NO_ERROR
 
                 msg_id = str(uuid.uuid1())
-                await server.ws_write(connection
-                    , {"path": "/no_error", "body": {}, "message_id": msg_id}
-                    )
-                self.assertEqual(await server.ws_read(connection)
-                    , { "message_id": msg_id
-                      , "reply": {"success": True}
-                      }
-                    )
+                await server.ws_write(
+                    connection, {"path": "/no_error", "body": {}, "message_id": msg_id}
+                )
+                self.assertEqual(
+                    await server.ws_read(connection),
+                    {"message_id": msg_id, "reply": {"success": True}},
+                )
 
                 ##################
                 ### INTERNAL_ERROR
 
                 msg_id = str(uuid.uuid1())
-                await server.ws_write(connection
-                    , {"path": "/internal_error", "body": {}, "message_id": msg_id}
-                    )
-                self.assertEqual(await server.ws_read(connection)
-                    , { "message_id": msg_id
-                      , "reply": {"error": "Internal Server Error", "error_code": "InternalServerError", "status": 500}
-                      }
-                    )
+                await server.ws_write(
+                    connection, {"path": "/internal_error", "body": {}, "message_id": msg_id}
+                )
+                self.assertEqual(
+                    await server.ws_read(connection),
+                    {
+                        "message_id": msg_id,
+                        "reply": {
+                            "error": "Internal Server Error",
+                            "error_code": "InternalServerError",
+                            "status": 500,
+                        },
+                    },
+                )
 
                 ##################
                 ### BUILDER_ERROR
 
                 msg_id = str(uuid.uuid1())
-                await server.ws_write(connection
-                    , {"path": "/builder_error", "body": {}, "message_id": msg_id}
-                    )
-                self.assertEqual(await server.ws_read(connection)
-                    , { "message_id": msg_id
-                      , "reply": {"progress": {"error": "progress"}}
-                      }
-                    )
+                await server.ws_write(
+                    connection, {"path": "/builder_error", "body": {}, "message_id": msg_id}
+                )
+                self.assertEqual(
+                    await server.ws_read(connection),
+                    {"message_id": msg_id, "reply": {"progress": {"error": "progress"}}},
+                )
 
-                self.assertEqual(await server.ws_read(connection)
-                    , { "message_id": msg_id
-                      , 'reply':
-                        { 'results': {'d073d5000001': 'ok'}
-                        , 'errors':
-                          [ {'error': {'message': 'Stuff'}, 'error_code': 'PhotonsAppError', "status": 400}
-                          ]
-                        }
-                      }
-                    )
+                self.assertEqual(
+                    await server.ws_read(connection),
+                    {
+                        "message_id": msg_id,
+                        "reply": {
+                            "results": {"d073d5000001": "ok"},
+                            "errors": [
+                                {
+                                    "error": {"message": "Stuff"},
+                                    "error_code": "PhotonsAppError",
+                                    "status": 400,
+                                }
+                            ],
+                        },
+                    },
+                )
 
                 ##################
                 ### BUILDER_SERIAL_ERROR
 
                 msg_id = str(uuid.uuid1())
-                await server.ws_write(connection
-                    , {"path": "/builder_serial_error", "body": {}, "message_id": msg_id}
-                    )
+                await server.ws_write(
+                    connection, {"path": "/builder_serial_error", "body": {}, "message_id": msg_id}
+                )
 
-                self.assertEqual(await server.ws_read(connection)
-                    , { "message_id": msg_id
-                      , 'reply':
-                        { 'results':
-                          { 'd073d5000001':
-                            { 'error': {'message': 'things'}
-                            , 'error_code': 'PhotonsAppError'
-                            , "status": 400
+                self.assertEqual(
+                    await server.ws_read(connection),
+                    {
+                        "message_id": msg_id,
+                        "reply": {
+                            "results": {
+                                "d073d5000001": {
+                                    "error": {"message": "things"},
+                                    "error_code": "PhotonsAppError",
+                                    "status": 400,
+                                }
                             }
-                          }
-                        }
-                      }
-                    )
+                        },
+                    },
+                )
 
                 ##################
                 ### BUILDER_INTERNAL_ERROR
 
                 msg_id = str(uuid.uuid1())
-                await server.ws_write(connection
-                    , {"path": "/builder_internal_error", "body": {}, "message_id": msg_id}
-                    )
-                self.assertEqual(await server.ws_read(connection)
-                    , { "message_id": msg_id
-                      , "reply":
-                        { "results": { "d073d5000001": "ok" }
-                        , "errors":
-                          [ { "error": "Internal Server Error", "error_code": "InternalServerError", "status": 500 }
-                          ]
-                        }
-                      }
-                    )
+                await server.ws_write(
+                    connection,
+                    {"path": "/builder_internal_error", "body": {}, "message_id": msg_id},
+                )
+                self.assertEqual(
+                    await server.ws_read(connection),
+                    {
+                        "message_id": msg_id,
+                        "reply": {
+                            "results": {"d073d5000001": "ok"},
+                            "errors": [
+                                {
+                                    "error": "Internal Server Error",
+                                    "error_code": "InternalServerError",
+                                    "status": 500,
+                                }
+                            ],
+                        },
+                    },
+                )
 
                 ##################
                 ### ERROR
 
                 msg_id = str(uuid.uuid1())
-                await server.ws_write(connection
-                    , {"path": "/error", "body": {}, "message_id": msg_id}
-                    )
-                self.assertEqual(await server.ws_read(connection)
-                    , { "message_id": msg_id
-                      , "reply": {"error": {"message": "Blah"}, "error_code": "PhotonsAppError", "status": 400}
-                      }
-                    )
+                await server.ws_write(
+                    connection, {"path": "/error", "body": {}, "message_id": msg_id}
+                )
+                self.assertEqual(
+                    await server.ws_read(connection),
+                    {
+                        "message_id": msg_id,
+                        "reply": {
+                            "error": {"message": "Blah"},
+                            "error_code": "PhotonsAppError",
+                            "status": 400,
+                        },
+                    },
+                )
 
                 connection.close()
                 self.assertIs(await server.ws_read(connection), None)
@@ -252,42 +290,60 @@ describe AsyncTestCase, "SimpleWebSocketBase":
 
         self.maxDiff = None
 
-        self.assertEqual(replies
-            , [ ( {'success': True}
-                , None
-                )
-              , ( {'status': 500, 'error': 'Internal Server Error', 'error_code': 'InternalServerError'}
-                , (ValueError, error1, ATraceback())
-                )
-              , ( {'progress': {'error': 'progress'}}
-                , None
-                )
-              , ( { "results": {"d073d5000001": "ok"}
-                  , "errors":
-                    [ {'error': {'message': 'Stuff'}, 'error_code': 'PhotonsAppError', "status": 400}
-                    ]
-                  }
-                , {None: [(PhotonsAppError, error2, None)]}
-                )
-              , ( { 'results':
-                    { 'd073d5000001':
-                      { 'error': {'message': 'things'}
-                      , 'error_code': 'PhotonsAppError'
-                      , "status": 400
-                      }
-                    }
-                  }
-                , {"d073d5000001": (PhotonsAppError, error5, ATraceback())}
-                )
-              , ( { "results": { "d073d5000001": "ok"}
-                  , "errors":
-                    [ {'error': 'Internal Server Error', 'error_code': 'InternalServerError', "status": 500}
-                    ]
-                  }
-                , {None: [(TypeError, error3, ATraceback())]}
-                )
-              , ( {'error': {'message': 'Blah'}, 'error_code': 'PhotonsAppError', "status": 400}
-                , (PhotonsAppError, error4, ATraceback())
-                )
-              ]
-            )
+        self.assertEqual(
+            replies,
+            [
+                ({"success": True}, None),
+                (
+                    {
+                        "status": 500,
+                        "error": "Internal Server Error",
+                        "error_code": "InternalServerError",
+                    },
+                    (ValueError, error1, ATraceback()),
+                ),
+                ({"progress": {"error": "progress"}}, None),
+                (
+                    {
+                        "results": {"d073d5000001": "ok"},
+                        "errors": [
+                            {
+                                "error": {"message": "Stuff"},
+                                "error_code": "PhotonsAppError",
+                                "status": 400,
+                            }
+                        ],
+                    },
+                    {None: [(PhotonsAppError, error2, None)]},
+                ),
+                (
+                    {
+                        "results": {
+                            "d073d5000001": {
+                                "error": {"message": "things"},
+                                "error_code": "PhotonsAppError",
+                                "status": 400,
+                            }
+                        }
+                    },
+                    {"d073d5000001": (PhotonsAppError, error5, ATraceback())},
+                ),
+                (
+                    {
+                        "results": {"d073d5000001": "ok"},
+                        "errors": [
+                            {
+                                "error": "Internal Server Error",
+                                "error_code": "InternalServerError",
+                                "status": 500,
+                            }
+                        ],
+                    },
+                    {None: [(TypeError, error3, ATraceback())]},
+                ),
+                (
+                    {"error": {"message": "Blah"}, "error_code": "PhotonsAppError", "status": 400},
+                    (PhotonsAppError, error4, ATraceback()),
+                ),
+            ],
+        )

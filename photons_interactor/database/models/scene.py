@@ -4,6 +4,7 @@ from photons_interactor.database.connection import Base
 from sqlalchemy import Column, Integer, String, Text, Boolean
 from input_algorithms import spec_base as sb
 
+
 class Scene(Base):
     uuid = Column(String(64), nullable=True, index=True)
     matcher = Column(Text(), nullable=False)
@@ -17,18 +18,22 @@ class Scene(Base):
 
     def as_object(self):
         dct = {
-              "uuid": self.uuid
-            , "matcher": self.matcher
-            , "power": self.power
-            , "color": self.color
-            , "zones": self.zones
-            , "chain": self.chain
-            , "duration": self.duration
-            }
+            "uuid": self.uuid,
+            "matcher": self.matcher,
+            "power": self.power,
+            "color": self.color,
+            "zones": self.zones,
+            "chain": self.chain,
+            "duration": self.duration,
+        }
         return self.Spec(storing=False).empty_normalise(**dct)
 
     def as_dict(self, ignore=None):
-        return {k: v for k, v in self.as_object().as_dict().items() if v is not None and (ignore is None or k not in ignore)}
+        return {
+            k: v
+            for k, v in self.as_object().as_dict().items()
+            if v is not None and (ignore is None or k not in ignore)
+        }
 
     @classmethod
     def Spec(kls, storing=True):

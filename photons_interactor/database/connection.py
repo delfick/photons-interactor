@@ -6,6 +6,7 @@ import logging
 
 log = logging.getLogger("photons_interactor.database.connection")
 
+
 class Base(object):
     # Metadata gets set by Sqlalchemy
     metadata = None
@@ -22,13 +23,16 @@ class Base(object):
     def __repr__(self):
         title = self.__tablename__
         cols = dict((key, getattr(self, key)) for key in self.__repr_columns__)
-        columns = ', '.join("%s:%s" % (key, value) for key, value in cols.items())
+        columns = ", ".join("%s:%s" % (key, value) for key, value in cols.items())
         return "<%s (%s)>" % (title, columns)
+
+
 Base = declarative_base(cls=Base)
 
 ########################
 ###   CONNECTION
 ########################
+
 
 class DatabaseConnection(object):
     """
@@ -67,6 +71,7 @@ class DatabaseConnection(object):
         db.add(db.queries.create_thing(luid="adf", serial='adf"))
         db.commit()
     """
+
     def __init__(self, database=None, engine=None, **engine_kwargs):
         self.database = database
         self.engine = engine
@@ -77,7 +82,7 @@ class DatabaseConnection(object):
 
     def create_engine(self, database, **engine_kwargs):
         if not database:
-            database = 'sqlite:///:memory:'
+            database = "sqlite:///:memory:"
 
         return create_engine(database, **engine_kwargs)
 
@@ -156,9 +161,11 @@ class DatabaseConnection(object):
         if hasattr(self, "session"):
             self.session.close()
 
+
 ########################
 ###   QUERIES
 ########################
+
 
 class QueryHelper(object):
     """
@@ -168,6 +175,7 @@ class QueryHelper(object):
 
     .. automethod:: photons_interactor.database.connection.QueryHelper.__getattr__
     """
+
     def __init__(self, db):
         self.db = db
 
@@ -180,7 +188,7 @@ class QueryHelper(object):
     ########################
 
     def __getattr__(self, key):
-        '''
+        """
         Custom getattr to get
 
         get_<ModelName>
@@ -197,7 +205,7 @@ class QueryHelper(object):
 
         get_or_create_<ModelName>
             Finds first model with provided keyword attributes or creates one.
-        '''
+        """
         # Return private or existing things
         if key.startswith("_") or key in self.__dict__:
             return object.__getattribute__(self, key)
@@ -229,7 +237,7 @@ class QueryHelper(object):
                 raise AttributeError("No such table as %s" % model_name)
 
             def getter(**attrs):
-                '''Returned method that calls the desired action with the correct model'''
+                """Returned method that calls the desired action with the correct model"""
                 model = Base._decl_class_registry[model_name]
                 return object.__getattribute__(self, action)(model, attrs)
 
@@ -268,7 +276,7 @@ class QueryHelper(object):
     ########################
 
     def clean_name(self, name):
-        return ''.join(part.capitalize() for part in name.split('_'))
+        return "".join(part.capitalize() for part in name.split("_"))
 
     def make_filters(self, model, attrs):
         filters = []

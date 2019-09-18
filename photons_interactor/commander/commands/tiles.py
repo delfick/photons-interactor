@@ -8,10 +8,10 @@ from photons_app.errors import FoundNoDevices
 from photons_app import helpers as hp
 
 from photons_tile_paint.animation import (
-      coords_for_horizontal_line
-    , tile_serials_from_reference
-    , canvas_to_msgs
-    )
+    coords_for_horizontal_line,
+    tile_serials_from_reference,
+    canvas_to_msgs,
+)
 from photons_control.orientation import reorient, Orientation as O
 from photons_control.tile import tiles_from, orientations_from
 from photons_themes.coords import user_coords_to_pixel_coords
@@ -26,6 +26,7 @@ import logging
 import asyncio
 
 log = logging.getLogger("photons_interactor.commander.commands.tiles")
+
 
 class ArrangeState:
     _merged_options_formattable = True
@@ -87,22 +88,23 @@ class ArrangeState:
         user_y = (top_y - 4) / 8
 
         msg = TileMessages.SetUserPosition(
-              tile_index = tile_index
-            , user_x = user_x
-            , user_y = user_y
-            , res_required = False
-            )
+            tile_index=tile_index, user_x=user_x, user_y=user_y, res_required=False
+        )
 
         errors = []
         await target.script(msg).run_with_all(serial, afr, error_catcher=errors, message_timeout=5)
-        hp.async_as_background(self.highlight(serial, tile_index, target, afr, error_catcher=[], message_timeout=3))
+        hp.async_as_background(
+            self.highlight(serial, tile_index, target, afr, error_catcher=[], message_timeout=3)
+        )
 
         if errors:
             return {"serial": serial, "data": None}
 
         coords = []
         get_chain = TileMessages.GetDeviceChain()
-        async for pkt, _, _ in target.script(get_chain).run_with(serial, afr, error_catcher=errors, message_timeout=5):
+        async for pkt, _, _ in target.script(get_chain).run_with(
+            serial, afr, error_catcher=errors, message_timeout=5
+        ):
             if pkt | TileMessages.StateDeviceChain:
                 coords = [((c.user_x, c.user_y), (c.width, c.height)) for c in tiles_from(pkt)]
                 coords = [top_left for top_left, _ in user_coords_to_pixel_coords(coords)]
@@ -110,7 +112,9 @@ class ArrangeState:
 
         return {"serial": serial, "data": self.info_for_browser(serial)}
 
-    async def highlight(self, serial, tile_index, target, afr, error_catcher=None, message_timeout=3):
+    async def highlight(
+        self, serial, tile_index, target, afr, error_catcher=None, message_timeout=3
+    ):
         if serial not in self.serials or self.serials[serial]["highlightlock"].locked():
             return
 
@@ -128,20 +132,22 @@ class ArrangeState:
                 for i in range(8):
                     if row < i:
                         start = i * 8
-                        colors.extend(pixels[start:start + 8])
+                        colors.extend(pixels[start : start + 8])
                     else:
-                        colors.extend([{"hue": 0, "saturation": 0, "brightness": 0, "kelvin": 3500}] * 8)
+                        colors.extend(
+                            [{"hue": 0, "saturation": 0, "brightness": 0, "kelvin": 3500}] * 8
+                        )
 
                 msg = TileMessages.Set64(
-                      tile_index = tile_index
-                    , length = 1
-                    , x = 0
-                    , y = 0
-                    , width = 8
-                    , colors = reorient(colors, orientation)
-                    , res_required = False
-                    , ack_required = False
-                    )
+                    tile_index=tile_index,
+                    length=1,
+                    x=0,
+                    y=0,
+                    width=8,
+                    colors=reorient(colors, orientation),
+                    res_required=False,
+                    ack_required=False,
+                )
 
                 await target.script(msg).run_with_all(serial, afr, error_catcher=[])
                 await asyncio.sleep(0.075)
@@ -157,16 +163,18 @@ class ArrangeState:
 
             if not afr.stop_fut.done():
                 msg = TileMessages.Set64(
-                      tile_index = tile_index
-                    , length = 1
-                    , x = 0
-                    , y = 0
-                    , width = 8
-                    , colors = reorient(pixels, orientation)
-                    , res_required = False
-                    , ack_required = True
-                    )
-                await target.script(msg).run_with_all(serial, afr, error_catcher=[], message_timeout=1)
+                    tile_index=tile_index,
+                    length=1,
+                    x=0,
+                    y=0,
+                    width=8,
+                    colors=reorient(pixels, orientation),
+                    res_required=False,
+                    ack_required=True,
+                )
+                await target.script(msg).run_with_all(
+                    serial, afr, error_catcher=[], message_timeout=1
+                )
 
     async def leave_arrange(self, ref, target, afr):
         log.info(hp.lc("Leaving arrange", ref=ref))
@@ -176,7 +184,9 @@ class ArrangeState:
         for serial, info in list(self.serials.items()):
             info["refs"] = [r for r in info["refs"] if r != ref]
             if not info["refs"]:
-                tasks.append(hp.async_as_background(self.restore(serial, info["initial"], target, afr)))
+                tasks.append(
+                    hp.async_as_background(self.restore(serial, info["initial"], target, afr))
+                )
                 del self.serials[serial]
 
         for t in tasks:
@@ -197,10 +207,16 @@ class ArrangeState:
         async for pkt, _, _ in target.script(msgs).run_with(serial, afr, error_catcher=errors):
             if pkt | TileMessages.State64:
                 info["initial"]["colors"].append(
-                      [ {"hue": c.hue, "saturation": c.saturation, "brightness": c.brightness, "kelvin":  c.kelvin}
+                    [
+                        {
+                            "hue": c.hue,
+                            "saturation": c.saturation,
+                            "brightness": c.brightness,
+                            "kelvin": c.kelvin,
+                        }
                         for c in pkt.colors
-                      ]
-                    )
+                    ]
+                )
             elif pkt | TileMessages.StateDeviceChain:
                 length = pkt.tile_devices_count
                 orientations = orientations_from(pkt)
@@ -218,13 +234,22 @@ class ArrangeState:
 
             def dcf(i, j):
                 return Color(0, 0, 0, 3500)
+
             canvas.default_color_func = dcf
 
             self.style_maker.set_canvas(canvas, length)
             info["pixels"], info["color_pixels"] = make_rgb_and_color_pixels(canvas, length)
 
             msgs = [DeviceMessages.SetPower(level=65535)]
-            msgs.extend(canvas_to_msgs(canvas, coords_for_horizontal_line, duration=1, acks=True, orientations=orientations))
+            msgs.extend(
+                canvas_to_msgs(
+                    canvas,
+                    coords_for_horizontal_line,
+                    duration=1,
+                    acks=True,
+                    orientations=orientations,
+                )
+            )
             await target.script(msgs).run_with_all(serial, afr, error_catcher=errors)
 
         return errors, info
@@ -233,26 +258,31 @@ class ArrangeState:
         msgs = [DeviceMessages.SetPower(level=initial["power"])]
 
         for i, colors in enumerate(initial["colors"]):
-            msgs.append(TileMessages.Set64(
-                  tile_index = i
-                , length = 1
-                , width = 8
-                , x = 0
-                , y = 0
-                , colors = colors
-                , res_required = False
-                , ack_required = True
-                ))
+            msgs.append(
+                TileMessages.Set64(
+                    tile_index=i,
+                    length=1,
+                    width=8,
+                    x=0,
+                    y=0,
+                    colors=colors,
+                    res_required=False,
+                    ack_required=True,
+                )
+            )
 
         def errors(e):
             log.error(hp.lc("Error restoring tile", serial=serial, error=e))
+
         await target.script(msgs).run_with_all(serial, afr, error_catcher=errors)
+
 
 @store.command(name="tiles/dice")
 class TileDiceCommand(store.Command):
     """
     Show dice on provided tiles and return the hsbk values that were sent
     """
+
     finder = store.injected("finder")
     target = store.injected("targets.lan")
 
@@ -270,15 +300,16 @@ class TileDiceCommand(store.Command):
         if not serials:
             raise FoundNoDevices("Didn't find any tiles")
 
-        await self.target.script(DeviceMessages.SetPower(level=65535)).run_with_all(serials, afr
-            , error_catcher = result.error
-            )
+        await self.target.script(DeviceMessages.SetPower(level=65535)).run_with_all(
+            serials, afr, error_catcher=result.error
+        )
 
-        result.result["results"]["tiles"] = await tile_dice(self.target, serials, afr
-            , error_catcher = result.error
-            )
+        result.result["results"]["tiles"] = await tile_dice(
+            self.target, serials, afr, error_catcher=result.error
+        )
 
         return result
+
 
 @store.command(name="tiles/arrange/start")
 class StartArrangeCommand(store.Command):
@@ -293,7 +324,10 @@ class StartArrangeCommand(store.Command):
 
         afr = await self.finder.args_for_run()
         serials = await tile_serials_from_reference(self.target, self.finder.find(), afr)
-        return await self.arranger.start_arrange(serials, self.request_handler.key, self.target, afr)
+        return await self.arranger.start_arrange(
+            serials, self.request_handler.key, self.target, afr
+        )
+
 
 @store.command(name="tiles/arrange/leave")
 class LeaveArrangeCommand(store.Command):
@@ -310,6 +344,7 @@ class LeaveArrangeCommand(store.Command):
         await self.arranger.leave_arrange(self.request_handler.key, self.target, afr)
         return {"ok": True}
 
+
 @store.command(name="tiles/arrange/change")
 class ChangeArrangeCommand(store.Command):
     finder = store.injected("finder")
@@ -323,7 +358,10 @@ class ChangeArrangeCommand(store.Command):
 
     async def execute(self):
         afr = await self.finder.args_for_run()
-        return await self.arranger.change(self.serial, self.tile_index, self.left_x, self.top_y, self.target, afr)
+        return await self.arranger.change(
+            self.serial, self.tile_index, self.left_x, self.top_y, self.target, afr
+        )
+
 
 @store.command(name="tiles/arrange/highlight")
 class HighlightArrangeCommand(store.Command):

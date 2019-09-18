@@ -1,8 +1,8 @@
 from photons_tile_paint.animation import (
-      coords_for_horizontal_line
-    , put_characters_on_canvas
-    , canvas_to_msgs
-    )
+    coords_for_horizontal_line,
+    put_characters_on_canvas,
+    canvas_to_msgs,
+)
 from photons_themes.theme import ThemeColor as Color
 from photons_control.tile import orientations_from
 from photons_tile_paint.font.dice import dice
@@ -11,6 +11,7 @@ from photons_themes.canvas import Canvas
 
 import colorsys
 import math
+
 
 def make_rgb_and_color_pixels(canvas, length):
     rgb_made = []
@@ -34,6 +35,7 @@ def make_rgb_and_color_pixels(canvas, length):
 
     return rgb_made, color_made
 
+
 async def tile_dice(target, serials, afr, **kwargs):
     canvas = Canvas()
 
@@ -41,6 +43,7 @@ async def tile_dice(target, serials, afr, **kwargs):
         if j == -3:
             return Color(0, 1, 0.4, 3500)
         return Color(0, 0, 0, 3500)
+
     canvas.set_default_color_func(default_color_func)
 
     numbers = ["1", "2", "3", "4", "5"]
@@ -49,7 +52,9 @@ async def tile_dice(target, serials, afr, **kwargs):
     put_characters_on_canvas(canvas, characters, coords_for_horizontal_line, color)
 
     orientations = {}
-    async for pkt, _, _ in target.script(TileMessages.GetDeviceChain()).run_with(serials, afr, **kwargs):
+    async for pkt, _, _ in target.script(TileMessages.GetDeviceChain()).run_with(
+        serials, afr, **kwargs
+    ):
         if pkt | TileMessages.StateDeviceChain:
             orientations[pkt.serial] = orientations_from(pkt)
 
@@ -58,12 +63,15 @@ async def tile_dice(target, serials, afr, **kwargs):
     msgs = []
     for serial in serials:
         os = orientations.get(serial)
-        for msg in canvas_to_msgs(canvas, coords_for_horizontal_line, duration=1, acks=True, orientations=os):
+        for msg in canvas_to_msgs(
+            canvas, coords_for_horizontal_line, duration=1, acks=True, orientations=os
+        ):
             msg.target = serial
             msgs.append(msg)
 
     await target.script(msgs).run_with_all(None, afr, **kwargs)
     return made
+
 
 def convert_K_to_RGB(colour_temperature):
     """
@@ -89,7 +97,7 @@ def convert_K_to_RGB(colour_temperature):
         else:
             red = tmp_red
 
-    if tmp_internal <=66:
+    if tmp_internal <= 66:
         tmp_green = 99.4708025861 * math.log(tmp_internal) - 161.1195681661
         if tmp_green < 0:
             green = 0
@@ -121,11 +129,14 @@ def convert_K_to_RGB(colour_temperature):
 
     return int(red), int(green), int(blue)
 
+
 class White:
     pass
 
+
 class Black:
     pass
+
 
 class StyleMaker:
     def __init__(self):
@@ -151,10 +162,10 @@ class StyleMaker:
                 yield "split", color
 
             for color in colors:
-                yield "cross", (color, )
+                yield "cross", (color,)
 
             for color in colors:
-                yield "square", (color, )
+                yield "square", (color,)
 
             for h1, h2 in zip(colors, shifted):
                 yield "square", (h1, h2)

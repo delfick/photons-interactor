@@ -13,6 +13,7 @@ import sqlalchemy.exc
 Test = None
 test_runner = DBTestRunner()
 
+
 def setUp():
     global Test
 
@@ -25,11 +26,13 @@ def setUp():
         def as_dict(self):
             return {"one": self.one, "two": self.two}
 
+
 def tearDown():
     del Base._decl_class_registry["Test"]
     tables = dict(Base.metadata.tables)
     del tables["test"]
     Base.metadata.tables = tables
+
 
 describe AsyncTestCase, "DatabaseConnection":
     async before_each:
@@ -41,13 +44,16 @@ describe AsyncTestCase, "DatabaseConnection":
         await test_runner.after_each_db_queue()
 
     async it "can execute queries":
+
         def do_set(db):
             one = db.queries.create_test(one="one", two=True)
             db.add(one)
+
         await self.wait_for(self.db_queue.request(do_set))
 
         def do_get(db):
             return db.queries.get_one_test().as_dict()
+
         got = await self.wait_for(self.db_queue.request(do_get))
         self.assertEqual(got, {"one": "one", "two": True})
 
@@ -73,21 +79,19 @@ describe AsyncTestCase, "DatabaseConnection":
             else:
                 one = db.queries.create_test(one="one", two=True)
                 db.add(one)
+
         await self.wait_for(self.db_queue.request(do_error))
 
         def do_get(db):
             return db.queries.get_one_test().as_dict()
+
         got = await self.wait_for(self.db_queue.request(do_get))
         self.assertEqual(got, {"one": "one", "two": True})
 
         self.assertEqual(tries, [])
 
     async it "does not retry other errors":
-        errors = [
-              sqlalchemy.exc.InvalidRequestError()
-            , PhotonsAppError("blah")
-            , ValueError("nope")
-            ]
+        errors = [sqlalchemy.exc.InvalidRequestError(), PhotonsAppError("blah"), ValueError("nope")]
 
         for error in errors:
             tries = [True]
@@ -95,6 +99,7 @@ describe AsyncTestCase, "DatabaseConnection":
             def do_error(db):
                 tries.pop(0)
                 raise error
+
             with self.fuzzyAssertRaisesError(type(error)):
                 await self.wait_for(self.db_queue.request(do_error))
             self.assertEqual(tries, [])

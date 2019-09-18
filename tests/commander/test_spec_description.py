@@ -7,6 +7,7 @@ from photons_app.test_helpers import TestCase
 from input_algorithms import spec_base as sb
 
 describe TestCase, "signature":
+
     def assertSignature(self, spec, want):
         self.assertEqual(" ".join(signature(spec)), want)
 
@@ -49,6 +50,7 @@ describe TestCase, "signature":
         self.assertSignature(sb.dictof(sb.string_spec(), sb.any_spec()), "{ string : <item> }")
 
     it "knows about container_spec":
+
         class Container:
             def __init__(self, value):
                 pass
@@ -59,8 +61,12 @@ describe TestCase, "signature":
         self.assertSignature(sb.formatted(sb.string_spec(), formatter=None), "string")
 
     it "knows about or_spec":
-        self.assertSignature(sb.or_spec(sb.string_spec(), sb.dictionary_spec()), "string or dictionary")
+        self.assertSignature(
+            sb.or_spec(sb.string_spec(), sb.dictionary_spec()), "string or dictionary"
+        )
         self.assertSignature(sb.or_spec(), "")
         self.assertSignature(sb.or_spec(sb.string_spec()), "string")
         self.assertSignature(sb.or_spec(sb.string_spec(), sb.any_spec()), "string or <item>")
-        self.assertSignature(sb.or_spec(sb.string_spec(), sb.any_spec(), sb.boolean()), "string or <item> or boolean")
+        self.assertSignature(
+            sb.or_spec(sb.string_spec(), sb.any_spec(), sb.boolean()), "string or <item> or boolean"
+        )

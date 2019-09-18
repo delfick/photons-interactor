@@ -7,23 +7,28 @@ from photons_control.transform import Transformer
 from input_algorithms.dictobj import dictobj
 from input_algorithms import spec_base as sb
 
+
 @store.command(name="status")
 class StatusCommand(store.Command):
     async def execute(self):
         return {"on": True}
+
 
 @store.command(name="discover")
 class DiscoverCommand(store.Command):
     """
     Display information about all the devices that can be found on the network
     """
+
     finder = store.injected("finder")
     matcher = df.matcher_field
     refresh = df.refresh_field
 
-    just_serials = dictobj.Field(sb.boolean, default=False
-        , help = "Just return a list of serials instead of all the information per device"
-        )
+    just_serials = dictobj.Field(
+        sb.boolean,
+        default=False,
+        help="Just return a list of serials instead of all the information per device",
+    )
 
     async def execute(self):
         fltr = chp.filter_from_matcher(self.matcher)
@@ -36,11 +41,13 @@ class DiscoverCommand(store.Command):
         else:
             return await self.finder.info_for(filtr=fltr)
 
+
 @store.command(name="query")
 class QueryCommand(store.Command):
     """
     Send a pkt to devices and return the result
     """
+
     finder = store.injected("finder")
     target = store.injected("targets.lan")
     protocol_register = store.injected("protocol_register")
@@ -58,11 +65,13 @@ class QueryCommand(store.Command):
         script = self.target.script(msg)
         return await chp.run(script, fltr, self.finder, message_timeout=self.timeout)
 
+
 @store.command(name="transform")
 class TransformCommand(store.Command):
     """
     Apply a http api like transformation to the lights
     """
+
     finder = store.injected("finder")
     target = store.injected("targets.lan")
 
@@ -70,8 +79,10 @@ class TransformCommand(store.Command):
     timeout = df.timeout_field
     refresh = df.refresh_field
 
-    transform = dictobj.Field(sb.dictionary_spec(), wrapper=sb.required
-        , help = """
+    transform = dictobj.Field(
+        sb.dictionary_spec(),
+        wrapper=sb.required,
+        help="""
             A dictionary of what options to use to transform the lights with.
 
             For example,
@@ -79,14 +90,17 @@ class TransformCommand(store.Command):
 
             Or,
             ``{"color": "blue", "effect": "breathe", "cycles": 5}``
-          """
-        )
+          """,
+    )
 
     async def execute(self):
         fltr = chp.filter_from_matcher(self.matcher, self.refresh)
         msg = Transformer.using(self.transform)
         script = self.target.script(msg)
-        return await chp.run(script, fltr, self.finder, add_replies=False, message_timeout=self.timeout)
+        return await chp.run(
+            script, fltr, self.finder, add_replies=False, message_timeout=self.timeout
+        )
+
 
 @store.command(name="set")
 class SetCommand(store.Command):
@@ -94,6 +108,7 @@ class SetCommand(store.Command):
     Send a pkt to devices. This is the same as query except res_required is False
     and results aren't returned
     """
+
     finder = store.injected("finder")
     target = store.injected("targets.lan")
     protocol_register = store.injected("protocol_register")
