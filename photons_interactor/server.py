@@ -42,7 +42,9 @@ class Server(Server):
             (self.server_options.html_path, Index),
         ]
 
-    async def setup(self, server_options, cleaners, target_register, protocol_register):
+    async def setup(
+        self, server_options, cleaners, target_register, protocol_register, animation_options
+    ):
         self.cleaners = cleaners
         self.server_options = server_options
         self.target_register = target_register
@@ -73,7 +75,10 @@ class Server(Server):
         self.finder = DeviceFinder(target, **self.server_options.device_finder_options)
 
         self.arranger = ArrangeState()
-        self.animations = AnimationsStore(self.server_options.animations_presets, self.arranger)
+        self.animations = AnimationsStore(
+            self.server_options.animations_presets, self.arranger, animation_options
+        )
+        self.cleaners.append(self.animations.finish)
 
         await self.finder.start()
 

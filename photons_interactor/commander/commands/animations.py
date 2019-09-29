@@ -91,7 +91,7 @@ class TileTransitionAnimation(Animation):
             del remaining[point]
 
         if not remaining:
-            self.acks = True
+            self.retries = True
             wait += 1
 
         if wait == 2:
@@ -131,12 +131,14 @@ transition_animation = Animator(
 class AnimationsStore:
     _merged_options_formattable = True
 
-    def __init__(self, presets, arranger):
+    def __init__(self, presets, arranger, global_options):
         self.animations = {}
         self.arranger = arranger
         self.presets = presets
+        self.global_options = global_options
         self.animators = dict(Animations.animators())
         self.listeners = {}
+        self.removers = []
 
     def add_listener(self):
         u = str(uuid.uuid4())
@@ -155,6 +157,12 @@ class AnimationsStore:
 
     def available(self):
         return list(self.presets) + list([a for a in self.animators if a not in self.presets])
+
+    async def finish(self):
+        if self.removers:
+            for t in self.removers:
+                t.cancel()
+            await asyncio.wait(self.removers)
 
     def start(self, animation, target, serials, reference, afr, options, stop_conflicting=False):
         repeat = False
@@ -216,10 +224,18 @@ class AnimationsStore:
 
                     try:
                         await self.animators[a.animation].animate(
-                            target, afr, final_future, reference, opts, pauser=info["pauser"]
+                            target,
+                            afr,
+                            final_future,
+                            reference,
+                            opts,
+                            pauser=info["pauser"],
+                            global_options=self.global_options,
                         )
                     except Finish:
                         pass
+                    except asyncio.CancelledError:
+                        raise
                     except Exception as error:
                         log.exception(error)
                         await asyncio.sleep(1)
@@ -232,10 +248,12 @@ class AnimationsStore:
                         self.activate_listeners()
                         try:
                             await transition_animation.animate(
-                                target, afr, final_future, reference, options
+                                target, afr, final_future, reference, options, self.global_options
                             )
                         except Finish:
                             pass
+                        except asyncio.CancelledError:
+                            raise
                         except Exception as error:
                             log.exception(error)
                             await asyncio.sleep(1)
@@ -255,7 +273,8 @@ class AnimationsStore:
             self.activate_listeners()
             if "stopped" not in info:
                 info["stopped"] = time.time()
-            hp.async_as_background(remove_after_a_minute())
+            self.removers.append(hp.async_as_background(remove_after_a_minute()))
+            self.removers = [t for t in self.removers if not t.done()]
 
         info["task_future"].add_done_callback(activate)
 

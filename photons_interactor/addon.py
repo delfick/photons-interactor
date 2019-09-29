@@ -7,16 +7,11 @@ from photons_app.errors import PhotonsAppError
 from photons_app.actions import an_action
 from photons_app import helpers as hp
 
-from photons_transport.session.network import NetworkSession
-from photons_transport.targets import LanTarget
-from photons_messages import Services
-
 from delfick_project.addons import addon_hook
 from delfick_project.norms import sb
 from functools import partial
 import pkg_resources
 import subprocess
-import binascii
 import logging
 import asyncio
 import shlex
@@ -38,28 +33,6 @@ async def serve(collector, **kwargs):
     conf = collector.configuration
     await migrate(collector, extra="upgrade head")
 
-    if "DISCOVERY_FILTER" in os.environ:
-        serials = os.environ["DISCOVERY_FILTER"].split(",")
-
-        class ModifiedNetworkSession(NetworkSession):
-            async def add_service(s, serial, service, **kwargs):
-                if serial in serials:
-                    await super().add_service(serial, service, **kwargs)
-
-            async def _do_search(s, *args, **kwargs):
-                if serials[0] == ":":
-                    found_now = set()
-                    for serial in serials[1:]:
-                        serial, ip = serial.split(":")
-                        await super().add_service(serial, Services.UDP, port=56700, host=ip)
-                        found_now.add(binascii.unhexlify(serial)[:6])
-                    return list(found_now)
-                else:
-                    fn = await super()._do_search(*args, **kwargs)
-                    return [s for s in fn if binascii.hexlify(s).decode() in serials]
-
-        LanTarget.session_kls = ModifiedNetworkSession
-
     options = conf["interactor"]
     await Server(conf["photons_app"].final_future).serve(
         options.host,
@@ -68,6 +41,7 @@ async def serve(collector, **kwargs):
         conf["photons_app"].cleaners,
         conf["target_register"],
         conf["protocol_register"],
+        conf["animation_options"],
     )
 
 
