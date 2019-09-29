@@ -8,6 +8,8 @@ from photons_interactor.server import Server
 from photons_app.test_helpers import AsyncTestCase
 from photons_app import helpers as hp
 
+from photons_tile_paint.options import GlobalOptions
+
 from noseOfYeti.tokeniser.async_support import async_noy_sup_setUp, async_noy_sup_tearDown
 from tornado.httpclient import AsyncHTTPClient
 from whirlwind import test_helpers as wthp
@@ -78,6 +80,7 @@ describe AsyncTestCase, "Server":
                 cleaners,
                 self.target_register,
                 self.protocol_register,
+                GlobalOptions.create(),
             ) as s:
                 commander.executor.return_value.execute = asynctest.mock.CoroutineMock(
                     name="execute", return_value={}

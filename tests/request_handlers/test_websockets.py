@@ -9,6 +9,8 @@ from photons_app.test_helpers import AsyncTestCase
 from photons_app.errors import PhotonsAppError
 from photons_app import helpers as hp
 
+from photons_tile_paint.options import GlobalOptions
+
 from whirlwind.request_handlers.base import SimpleWebSocketBase
 from whirlwind.server import wait_for_futures
 from whirlwind import test_helpers as wthp
@@ -73,6 +75,7 @@ class WSServer(thp.ServerRunner):
             self.cleaners,
             self.target_register,
             self.protocol_register,
+            GlobalOptions.create(),
         )
 
     async def after_close(self, exc_type, exc, tb):

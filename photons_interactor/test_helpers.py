@@ -4,6 +4,7 @@ from photons_interactor.server import Server
 
 from photons_app.formatter import MergedOptionStringFormatter
 
+from photons_tile_paint.options import GlobalOptions
 from photons_control import test_helpers as chp
 from photons_messages import protocol_register
 
@@ -92,6 +93,7 @@ async def make_server(store, wrapper, **kwargs):
         cleaners,
         target_register,
         protocol_register,
+        GlobalOptions.create(),
     )
     return targetrunner, server
 
