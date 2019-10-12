@@ -1,7 +1,7 @@
-from photons_products_registry import LIFIProductRegistry
 from photons_transport.fake import FakeDevice, Responder
 from photons_control import test_helpers as chp
 from photons_messages import DeviceMessages
+from photons_products import Products
 
 from delfick_project.norms import dictobj
 from unittest import mock
@@ -55,7 +55,7 @@ class FakeDevice(FakeDevice):
 a19_1 = FakeDevice(
     "d073d5000001",
     chp.default_responders(
-        LIFIProductRegistry.LCM2_A19,
+        Products.LCM2_A19,
         label="kitchen",
         power=0,
         color=chp.Color(0, 1, 1, 2500),
@@ -67,7 +67,7 @@ a19_1 = FakeDevice(
 a19_2 = FakeDevice(
     "d073d5000002",
     chp.default_responders(
-        LIFIProductRegistry.LCM2_A19,
+        Products.LCM2_A19,
         label="bathroom",
         power=65535,
         color=chp.Color(100, 1, 1, 2500),
@@ -79,7 +79,7 @@ a19_2 = FakeDevice(
 color1000 = FakeDevice(
     "d073d5000003",
     chp.default_responders(
-        LIFIProductRegistry.LCMV4_A19_COLOR,
+        Products.LCMV4_A19_COLOR,
         label="lamp",
         power=65535,
         color=chp.Color(100, 0, 1, 2500),
@@ -91,7 +91,7 @@ color1000 = FakeDevice(
 white800 = FakeDevice(
     "d073d5000004",
     chp.default_responders(
-        LIFIProductRegistry.LCMV4_A19_WHITE_LV,
+        Products.LCMV4_A19_WHITE_LV,
         label="lamp",
         power=65535,
         color=chp.Color(100, 0, 1, 2500),
@@ -103,7 +103,7 @@ white800 = FakeDevice(
 strip1 = FakeDevice(
     "d073d5000005",
     chp.default_responders(
-        LIFIProductRegistry.LCM2_Z,
+        Products.LCM2_Z,
         label="desk",
         power=65535,
         zones=zones,
@@ -116,7 +116,7 @@ strip1 = FakeDevice(
 strip2 = FakeDevice(
     "d073d5000006",
     chp.default_responders(
-        LIFIProductRegistry.LCM1_Z,
+        Products.LCM1_Z,
         label="tv",
         power=65535,
         zones=zones,
@@ -164,7 +164,14 @@ class Around:
 discovery_response = {
     "d073d5000001": {
         "brightness": 1.0,
-        "cap": ["color", "not_chain", "not_ir", "not_multizone", "variable_color_temp"],
+        "cap": [
+            "color",
+            "not_chain",
+            "not_ir",
+            "not_matrix",
+            "not_multizone",
+            "variable_color_temp",
+        ],
         "firmware_version": "2.75",
         "group_id": mock.ANY,
         "group_name": "Living Room",
@@ -181,7 +188,14 @@ discovery_response = {
     },
     "d073d5000002": {
         "brightness": 1.0,
-        "cap": ["color", "not_chain", "not_ir", "not_multizone", "variable_color_temp"],
+        "cap": [
+            "color",
+            "not_chain",
+            "not_ir",
+            "not_matrix",
+            "not_multizone",
+            "variable_color_temp",
+        ],
         "firmware_version": "2.75",
         "group_id": mock.ANY,
         "group_name": "Bathroom",
@@ -198,7 +212,14 @@ discovery_response = {
     },
     "d073d5000003": {
         "brightness": 1.0,
-        "cap": ["color", "not_chain", "not_ir", "not_multizone", "variable_color_temp"],
+        "cap": [
+            "color",
+            "not_chain",
+            "not_ir",
+            "not_matrix",
+            "not_multizone",
+            "variable_color_temp",
+        ],
         "firmware_version": "1.1",
         "group_id": mock.ANY,
         "group_name": "desk",
@@ -215,7 +236,14 @@ discovery_response = {
     },
     "d073d5000004": {
         "brightness": 1.0,
-        "cap": ["not_chain", "not_color", "not_ir", "not_multizone", "variable_color_temp"],
+        "cap": [
+            "not_chain",
+            "not_color",
+            "not_ir",
+            "not_matrix",
+            "not_multizone",
+            "variable_color_temp",
+        ],
         "firmware_version": "1.1",
         "group_id": mock.ANY,
         "group_name": "desk",
@@ -232,7 +260,7 @@ discovery_response = {
     },
     "d073d5000005": {
         "brightness": Around(0.5),
-        "cap": ["color", "multizone", "not_chain", "not_ir", "variable_color_temp"],
+        "cap": ["color", "multizone", "not_chain", "not_ir", "not_matrix", "variable_color_temp"],
         "firmware_version": "2.75",
         "group_id": mock.ANY,
         "group_name": "Living Room",
@@ -249,7 +277,7 @@ discovery_response = {
     },
     "d073d5000006": {
         "brightness": Around(0.5),
-        "cap": ["color", "multizone", "not_chain", "not_ir", "variable_color_temp"],
+        "cap": ["color", "multizone", "not_chain", "not_ir", "not_matrix", "variable_color_temp"],
         "firmware_version": "1.1",
         "group_id": mock.ANY,
         "group_name": "desk",
