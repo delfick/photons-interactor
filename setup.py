@@ -10,8 +10,10 @@ setup(
     , packages = ['photons_interactor'] + ['photons_interactor.%s' % pkg for pkg in find_packages('photons_interactor')]
     , include_package_data = True
 
+    , python_requires = ">= 3.6"
+
     , install_requires =
-      [ "delfick_project==0.5.1"
+      [ "delfick_project==0.7.0"
       , "lifx-photons-core==0.23.0"
       , "tornado==5.1.1"
       , "SQLAlchemy==1.3.3"
