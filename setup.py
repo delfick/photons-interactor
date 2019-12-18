@@ -13,7 +13,7 @@ setup(
     , python_requires = ">= 3.6"
 
     , install_requires =
-      [ "delfick_project==0.7.0"
+      [ "delfick_project==0.7.1"
       , "lifx-photons-core==0.24.3"
       , "tornado==5.1.1"
       , "SQLAlchemy==1.3.3"
