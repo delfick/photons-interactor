@@ -39,9 +39,12 @@ class DBQueue(hp.ThreadToAsyncQueue):
     def setup(self, database):
         self.database = database
 
-    def start_thread(self):
-        """This is run for every thread, the return is what is passed into requested functions"""
-        return (DatabaseConnection(self.database, poolclass=StaticPool),)
+    def create_args(self, thread_number, existing):
+        """This is run when the queue starts and before every request"""
+        if existing:
+            return existing
+
+        return (DatabaseConnection(self.database, poolclass=StaticPool), )
 
     def wrap_request(self, proc, args):
         """We create a new session for every database request"""
