@@ -78,12 +78,9 @@ class App(App):
             ),
         }
 
-        with hp.a_temp_file() as fle:
-            fle.write(json.dumps(data).encode())
-            fle.flush()
-            return super(App, self).execute(
-                args_obj, args_dict, extra_args, logging_handler, extra_files=[fle.name]
-            )
+        return super(App, self).execute(
+            args_obj, args_dict, extra_args, logging_handler, extra_files=[data]
+        )
 
     def specify_other_args(self, parser, defaults):
         parser = super(App, self).specify_other_args(parser, defaults)
