@@ -28,13 +28,10 @@ describe TestCase, "fields_description":
 
         got = list(chp.fields_description(Thing))
 
-        self.assertEqual(
-            got,
-            [
-                ("two", "integer (default 20)", "two\nis\ngood"),
-                ("three", "string (required)", "three"),
-            ],
-        )
+        assert got == [
+            ("two", "integer (default 20)", "two\nis\ngood"),
+            ("three", "string (required)", "three"),
+        ]
 
     it "works for default fields":
         fields = {
@@ -60,15 +57,11 @@ describe TestCase, "fields_description":
 
         got = []
         for name, type_info, hlp in chp.fields_description(Thing):
-            self.assertEqual(dedent(getattr(df, name).help).strip(), hlp)
+            assert dedent(getattr(df, name).help).strip() == hlp
             assert fields.get(name) is not None, f"Expected this field to not be used {name}"
-            self.assertEqual(
-                fields[name],
-                type_info,
-                f"Expect field type info to be correct for {name}: got '{type_info}' instead of '{fields[name]}'",
-            )
+            assert (
+                fields[name] == type_info
+            ), f"Expect field type info to be correct for {name}: got '{type_info}' instead of '{fields[name]}'"
             got.append(name)
 
-        self.assertEqual(
-            sorted(got), sorted(name for name in fields if fields.get(name) is not None)
-        )
+        assert sorted(got) == sorted(name for name in fields if fields.get(name) is not None)

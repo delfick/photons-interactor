@@ -36,10 +36,10 @@ describe AsyncTestCase, "Server":
 
             response = await client.fetch(f"http://127.0.0.1:{options.port}/", raise_error=False)
 
-            self.assertEqual(response.code, 200, response.body)
+            assert response.code == 200, response.body
             assert response.body.startswith(b"<!DOCTYPE html>"), response.body
 
-            self.assertEqual(response.headers["Content-Type"], "text/html; charset=UTF-8")
+            assert response.headers["Content-Type"] == "text/html; charset=UTF-8"
 
         async it "works":
             options = thp.make_options(
@@ -89,9 +89,9 @@ describe AsyncTestCase, "Server":
 
                 await self.assertIndex(options)
 
-            self.assertIs(server.commander, commander)
-            self.assertIs(server.finder, finder)
-            self.assertIsInstance(server.animations, AnimationsStore)
+            assert server.commander is commander
+            assert server.finder is finder
+            assert isinstance(server.animations, AnimationsStore)
 
             from photons_interactor.commander.store import store
 

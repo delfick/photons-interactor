@@ -32,7 +32,7 @@ describe AsyncTestCase, "Control Commands":
             self, "/v1/lifx/command", {"command": "discover", "args": {"just_serials": True}}
         )
         serials = json.loads(res.decode())
-        self.assertEqual(sorted(serials), sorted(device.serial for device in fake.devices))
+        assert sorted(serials) == sorted(device.serial for device in fake.devices)
 
         res = await server.assertPUT(
             self,
@@ -45,8 +45,8 @@ describe AsyncTestCase, "Control Commands":
             for device in fake.devices
             if device.attrs.group.label == "Living Room"
         }
-        self.assertEqual(len(wanted), 2)
-        self.assertEqual(j, wanted)
+        assert len(wanted) == 2
+        assert j == wanted
 
         res = await server.assertPUT(
             self,
@@ -54,7 +54,7 @@ describe AsyncTestCase, "Control Commands":
             {"command": "discover", "args": {"just_serials": True, "matcher": "label=kitchen"}},
         )
         serials = json.loads(res.decode())
-        self.assertEqual(serials, [fake.for_attribute("label", "kitchen")[0].serial])
+        assert serials == [fake.for_attribute("label", "kitchen")[0].serial]
 
         res = await server.assertPUT(
             self,
@@ -62,7 +62,7 @@ describe AsyncTestCase, "Control Commands":
             {"command": "discover", "args": {"just_serials": True, "matcher": "label=lamp"}},
         )
         serials = json.loads(res.decode())
-        self.assertEqual(serials, [d.serial for d in fake.for_attribute("label", "lamp", 2)])
+        assert serials == [d.serial for d in fake.for_attribute("label", "lamp", 2)]
 
         res = await server.assertPUT(
             self,
@@ -71,14 +71,11 @@ describe AsyncTestCase, "Control Commands":
             status=400,
         )
         j = json.loads(res.decode())
-        self.assertEqual(
-            j,
-            {
-                "error": {"message": "Didn't find any devices"},
-                "status": 400,
-                "error_code": "FoundNoDevices",
-            },
-        )
+        assert j == {
+            "error": {"message": "Didn't find any devices"},
+            "status": 400,
+            "error_code": "FoundNoDevices",
+        }
 
     @test_server.test
     async it "has query commands", options, fake, server:

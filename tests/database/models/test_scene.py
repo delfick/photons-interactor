@@ -31,7 +31,7 @@ describe TestCase, "Scene":
             expect = dict(kwargs)
             expect["uuid"] = identifier
 
-            self.assertEqual(normalised.as_dict(), expect)
+            assert normalised.as_dict() == expect
 
             scene_for_storing = Scene.DelayedSpec(storing=True).normalise(Meta.empty(), kwargs)
             normalised = scene_for_storing(identifier)
@@ -46,7 +46,7 @@ describe TestCase, "Scene":
                 duration=1,
             )
 
-            self.assertEqual(normalised.as_dict(), expect)
+            assert normalised.as_dict() == expect
 
     describe "Interaction with database":
         before_each:
@@ -81,8 +81,8 @@ describe TestCase, "Scene":
             self.database.commit()
 
             got = self.database.queries.get_one_scene(uuid=identifier)
-            self.assertEqual(got.as_dict(), kwargs)
+            assert got.as_dict() == kwargs
 
             obj = got.as_object()
             for prop in kwargs.keys():
-                self.assertEqual(getattr(obj, prop), kwargs[prop])
+                assert getattr(obj, prop) == kwargs[prop]

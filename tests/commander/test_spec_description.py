@@ -9,7 +9,7 @@ from delfick_project.norms import sb
 describe TestCase, "signature":
 
     def assertSignature(self, spec, want):
-        self.assertEqual(" ".join(signature(spec)), want)
+        assert " ".join(signature(spec)) == want
 
     it "knows about integer_spec":
         self.assertSignature(sb.integer_spec(), "integer")

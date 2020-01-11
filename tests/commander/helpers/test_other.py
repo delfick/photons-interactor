@@ -18,7 +18,7 @@ describe TestCase, "filter_from_matcher":
 
     def assertFilter(self, fltr, **kwargs):
         dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
-        self.assertEqual(dct, kwargs)
+        assert dct == kwargs
 
     it "returns empty filter if matcher is None":
         fltr = chp.filter_from_matcher(None)
@@ -80,7 +80,7 @@ describe TestCase, "clone_filter":
 
     def assertFilter(self, fltr, **kwargs):
         dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
-        self.assertEqual(dct, kwargs)
+        assert dct == kwargs
 
     it "clones with additional kwargs":
         fltr = chp.filter_from_matcher(
@@ -118,14 +118,12 @@ describe TestCase, "find_packet":
         self.protocol_register.message_register(1024).add(LightMessages)
 
     it "can find a packet based on pkt_type integer":
-        self.assertIs(chp.find_packet(self.protocol_register, 23), DeviceMessages.GetLabel)
-        self.assertIs(chp.find_packet(self.protocol_register, 116), LightMessages.GetLightPower)
+        assert chp.find_packet(self.protocol_register, 23) is DeviceMessages.GetLabel
+        assert chp.find_packet(self.protocol_register, 116) is LightMessages.GetLightPower
 
     it "can find a packet based on pkt_type name":
-        self.assertIs(chp.find_packet(self.protocol_register, "GetLabel"), DeviceMessages.GetLabel)
-        self.assertIs(
-            chp.find_packet(self.protocol_register, "StatePower"), DeviceMessages.StatePower
-        )
+        assert chp.find_packet(self.protocol_register, "GetLabel") is DeviceMessages.GetLabel
+        assert chp.find_packet(self.protocol_register, "StatePower") is DeviceMessages.StatePower
 
     it "complains if we can't find the packet":
         with self.fuzzyAssertRaisesError(NoSuchPacket, wanted="GetWat"):
@@ -155,7 +153,7 @@ describe TestCase, "make_message":
             pkt = chp.make_message(protocol_register, pkt_type, {"level": 65535, "duration": 10})
 
         assert isinstance(pkt, LightMessages.SetLightPower)
-        self.assertEqual(pkt.payload.as_dict(), {"level": 65535, "duration": 10})
+        assert pkt.payload.as_dict() == {"level": 65535, "duration": 10}
         find_packet.assert_called_once_with(protocol_register, pkt_type)
 
 describe AsyncTestCase, "run":
@@ -205,24 +203,21 @@ describe AsyncTestCase, "run":
         with mock.patch("photons_interactor.commander.helpers.clone_filter", clone_filter):
             result = await self.wait_for(chp.run(script, fltr, finder, one=1))
 
-        self.assertEqual(
-            result.as_dict(),
-            {
-                "results": {
-                    "d073d5000001": {
-                        "pkt_type": 22,
-                        "pkt_name": "StatePower",
-                        "payload": {"level": 0},
-                    },
-                    "d073d5000002": {
-                        "error": {"message": "failure"},
-                        "error_code": "PhotonsAppError",
-                        "status": 400,
-                    },
-                    "d073d5000003": "ok",
-                }
-            },
-        )
+        assert result.as_dict() == {
+            "results": {
+                "d073d5000001": {
+                    "pkt_type": 22,
+                    "pkt_name": "StatePower",
+                    "payload": {"level": 0},
+                },
+                "d073d5000002": {
+                    "error": {"message": "failure"},
+                    "error_code": "PhotonsAppError",
+                    "status": 400,
+                },
+                "d073d5000003": "ok",
+            }
+        }
 
         finder.args_for_run.assert_called_once_with()
         finder.serials.assert_called_once_with(filtr=fltr)
@@ -282,10 +277,9 @@ describe AsyncTestCase, "run":
 
         with mock.patch("photons_interactor.commander.helpers.clone_filter", clone_filter):
             result = await self.wait_for(chp.run(script, fltr, finder, add_replies=False, one=1))
-        self.assertEqual(
-            result.as_dict(),
-            {"results": {"d073d5000001": "ok", "d073d5000002": "ok", "d073d5000003": "ok"}},
-        )
+        assert result.as_dict() == {
+            "results": {"d073d5000001": "ok", "d073d5000002": "ok", "d073d5000003": "ok"}
+        }
 
         finder.args_for_run.assert_called_once_with()
         finder.serials.assert_called_once_with(filtr=fltr)

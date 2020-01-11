@@ -22,4 +22,4 @@ describe AsyncTestCase, "DatabaseMigration":
             inspector = inspect(database.engine)
 
             tables = sorted(list(inspector.get_table_names()))
-            self.assertEqual(tables, ["alembic_version", "scene", "sceneinfo"])
+            assert tables == ["alembic_version", "scene", "sceneinfo"]

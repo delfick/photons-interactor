@@ -126,19 +126,16 @@ describe AsyncTestCase, "commands":
             assert "test" in reply["error"]["available"]
             reply["error"]["available"] = ["test"]
 
-            self.assertEqual(
-                reply,
-                {
-                    "error": {
-                        "message": "Bad value. Unknown command",
-                        "wanted": "nope",
-                        "meta": "{path=<input>.body.command}",
-                        "available": ["test"],
-                    },
-                    "error_code": "BadSpecValue",
-                    "status": 400,
+            assert reply == {
+                "error": {
+                    "message": "Bad value. Unknown command",
+                    "wanted": "nope",
+                    "meta": "{path=<input>.body.command}",
+                    "available": ["test"],
                 },
-            )
+                "error_code": "BadSpecValue",
+                "status": 400,
+            }
 
             # valid command
             args = {"one": 1, "two": "TWO", "three": True}

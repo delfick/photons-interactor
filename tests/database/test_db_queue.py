@@ -55,7 +55,7 @@ describe AsyncTestCase, "DatabaseConnection":
             return db.queries.get_one_test().as_dict()
 
         got = await self.wait_for(self.db_queue.request(do_get))
-        self.assertEqual(got, {"one": "one", "two": True})
+        assert got == {"one": "one", "two": True}
 
     async it "retries on OperationalError":
         tries = [True, True]
@@ -67,7 +67,7 @@ describe AsyncTestCase, "DatabaseConnection":
         with self.fuzzyAssertRaisesError(sqlalchemy.exc.OperationalError):
             await self.wait_for(self.db_queue.request(do_error))
 
-        self.assertEqual(tries, [])
+        assert tries == []
 
     async it "can work after the first OperationalError":
         tries = [True, True]
@@ -86,9 +86,9 @@ describe AsyncTestCase, "DatabaseConnection":
             return db.queries.get_one_test().as_dict()
 
         got = await self.wait_for(self.db_queue.request(do_get))
-        self.assertEqual(got, {"one": "one", "two": True})
+        assert got == {"one": "one", "two": True}
 
-        self.assertEqual(tries, [])
+        assert tries == []
 
     async it "does not retry other errors":
         errors = [sqlalchemy.exc.InvalidRequestError(), PhotonsAppError("blah"), ValueError("nope")]
@@ -102,4 +102,4 @@ describe AsyncTestCase, "DatabaseConnection":
 
             with self.fuzzyAssertRaisesError(type(error)):
                 await self.wait_for(self.db_queue.request(do_error))
-            self.assertEqual(tries, [])
+            assert tries == []

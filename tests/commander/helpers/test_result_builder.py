@@ -18,23 +18,23 @@ class ATraceback:
 describe TestCase, "ResultBuilder":
     it "initializes itself":
         builder = chp.ResultBuilder(["one", "two"])
-        self.assertEqual(builder.serials, ["one", "two"])
-        self.assertEqual(builder.result, {"results": {}})
-        self.assertEqual(builder.exc_info, {})
+        assert builder.serials == ["one", "two"]
+        assert builder.result == {"results": {}}
+        assert builder.exc_info == {}
 
     it "can add serials":
         builder = chp.ResultBuilder(["one", "two"])
-        self.assertEqual(builder.serials, ["one", "two"])
+        assert builder.serials == ["one", "two"]
 
         builder.add_serials(["three", "two", "four"])
-        self.assertEqual(builder.serials, ["one", "two", "three", "four"])
+        assert builder.serials == ["one", "two", "three", "four"]
 
     describe "as_dict":
         it "returns results but with ok for devices":
             builder = chp.ResultBuilder(["one", "two"])
             dct = builder.as_dict()
-            self.assertEqual(builder.result, {"results": {}})
-            self.assertEqual(dct, {"results": {"one": "ok", "two": "ok"}})
+            assert builder.result == {"results": {}}
+            assert dct == {"results": {"one": "ok", "two": "ok"}}
 
         it "doesn't give ok for devices that already have results":
             builder = chp.ResultBuilder(["one", "two", "three"])
@@ -42,22 +42,20 @@ describe TestCase, "ResultBuilder":
             builder.result["results"]["three"] = {"error": "blah"}
             dct = builder.as_dict()
 
-            self.assertEqual(
-                builder.result, {"results": {"one": {"pkt_type": 1}, "three": {"error": "blah"}}}
-            )
-            self.assertEqual(
-                dct, {"results": {"one": {"pkt_type": 1}, "two": "ok", "three": {"error": "blah"}}}
-            )
+            assert builder.result == {
+                "results": {"one": {"pkt_type": 1}, "three": {"error": "blah"}}
+            }
+            assert dct == {
+                "results": {"one": {"pkt_type": 1}, "two": "ok", "three": {"error": "blah"}}
+            }
 
         it "includes errors on result":
             builder = chp.ResultBuilder(["one", "two"])
             builder.result["errors"] = ["error1", "error2"]
             dct = builder.as_dict()
 
-            self.assertEqual(builder.result, {"results": {}, "errors": ["error1", "error2"]})
-            self.assertEqual(
-                dct, {"results": {"one": "ok", "two": "ok"}, "errors": ["error1", "error2"]}
-            )
+            assert builder.result == {"results": {}, "errors": ["error1", "error2"]}
+            assert dct == {"results": {"one": "ok", "two": "ok"}, "errors": ["error1", "error2"]}
 
     describe "add_packet":
         it "sets info for that serial in results":
@@ -66,7 +64,7 @@ describe TestCase, "ResultBuilder":
             builder = chp.ResultBuilder(["d073d5000001"])
             builder.add_packet(packet)
 
-            self.assertEqual(builder.as_dict(), {"results": {"d073d5000001": info}})
+            assert builder.as_dict() == {"results": {"d073d5000001": info}}
 
         it "makes a list if already have packet for that bulb":
             packet1 = DeviceMessages.StatePower(level=0, target="d073d5000001")
@@ -85,15 +83,13 @@ describe TestCase, "ResultBuilder":
 
             builder = chp.ResultBuilder(["d073d5000001"])
             builder.add_packet(packet1)
-            self.assertEqual(builder.as_dict(), {"results": {"d073d5000001": info1}})
+            assert builder.as_dict() == {"results": {"d073d5000001": info1}}
 
             builder.add_packet(packet2)
-            self.assertEqual(builder.as_dict(), {"results": {"d073d5000001": [info1, info2]}})
+            assert builder.as_dict() == {"results": {"d073d5000001": [info1, info2]}}
 
             builder.add_packet(packet3)
-            self.assertEqual(
-                builder.as_dict(), {"results": {"d073d5000001": [info1, info2, info3]}}
-            )
+            assert builder.as_dict() == {"results": {"d073d5000001": [info1, info2, info3]}}
 
     describe "error":
         it "adds the error for that serial if we can get serial from the error":
@@ -104,19 +100,16 @@ describe TestCase, "ResultBuilder":
 
             error = BadError("blah", serial="d073d5000001")
             builder.error(error)
-            self.assertEqual(
-                builder.as_dict(),
-                {
-                    "results": {
-                        "d073d5000001": {
-                            "error": {"message": "blah"},
-                            "error_code": "BadError",
-                            "status": 400,
-                        }
+            assert builder.as_dict() == {
+                "results": {
+                    "d073d5000001": {
+                        "error": {"message": "blah"},
+                        "error_code": "BadError",
+                        "status": 400,
                     }
-                },
-            )
-            self.assertEqual(builder.exc_info, {"d073d5000001": (BadError, error, None)})
+                }
+            }
+            assert builder.exc_info == {"d073d5000001": (BadError, error, None)}
 
             class Error(PhotonsAppError):
                 desc = "an error"
@@ -129,39 +122,29 @@ describe TestCase, "ResultBuilder":
                 error2 = error
 
             builder.error(error2)
-            self.assertEqual(
-                builder.as_dict(),
-                {
-                    "results": {
-                        "d073d5000001": {
-                            "error": {"message": "an error. wat", "thing": 1},
-                            "error_code": "Error",
-                            "status": 400,
-                        }
+            assert builder.as_dict() == {
+                "results": {
+                    "d073d5000001": {
+                        "error": {"message": "an error. wat", "thing": 1},
+                        "error_code": "Error",
+                        "status": 400,
                     }
-                },
-            )
-            self.assertEqual(builder.exc_info, {"d073d5000001": (Error, error2, ATraceback())})
+                }
+            }
+            assert builder.exc_info == {"d073d5000001": (Error, error2, ATraceback())}
 
         it "adds error to errors in result if no serial on the error":
             builder = chp.ResultBuilder(["d073d5000001"])
 
             error = PhotonsAppError("blah")
             builder.error(error)
-            self.assertEqual(
-                builder.as_dict(),
-                {
-                    "results": {"d073d5000001": "ok"},
-                    "errors": [
-                        {
-                            "error": {"message": "blah"},
-                            "error_code": "PhotonsAppError",
-                            "status": 400,
-                        }
-                    ],
-                },
-            )
-            self.assertEqual(builder.exc_info, {None: [(PhotonsAppError, error, None)]})
+            assert builder.as_dict() == {
+                "results": {"d073d5000001": "ok"},
+                "errors": [
+                    {"error": {"message": "blah"}, "error_code": "PhotonsAppError", "status": 400,}
+                ],
+            }
+            assert builder.exc_info == {None: [(PhotonsAppError, error, None)]}
 
             class Error(PhotonsAppError):
                 desc = "an error"
@@ -173,43 +156,32 @@ describe TestCase, "ResultBuilder":
                 error2 = e
 
             builder.error(error2)
-            self.assertEqual(
-                builder.as_dict(),
-                {
-                    "results": {"d073d5000001": "ok"},
-                    "errors": [
-                        {
-                            "error": {"message": "blah"},
-                            "error_code": "PhotonsAppError",
-                            "status": 400,
-                        },
-                        {
-                            "error": {"message": "an error. wat", "thing": 1},
-                            "error_code": "Error",
-                            "status": 400,
-                        },
-                    ],
-                },
-            )
-            self.assertEqual(
-                builder.exc_info,
-                {None: [(PhotonsAppError, error, None), (Error, error2, ATraceback())]},
-            )
+            assert builder.as_dict() == {
+                "results": {"d073d5000001": "ok"},
+                "errors": [
+                    {"error": {"message": "blah"}, "error_code": "PhotonsAppError", "status": 400,},
+                    {
+                        "error": {"message": "an error. wat", "thing": 1},
+                        "error_code": "Error",
+                        "status": 400,
+                    },
+                ],
+            }
+            assert builder.exc_info == {
+                None: [(PhotonsAppError, error, None), (Error, error2, ATraceback())]
+            }
 
             builder = chp.ResultBuilder(["d073d5000001"])
             error3 = ValueError("nope")
             builder.error(error3)
-            self.assertEqual(
-                builder.as_dict(),
-                {
-                    "results": {"d073d5000001": "ok"},
-                    "errors": [
-                        {
-                            "error": "Internal Server Error",
-                            "error_code": "InternalServerError",
-                            "status": 500,
-                        }
-                    ],
-                },
-            )
-            self.assertEqual(builder.exc_info, {None: [(ValueError, error3, None)]})
+            assert builder.as_dict() == {
+                "results": {"d073d5000001": "ok"},
+                "errors": [
+                    {
+                        "error": "Internal Server Error",
+                        "error_code": "InternalServerError",
+                        "status": 500,
+                    }
+                ],
+            }
+            assert builder.exc_info == {None: [(ValueError, error3, None)]}

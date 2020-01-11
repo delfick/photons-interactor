@@ -15,15 +15,13 @@ test_runner = DBTestRunner()
 describe TestCase, "SceneInfo":
     it "can return itself as a dict":
         info = SceneInfo(uuid="one", label=None, description=None)
-        self.assertEqual(info.as_dict(), {"uuid": "one"})
+        assert info.as_dict() == {"uuid": "one"}
 
         info = SceneInfo(uuid="two", label="kitchen", description=None)
-        self.assertEqual(info.as_dict(), {"uuid": "two", "label": "kitchen"})
+        assert info.as_dict() == {"uuid": "two", "label": "kitchen"}
 
         info = SceneInfo(uuid="three", label="bathroom", description="blah")
-        self.assertEqual(
-            info.as_dict(), {"uuid": "three", "label": "bathroom", "description": "blah"}
-        )
+        assert info.as_dict() == {"uuid": "three", "label": "bathroom", "description": "blah"}
 
     describe "Interaction with database":
         before_each:
