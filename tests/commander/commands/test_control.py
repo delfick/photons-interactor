@@ -16,8 +16,8 @@ store = store.clone()
 
 test_server = thp.ModuleLevelServer(store)
 
-setUp = test_server.setUp
-tearDown = test_server.tearDown
+setup_module = test_server.setUp
+teardown_module = test_server.tearDown
 
 describe AsyncTestCase, "Control Commands":
     use_default_loop = True

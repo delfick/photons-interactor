@@ -19,7 +19,7 @@ serial_field = dictobj.Field(sb.string_spec, wrapper=sb.required)
 
 
 @store.command("test_done_progress")
-class TestDoneProgress(store.Command):
+class TDoneProgress(store.Command):
     serial = serial_field
     progress_cb = store.injected("progress_cb")
 
@@ -29,7 +29,7 @@ class TestDoneProgress(store.Command):
 
 
 @store.command("test_no_error")
-class TestNoError(store.Command):
+class TNoError(store.Command):
     serial = serial_field
     progress_cb = store.injected("progress_cb")
 
@@ -40,7 +40,7 @@ class TestNoError(store.Command):
 
 
 @store.command("test_error")
-class TestError(store.Command):
+class TError(store.Command):
     serial = serial_field
     progress_cb = store.injected("progress_cb")
 
@@ -57,8 +57,8 @@ class TestError(store.Command):
 
 test_server = thp.ModuleLevelServer(store)
 
-setUp = test_server.setUp
-tearDown = test_server.tearDown
+setup_module = test_server.setUp
+teardown_module = test_server.tearDown
 
 describe AsyncTestCase, "Commands":
     use_default_loop = True

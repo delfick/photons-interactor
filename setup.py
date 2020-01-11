@@ -17,22 +17,23 @@ setup(
       , "lifx-photons-core==0.24.5"
       , "tornado==5.1.1"
       , "SQLAlchemy==1.3.3"
-      , "alembic==1.0.0"
+      , "alembic==1.3.2"
       , "whirlwind-web==0.6"
       ]
 
     , extras_require =
       { "tests":
-        [ "noseOfYeti>=1.7"
+        [ "noseOfYeti==1.9.1"
         , "asynctest==0.12.2"
-        , "nose"
-        , "mock"
+        , "pytest==5.3.1"
+        , "alt-pytest-asyncio==0.5.1"
         ]
       }
 
     , entry_points =
       { 'console_scripts' :
         [ 'photons-interactor = photons_interactor.executor:main'
+        , 'run_interactor_pytest = photons_interactor.test_helpers:run_pytest'
         ]
       , "lifx.photons": ["interactor = photons_interactor.addon"]
       }

@@ -15,7 +15,7 @@ store = store.clone()
 
 
 @store.command("test")
-class TestCommand(store.Command):
+class TCommand(store.Command):
     """
     A test command to test help output
     """
@@ -40,8 +40,8 @@ class TestCommand(store.Command):
 
 test_server = thp.ModuleLevelServer(store)
 
-setUp = test_server.setUp
-tearDown = test_server.tearDown
+setup_module = test_server.setUp
+teardown_module = test_server.tearDown
 
 describe AsyncTestCase, "commands":
     use_default_loop = True

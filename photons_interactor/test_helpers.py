@@ -13,6 +13,7 @@ from unittest import mock
 import tempfile
 import asyncio
 import shutil
+import sys
 import os
 
 
@@ -120,3 +121,23 @@ class ModuleLevelServer(thp.ModuleLevelServer):
     async def started_test(self):
         for device in cthp.fakery.devices:
             await device.reset()
+
+
+def run_pytest():
+    import pytest
+
+    class EditConfig:
+        @pytest.hookimpl(hookwrapper=True)
+        def pytest_cmdline_parse(pluginmanager, args):
+            args.extend(
+                [
+                    "--tb=short",
+                    "-o",
+                    "console_output_style=classic",
+                    "-o",
+                    "default_alt_async_timeout=1",
+                ]
+            )
+            yield
+
+    sys.exit(pytest.main(plugins=[EditConfig()]))

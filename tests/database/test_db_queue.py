@@ -14,7 +14,7 @@ Test = None
 test_runner = DBTestRunner()
 
 
-def setUp():
+def setup_module():
     global Test
 
     class Test(Base):
@@ -27,7 +27,7 @@ def setUp():
             return {"one": self.one, "two": self.two}
 
 
-def tearDown():
+def teardown_module():
     del Base._decl_class_registry["Test"]
     tables = dict(Base.metadata.tables)
     del tables["test"]
