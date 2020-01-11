@@ -5,14 +5,12 @@ setup.py creates a `photons-interactor` shortcut that calls out to this file.
 """
 from photons_interactor import VERSION
 
-from photons_app import helpers as hp
 from photons_app.executor import App
 
 from delfick_project.norms import sb
 from textwrap import dedent
 import argparse
 import logging
-import json
 import os
 
 log = logging.getLogger("photons_interactor.executor")
@@ -113,5 +111,6 @@ class App(App):
 
 
 main = App.main
+
 if __name__ == "__main__":
     main()
