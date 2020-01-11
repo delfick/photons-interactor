@@ -44,7 +44,7 @@ class DBQueue(hp.ThreadToAsyncQueue):
         if existing:
             return existing
 
-        return (DatabaseConnection(self.database, poolclass=StaticPool), )
+        return (DatabaseConnection(self.database, poolclass=StaticPool),)
 
     def wrap_request(self, proc, args):
         """We create a new session for every database request"""
