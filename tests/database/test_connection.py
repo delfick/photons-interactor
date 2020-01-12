@@ -1,23 +1,16 @@
 # coding: spec
 
-from photons_interactor.database.test_helpers import DBTestRunner
 from photons_interactor.database.connection import Base
 
-from photons_app.test_helpers import TestCase
-from photons_app import helpers as hp
-
-from noseOfYeti.tokeniser.support import noy_sup_setUp, noy_sup_tearDown
+from delfick_project.errors_pytest import assertRaises
 from sqlalchemy import Column, String, Boolean
 import sqlalchemy.exc
-
-Test = None
-test_runner = DBTestRunner()
+import pytest
 
 
-def setup_module():
-    global Test
-
-    class Test(Base):
+@pytest.fixture(scope="module")
+def ThingModel():
+    class ThingModel(Base):
         one = Column(String(64), nullable=True, unique=True)
         two = Column(Boolean(), nullable=True)
 
@@ -26,99 +19,104 @@ def setup_module():
         def as_dict(self):
             return {"one": self.one, "two": self.two}
 
-
-def teardown_module():
-    del Base._decl_class_registry["Test"]
-    tables = dict(Base.metadata.tables)
-    del tables["test"]
-    Base.metadata.tables = tables
+    return ThingModel
 
 
-describe TestCase, "DatabaseConnection":
-    before_each:
-        test_runner.before_each(start_db_queue=False)
-        self.database = test_runner.database
+@pytest.fixture(scope="module", autouse=True)
+async def cleanup(ThingModel):
+    try:
+        yield
+    finally:
+        del Base._decl_class_registry["ThingModel"]
+        tables = dict(Base.metadata.tables)
+        del tables["thingmodel"]
+        Base.metadata.tables = tables
 
-    after_each:
-        test_runner.after_each()
 
+@pytest.fixture()
+async def database(db_runner, ThingModel):
+    async with db_runner() as runner:
+        yield runner.database
+
+
+describe "DatabaseConnection":
     describe "actions":
-        it "can create and query the database and delete from the database":
-            self.database.add(Test(one="one", two=True))
-            self.database.add(Test(one="two", two=False))
-            self.database.commit()
+        it "can create and query the database and delete from the database", database, ThingModel:
+            database.add(ThingModel(one="one", two=True))
+            database.add(ThingModel(one="two", two=False))
+            database.commit()
 
-            made = self.database.query(Test).order_by(Test.one.asc()).all()
+            made = database.query(ThingModel).order_by(ThingModel.one.asc()).all()
             assert [t.as_dict() for t in made] == [
-                Test(one="one", two=True).as_dict(),
-                Test(one="two", two=False).as_dict(),
+                ThingModel(one="one", two=True).as_dict(),
+                ThingModel(one="two", two=False).as_dict(),
             ]
 
-            self.database.delete(made[0])
-            self.database.commit()
+            database.delete(made[0])
+            database.commit()
 
-            made = self.database.query(Test).order_by(Test.one.asc()).all()
-            assert [t.as_dict() for t in made] == [Test(one="two", two=False).as_dict()]
+            made = database.query(ThingModel).order_by(ThingModel.one.asc()).all()
+            assert [t.as_dict() for t in made] == [ThingModel(one="two", two=False).as_dict()]
 
-        it "can refresh items":
-            one = Test(one="one", two=True)
-            self.database.add(one)
-            self.database.commit()
+        it "can refresh items", database, ThingModel:
+            one = ThingModel(one="one", two=True)
+            database.add(one)
+            database.commit()
 
-            made = self.database.query(Test).one()
+            made = database.query(ThingModel).one()
             made.two = False
-            self.database.add(made)
-            self.database.commit()
+            database.add(made)
+            database.commit()
 
-            self.database.refresh(one)
+            database.refresh(one)
             assert one.two == False
 
-        it "can rollback":
-            one = Test(one="one", two="wat")
-            self.database.add(one)
+        it "can rollback", database, ThingModel:
+            one = ThingModel(one="one", two="wat")
+            database.add(one)
             try:
-                self.database.commit()
+                database.commit()
             except sqlalchemy.exc.StatementError:
-                self.database.rollback()
+                database.rollback()
 
-            one = Test(one="one", two=True)
-            self.database.add(one)
-            self.database.commit()
+            one = ThingModel(one="one", two=True)
+            database.add(one)
+            database.commit()
 
-            made = self.database.query(Test).one()
+            made = database.query(ThingModel).one()
             assert made.as_dict() == one.as_dict()
 
-        it "can execute against the database":
-            one = Test(one="one", two=True)
-            self.database.add(one)
-            self.database.commit()
+        it "can execute against the database", database, ThingModel:
+            one = ThingModel(one="one", two=True)
+            database.add(one)
+            database.commit()
 
             result = list(
-                self.database.execute("SELECT * FROM test WHERE one=:one", {"one": "one"})
+                database.execute("SELECT * FROM thingmodel WHERE one=:one", {"one": "one"})
             )
             assert result == [(1, "one", 1)]
 
     describe "queries":
-        it "has methods for doing stuff with the database":
-            one = self.database.queries.create_test(one="one", two=True)
-            self.database.add(one)
-            self.database.commit()
+        it "has methods for doing stuff with the database", database, ThingModel:
+            one = database.queries.create_thing_model(one="one", two=True)
+            database.add(one)
+            database.commit()
 
-            two, made = self.database.queries.get_or_create_test(one="one", two=True)
+            two, made = database.queries.get_or_create_thing_model(one="one", two=True)
             assert made == False
             assert one.id == two.id
 
-            three, made = self.database.queries.get_or_create_test(one="two", two=True)
+            three, made = database.queries.get_or_create_thing_model(one="two", two=True)
             assert made == True
-            self.database.add(three)
-            self.database.commit()
+            database.add(three)
+            database.commit()
 
-            made = self.database.queries.get_tests().order_by(Test.one.asc()).all()
+            made = database.queries.get_thing_models().order_by(ThingModel.one.asc()).all()
             assert [t.as_dict() for t in made] == [t.as_dict() for t in (one, three)]
 
-            one_got = self.database.queries.get_test(one="one")
+            one_got = database.queries.get_thing_model(one="one")
             assert one_got.as_dict() == one.as_dict()
             assert one_got.id == one.id
 
-            with self.fuzzyAssertRaisesError(sqlalchemy.orm.exc.MultipleResultsFound):
-                self.database.queries.get_one_test(two=True)
+            with assertRaises(sqlalchemy.orm.exc.MultipleResultsFound):
+                database.queries.get_one_thing_model(two=True)

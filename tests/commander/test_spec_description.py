@@ -2,11 +2,9 @@
 
 from photons_interactor.commander.spec_description import signature
 
-from photons_app.test_helpers import TestCase
-
 from delfick_project.norms import sb
 
-describe TestCase, "signature":
+describe "signature":
 
     def assertSignature(self, spec, want):
         assert " ".join(signature(spec)) == want

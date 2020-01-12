@@ -3,12 +3,10 @@
 from photons_interactor.commander import default_fields as df
 from photons_interactor.commander import helpers as chp
 
-from photons_app.test_helpers import TestCase
-
 from delfick_project.norms import dictobj, sb
 from textwrap import dedent
 
-describe TestCase, "fields_description":
+describe "fields_description":
     it "only gets fields that have help specified":
 
         class Thing(dictobj.Spec):

@@ -1,17 +1,19 @@
 # coding: spec
 
-from photons_interactor.database.test_helpers import DBTestRunner
 from photons_interactor.database.models.scene import Scene
 
-from photons_app.test_helpers import TestCase
-
-from noseOfYeti.tokeniser.support import noy_sup_setUp, noy_sup_tearDown
 from delfick_project.norms import Meta
+import pytest
 import uuid
 
-test_runner = DBTestRunner()
 
-describe TestCase, "Scene":
+@pytest.fixture()
+async def runner(db_runner):
+    async with db_runner() as runner:
+        yield runner
+
+
+describe "Scene":
     describe "DelayedSpec":
         it "returns a function that can be provided the uuid":
             identifier = str(uuid.uuid1())
@@ -49,14 +51,7 @@ describe TestCase, "Scene":
             assert normalised.as_dict() == expect
 
     describe "Interaction with database":
-        before_each:
-            test_runner.before_each()
-            self.database = test_runner.database
-
-        after_each:
-            test_runner.after_each()
-
-        it "can store and retrieve from a spec":
+        it "can store and retrieve from a spec", runner:
             identifier = str(uuid.uuid1())
 
             chain = []
@@ -77,10 +72,10 @@ describe TestCase, "Scene":
             )
 
             scene = Scene.Spec(storing=True).empty_normalise(**kwargs)
-            self.database.add(self.database.queries.create_scene(**scene))
-            self.database.commit()
+            runner.database.add(runner.database.queries.create_scene(**scene))
+            runner.database.commit()
 
-            got = self.database.queries.get_one_scene(uuid=identifier)
+            got = runner.database.queries.get_one_scene(uuid=identifier)
             assert got.as_dict() == kwargs
 
             obj = got.as_object()

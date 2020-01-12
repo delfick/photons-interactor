@@ -1,23 +1,18 @@
 # coding: spec
 
-from photons_interactor.database.test_helpers import DBTestRunner
 from photons_interactor.database.connection import Base
 
-from photons_app.test_helpers import AsyncTestCase
 from photons_app.errors import PhotonsAppError
 
-from noseOfYeti.tokeniser.async_support import async_noy_sup_setUp, async_noy_sup_tearDown
+from delfick_project.errors_pytest import assertRaises
 from sqlalchemy import Column, String, Boolean
 import sqlalchemy.exc
-
-Test = None
-test_runner = DBTestRunner()
+import pytest
 
 
-def setup_module():
-    global Test
-
-    class Test(Base):
+@pytest.fixture(scope="module")
+def ThingModel():
+    class ThingModel(Base):
         one = Column(String(64), nullable=True, unique=True)
         two = Column(Boolean(), nullable=True)
 
@@ -26,50 +21,54 @@ def setup_module():
         def as_dict(self):
             return {"one": self.one, "two": self.two}
 
-
-def teardown_module():
-    del Base._decl_class_registry["Test"]
-    tables = dict(Base.metadata.tables)
-    del tables["test"]
-    Base.metadata.tables = tables
+    return ThingModel
 
 
-describe AsyncTestCase, "DatabaseConnection":
-    async before_each:
-        test_runner.before_each(start_db_queue=True)
-        self.db_queue = test_runner.db_queue
+@pytest.fixture(scope="module", autouse=True)
+async def cleanup(ThingModel):
+    try:
+        yield
+    finally:
+        del Base._decl_class_registry["ThingModel"]
+        tables = dict(Base.metadata.tables)
+        del tables["thingmodel"]
+        Base.metadata.tables = tables
 
-    async after_each:
-        test_runner.after_each()
-        await test_runner.after_each_db_queue()
 
-    async it "can execute queries":
+@pytest.fixture()
+async def runner(db_runner, ThingModel):
+    async with db_runner(start_db_queue=True) as runner:
+        yield runner
+
+
+describe "DatabaseConnection":
+    async it "can execute queries", runner:
 
         def do_set(db):
-            one = db.queries.create_test(one="one", two=True)
+            one = db.queries.create_thing_model(one="one", two=True)
             db.add(one)
 
-        await self.wait_for(self.db_queue.request(do_set))
+        await runner.db_queue.request(do_set)
 
         def do_get(db):
-            return db.queries.get_one_test().as_dict()
+            return db.queries.get_one_thing_model().as_dict()
 
-        got = await self.wait_for(self.db_queue.request(do_get))
+        got = await runner.db_queue.request(do_get)
         assert got == {"one": "one", "two": True}
 
-    async it "retries on OperationalError":
+    async it "retries on OperationalError", runner:
         tries = [True, True]
 
         def do_error(db):
             tries.pop(0)
             raise sqlalchemy.exc.OperationalError("select", {}, "")
 
-        with self.fuzzyAssertRaisesError(sqlalchemy.exc.OperationalError):
-            await self.wait_for(self.db_queue.request(do_error))
+        with assertRaises(sqlalchemy.exc.OperationalError):
+            await runner.db_queue.request(do_error)
 
         assert tries == []
 
-    async it "can work after the first OperationalError":
+    async it "can work after the first OperationalError", runner:
         tries = [True, True]
 
         def do_error(db):
@@ -77,20 +76,20 @@ describe AsyncTestCase, "DatabaseConnection":
             if len(tries) == 1:
                 raise sqlalchemy.exc.OperationalError("select", {}, "")
             else:
-                one = db.queries.create_test(one="one", two=True)
+                one = db.queries.create_thing_model(one="one", two=True)
                 db.add(one)
 
-        await self.wait_for(self.db_queue.request(do_error))
+        await runner.db_queue.request(do_error)
 
         def do_get(db):
-            return db.queries.get_one_test().as_dict()
+            return db.queries.get_one_thing_model().as_dict()
 
-        got = await self.wait_for(self.db_queue.request(do_get))
+        got = await runner.db_queue.request(do_get)
         assert got == {"one": "one", "two": True}
 
         assert tries == []
 
-    async it "does not retry other errors":
+    async it "does not retry other errors", runner:
         errors = [sqlalchemy.exc.InvalidRequestError(), PhotonsAppError("blah"), ValueError("nope")]
 
         for error in errors:
@@ -100,6 +99,6 @@ describe AsyncTestCase, "DatabaseConnection":
                 tries.pop(0)
                 raise error
 
-            with self.fuzzyAssertRaisesError(type(error)):
-                await self.wait_for(self.db_queue.request(do_error))
+            with assertRaises(type(error)):
+                await runner.db_queue.request(do_error)
             assert tries == []

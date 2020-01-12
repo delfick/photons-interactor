@@ -1,117 +1,134 @@
 # coding: spec
 
 from photons_interactor.commander.commands.animations import AnimationsStore
-from photons_interactor import test_helpers as thp
-from photons_interactor.options import Options
-from photons_interactor.server import Server
+from photons_interactor.commander.store import store
 
-from photons_app.test_helpers import AsyncTestCase
 from photons_app import helpers as hp
 
-from photons_tile_paint.options import GlobalOptions
+from photons_messages import protocol_register
 
-from noseOfYeti.tokeniser.async_support import async_noy_sup_setUp, async_noy_sup_tearDown
-from tornado.httpclient import AsyncHTTPClient
-from whirlwind import test_helpers as wthp
-from contextlib import contextmanager
 from unittest import mock
 import asynctest
-import asyncio
+import pytest
 
-describe AsyncTestCase, "Server":
-    describe "serve":
-        async before_each:
-            self.final_future = asyncio.Future()
 
-            self.target_register = mock.Mock(name="target_register")
-            self.protocol_register = mock.Mock(name="protocol_register")
+@pytest.fixture(scope="module")
+def V():
+    class V:
+        afr = mock.Mock(name="afr")
+        db_queue = mock.Mock(name="db_queue")
+        commander = mock.Mock(name="commander")
 
-        async after_each:
-            # Make sure the server dies
-            if hasattr(self, "final_future"):
-                self.final_future.cancel()
+        @hp.memoized_property
+        def lan_target(s):
+            m = mock.Mock(name="lan_target")
 
-        async def assertIndex(self, options):
-            client = AsyncHTTPClient()
+            m.args_for_run = asynctest.mock.CoroutineMock(name="args_for_run", return_value=s.afr)
+            m.close_args_for_run = asynctest.mock.CoroutineMock(name="close_args_for_run")
 
-            response = await client.fetch(f"http://127.0.0.1:{options.port}/", raise_error=False)
+            return m
 
-            assert response.code == 200, response.body
-            assert response.body.startswith(b"<!DOCTYPE html>"), response.body
-
-            assert response.headers["Content-Type"] == "text/html; charset=UTF-8"
-
-        async it "works":
-            options = thp.make_options(
-                "127.0.0.1", wthp.free_port(), device_finder_options={"arg1": 0.1, "arg2": True}
-            )
-
-            lan_target = mock.Mock(name="lan_target")
-            self.target_register.resolve.return_value = lan_target
-
+        @hp.memoized_property
+        def finder(s):
             finder = mock.Mock(name="finder")
             finder.start = asynctest.mock.CoroutineMock(name="start")
             finder.finish = asynctest.mock.CoroutineMock(name="finish")
-            FakeDeviceFinder = mock.Mock(name="DeviceFinder", return_value=finder)
+            return finder
 
-            db_queue = mock.Mock(name="db_queue")
-            FakeDBQueue = mock.Mock(name="DBQueue", return_value=db_queue)
+        @hp.memoized_property
+        def FakeDeviceFinder(s):
+            return mock.Mock(name="DeviceFinder", return_value=s.finder)
 
-            commander = mock.Mock(name="commander")
-            FakeCommander = mock.Mock(name="Commander", return_value=commander)
+        @hp.memoized_property
+        def FakeDBQueue(s):
+            return mock.Mock(name="DBQueue", return_value=s.db_queue)
 
-            cleaners = []
-            server = Server(self.final_future)
+        @hp.memoized_property
+        def FakeCommander(s):
+            return mock.Mock(name="Commander", return_value=s.commander)
 
-            @contextmanager
-            def wrapper():
-                with mock.patch("photons_interactor.server.Commander", FakeCommander):
-                    with mock.patch("photons_interactor.server.DeviceFinder", FakeDeviceFinder):
-                        with mock.patch("photons_interactor.server.DBQueue", FakeDBQueue):
-                            yield
+        @hp.memoized_property
+        def target_register(s):
+            m = mock.Mock(name="target_register")
 
-            async with thp.ServerRunner(
-                self.final_future,
-                options.port,
-                server,
-                wrapper(),
-                None,
-                options,
-                cleaners,
-                self.target_register,
-                self.protocol_register,
-                GlobalOptions.create(),
-            ) as s:
-                commander.executor.return_value.execute = asynctest.mock.CoroutineMock(
-                    name="execute", return_value={}
-                )
-                await s.assertPUT(self, "/v1/lifx/command", {"command": "wat"}, json_output={})
+            def resolve(name):
+                if name == "lan":
+                    return s.lan_target
+                else:
+                    assert False, f"Unknown target: {name}"
 
-                await self.assertIndex(options)
+            m.resolve.side_effect = resolve
+            return m
 
-            assert server.commander is commander
-            assert server.finder is finder
-            assert isinstance(server.animations, AnimationsStore)
+    return V()
 
-            from photons_interactor.commander.store import store
 
-            FakeCommander.assert_called_once_with(
-                store,
-                finder=finder,
-                db_queue=db_queue,
-                arranger=server.arranger,
-                animations=server.animations,
-                test_devices=None,
-                final_future=self.final_future,
-                server_options=options,
-                target_register=self.target_register,
-                protocol_register=self.protocol_register,
-            )
-            FakeDeviceFinder.assert_called_once_with(lan_target, arg1=0.1, arg2=True)
-            FakeDBQueue.assert_called_once_with(
-                self.final_future, 5, mock.ANY, "sqlite:///:memory:"
-            )
+@pytest.fixture(scope="module")
+async def wrapper(V, server_wrapper):
+    commander_patch = mock.patch("photons_interactor.server.Commander", V.FakeCommander)
+    db_patch = mock.patch("photons_interactor.server.DBQueue", V.FakeDBQueue)
+    finder_patch = mock.patch("photons_interactor.server.DeviceFinder", V.FakeDeviceFinder)
 
-            self.target_register.resolve.assert_called_once_with("lan")
-            finder.start.assert_called_once_with()
-            db_queue.start.assert_called_once_with()
+    with commander_patch, db_patch, finder_patch:
+        kwargs = {
+            "target_register": V.target_register,
+            "device_finder_options": {"arg1": 0.1, "arg2": True},
+        }
+        async with server_wrapper(store, **kwargs) as wrapper:
+            yield wrapper
+
+
+@pytest.fixture(autouse=True)
+async def wrap_tests(wrapper):
+    async with wrapper.test_wrap():
+        yield
+
+
+@pytest.fixture()
+def runner(wrapper):
+    return wrapper.runner
+
+
+@pytest.fixture()
+def server(wrapper):
+    return wrapper.server
+
+
+describe "Server":
+    async it "has an index page", asserter, runner:
+
+        class HTML:
+            def __eq__(s, other):
+                return other.startswith(b"<!DOCTYPE html>")
+
+        await runner.assertGET(asserter, "/", text_output=HTML())
+
+    async it "can execute commands", V, runner:
+        V.commander.executor.return_value.execute = asynctest.mock.CoroutineMock(
+            name="execute", return_value={}
+        )
+
+    async it "starts things correctly", V, server, runner:
+        assert server.finder is V.finder
+        assert isinstance(server.animations, AnimationsStore)
+
+        V.FakeCommander.assert_called_once_with(
+            store,
+            finder=V.finder,
+            db_queue=V.db_queue,
+            arranger=server.arranger,
+            animations=server.animations,
+            test_devices=None,
+            final_future=runner.final_future,
+            server_options=server.server_options,
+            target_register=V.target_register,
+            protocol_register=protocol_register,
+        )
+        V.FakeDeviceFinder.assert_called_once_with(V.lan_target, arg1=0.1, arg2=True)
+        V.FakeDBQueue.assert_called_once_with(
+            runner.final_future, 5, mock.ANY, "sqlite:///:memory:"
+        )
+
+        V.target_register.resolve.assert_called_once_with("lan")
+        V.finder.start.assert_called_once_with()
+        V.db_queue.start.assert_called_once_with()

@@ -1,18 +1,21 @@
 # coding: spec
 
 from photons_interactor.database.models.scene_info import SceneInfo
-from photons_interactor.database.test_helpers import DBTestRunner
 
-from photons_app.test_helpers import TestCase
-
-from noseOfYeti.tokeniser.support import noy_sup_setUp, noy_sup_tearDown
+from delfick_project.errors_pytest import assertRaises
 from delfick_project.norms import Meta
 import sqlalchemy.exc
+import pytest
 import uuid
 
-test_runner = DBTestRunner()
 
-describe TestCase, "SceneInfo":
+@pytest.fixture()
+async def runner(db_runner):
+    async with db_runner() as runner:
+        yield runner
+
+
+describe "SceneInfo":
     it "can return itself as a dict":
         info = SceneInfo(uuid="one", label=None, description=None)
         assert info.as_dict() == {"uuid": "one"}
@@ -24,34 +27,27 @@ describe TestCase, "SceneInfo":
         assert info.as_dict() == {"uuid": "three", "label": "bathroom", "description": "blah"}
 
     describe "Interaction with database":
-        before_each:
-            test_runner.before_each()
-            self.database = test_runner.database
-
-        after_each:
-            test_runner.after_each()
-
-        it "Must have unique uuid":
+        it "Must have unique uuid", runner:
             identifier = str(uuid.uuid1())
 
             kwargs = dict(uuid=identifier, label="blah", description="described")
 
-            info = self.database.queries.create_scene_info(**kwargs)
-            self.database.add(info)
-            self.database.commit()
+            info = runner.database.queries.create_scene_info(**kwargs)
+            runner.database.add(info)
+            runner.database.commit()
 
-            info2 = self.database.queries.create_scene_info(**kwargs)
-            self.database.add(info2)
+            info2 = runner.database.queries.create_scene_info(**kwargs)
+            runner.database.add(info2)
             try:
-                with self.fuzzyAssertRaisesError(sqlalchemy.exc.IntegrityError):
-                    self.database.commit()
+                with assertRaises(sqlalchemy.exc.IntegrityError):
+                    runner.database.commit()
             finally:
-                self.database.rollback()
+                runner.database.rollback()
 
-            info3 = self.database.queries.create_scene_info(uuid=identifier)
-            self.database.add(info3)
+            info3 = runner.database.queries.create_scene_info(uuid=identifier)
+            runner.database.add(info3)
             try:
-                with self.fuzzyAssertRaisesError(sqlalchemy.exc.IntegrityError):
-                    self.database.commit()
+                with assertRaises(sqlalchemy.exc.IntegrityError):
+                    runner.database.commit()
             finally:
-                self.database.rollback()
+                runner.database.rollback()

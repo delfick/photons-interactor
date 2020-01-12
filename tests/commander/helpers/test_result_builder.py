@@ -3,7 +3,6 @@
 from photons_interactor.commander import helpers as chp
 
 from photons_app.errors import PhotonsAppError
-from photons_app.test_helpers import TestCase
 
 from photons_messages import DeviceMessages
 
@@ -15,7 +14,7 @@ class ATraceback:
         return isinstance(other, types.TracebackType)
 
 
-describe TestCase, "ResultBuilder":
+describe "ResultBuilder":
     it "initializes itself":
         builder = chp.ResultBuilder(["one", "two"])
         assert builder.serials == ["one", "two"]

@@ -2,52 +2,68 @@
 
 from photons_interactor.commander.store import store, load_commands
 from photons_interactor.commander import test_helpers as cthp
-from photons_interactor import test_helpers as thp
-
-from photons_app.test_helpers import AsyncTestCase
 
 from delfick_project.norms import dictobj, sb
 from textwrap import dedent
 from unittest import mock
-
-load_commands()
-store = store.clone()
+import pytest
 
 
-@store.command("test")
-class TCommand(store.Command):
-    """
-    A test command to test help output
-    """
+@pytest.fixture(autouse=True)
+def TCommand(store_clone):
+    @store_clone.command("test")
+    class TCommand(store_clone.Command):
+        """
+        A test command to test help output
+        """
 
-    one = dictobj.Field(
-        sb.integer_spec,
-        default=20,
-        help="""
-            one is the first number
+        one = dictobj.Field(
+            sb.integer_spec,
+            default=20,
+            help="""
+                one is the first number
 
-            it is the best number
-          """,
-    )
+                it is the best number
+            """,
+        )
 
-    two = dictobj.Field(sb.string_spec, wrapper=sb.required, help="two is the second best number")
+        two = dictobj.Field(
+            sb.string_spec, wrapper=sb.required, help="two is the second best number"
+        )
 
-    three = dictobj.Field(sb.boolean, default=True)
+        three = dictobj.Field(sb.boolean, default=True)
 
-    async def execute(self):
-        return self.as_dict()
+        async def execute(self):
+            return self.as_dict()
+
+    return TCommand
 
 
-test_server = thp.ModuleLevelServer(store)
+@pytest.fixture(scope="module")
+def store_clone():
+    load_commands()
+    return store.clone()
 
-setup_module = test_server.setUp
-teardown_module = test_server.tearDown
 
-describe AsyncTestCase, "commands":
-    use_default_loop = True
+@pytest.fixture(scope="module")
+async def wrapper(store_clone, server_wrapper):
+    async with server_wrapper(store_clone) as wrapper:
+        yield wrapper
 
-    @test_server.test
-    async it "has a help command", options, fake, server:
+
+@pytest.fixture(autouse=True)
+async def wrap_tests(wrapper):
+    async with wrapper.test_wrap():
+        yield
+
+
+@pytest.fixture()
+def runner(wrapper):
+    return wrapper.runner
+
+
+describe "commands":
+    async it "has a help command", runner, asserter:
         want = dedent(
             """
         Command test
@@ -68,17 +84,16 @@ describe AsyncTestCase, "commands":
         """
         ).lstrip()
 
-        await server.assertPUT(
-            self,
+        await runner.assertPUT(
+            asserter,
             "/v1/lifx/command",
             {"command": "help", "args": {"command": "test"}},
             text_output=want.encode(),
         )
 
-    @test_server.test
-    async it "has a test command", options, fake, server:
-        await server.assertPUT(
-            self,
+    async it "has a test command", runner, asserter:
+        await runner.assertPUT(
+            asserter,
             "/v1/lifx/command",
             {"command": "test"},
             status=400,
@@ -98,16 +113,15 @@ describe AsyncTestCase, "commands":
             },
         )
 
-        await server.assertPUT(
-            self,
+        await runner.assertPUT(
+            asserter,
             "/v1/lifx/command",
             {"command": "test", "args": {"one": 1, "two": "TWO", "three": True}},
             json_output={"one": 1, "two": "TWO", "three": True},
         )
 
-    @test_server.test
-    async it "has websocket commands", options, fake, server:
-        async with server.ws_stream(self) as stream:
+    async it "has websocket commands", runner, asserter:
+        async with runner.ws_stream(asserter) as stream:
             # Invalid path
             await stream.start("/blah", {"stuff": True})
             error = "Specified path is invalid"

@@ -2,15 +2,14 @@
 
 from photons_interactor.commander import default_fields as df
 from photons_interactor.errors import InteractorError
-from photons_interactor import test_helpers as thp
 
 from photons_app.formatter import MergedOptionStringFormatter
-from photons_app.test_helpers import AsyncTestCase
 
 from delfick_project.norms import dictobj, sb
 from contextlib import contextmanager
 from whirlwind.store import Store
 import random
+import pytest
 import uuid
 
 store = Store(default_path="/v1/lifx/command", formatter=MergedOptionStringFormatter)
@@ -55,39 +54,48 @@ class TError(store.Command):
         return {"serial": self.serial}
 
 
-test_server = thp.ModuleLevelServer(store)
+@pytest.fixture(scope="module")
+async def wrapper(server_wrapper):
+    async with server_wrapper(store) as wrapper:
+        yield wrapper
 
-setup_module = test_server.setUp
-teardown_module = test_server.tearDown
 
-describe AsyncTestCase, "Commands":
-    use_default_loop = True
+@pytest.fixture(autouse=True)
+async def wrap_tests(wrapper):
+    async with wrapper.test_wrap():
+        yield
+
+
+@pytest.fixture()
+def runner(wrapper):
+    return wrapper.runner
+
+
+describe "Commands":
 
     def command(self, command):
         serial = "d073d5{:06d}".format(random.randrange(1, 9999))
         cmd = {"command": command, "args": {"serial": serial}}
         return cmd, serial
 
-    @test_server.test
-    async it "has progress cb functionality for http", options, fake, server:
+    async it "has progress cb functionality for http", runner, asserter:
         command, serial = self.command("test_no_error")
-        await server.assertPUT(
-            self, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
+        await runner.assertPUT(
+            asserter, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
         )
 
         command, serial = self.command("test_error")
-        await server.assertPUT(
-            self, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
+        await runner.assertPUT(
+            asserter, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
         )
 
         command, serial = self.command("test_done_progress")
-        await server.assertPUT(
-            self, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
+        await runner.assertPUT(
+            asserter, "/v1/lifx/command", command, status=200, json_output={"serial": serial}
         )
 
-    @test_server.test
-    async it "has progress cb functionality for websockets", options, fake, server:
-        async with server.ws_stream(self) as stream:
+    async it "has progress cb functionality for websockets", runner, asserter:
+        async with runner.ws_stream(asserter) as stream:
 
             # Done progress
             command, serial = self.command("test_done_progress")

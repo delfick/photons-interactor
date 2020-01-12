@@ -3,18 +3,18 @@
 from photons_interactor.commander.errors import NoSuchPacket
 from photons_interactor.commander import helpers as chp
 
-from photons_app.test_helpers import TestCase, AsyncTestCase
 from photons_app.registers import ProtocolRegister
 from photons_app.errors import PhotonsAppError
 
 from photons_messages import DeviceMessages, LightMessages, LIFXPacket
 
-from noseOfYeti.tokeniser.support import noy_sup_setUp
+from delfick_project.errors_pytest import assertRaises
 from delfick_project.norms import sb
 from unittest import mock
 import asynctest
+import pytest
 
-describe TestCase, "filter_from_matcher":
+describe "filter_from_matcher":
 
     def assertFilter(self, fltr, **kwargs):
         dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
@@ -76,7 +76,7 @@ describe TestCase, "filter_from_matcher":
         )
         self.assertFilter(fltr, force_refresh=True, label=["one", "two"], hue=[(20.0, 20.0)])
 
-describe TestCase, "clone_filter":
+describe "clone_filter":
 
     def assertFilter(self, fltr, **kwargs):
         dct = {k: v for k, v in fltr.as_dict().items() if v is not sb.NotSpecified}
@@ -110,29 +110,32 @@ describe TestCase, "clone_filter":
         # Make sure the original isn't modified
         self.assertFilter(fltr, force_refresh=True, label=["one"], hue=[(20.0, 20.0)])
 
-describe TestCase, "find_packet":
-    before_each:
-        self.protocol_register = ProtocolRegister()
-        self.protocol_register.add(1024, LIFXPacket)
-        self.protocol_register.message_register(1024).add(DeviceMessages)
-        self.protocol_register.message_register(1024).add(LightMessages)
+describe "find_packet":
 
-    it "can find a packet based on pkt_type integer":
-        assert chp.find_packet(self.protocol_register, 23) is DeviceMessages.GetLabel
-        assert chp.find_packet(self.protocol_register, 116) is LightMessages.GetLightPower
+    @pytest.fixture()
+    def protocol_register(self):
+        protocol_register = ProtocolRegister()
+        protocol_register.add(1024, LIFXPacket)
+        protocol_register.message_register(1024).add(DeviceMessages)
+        protocol_register.message_register(1024).add(LightMessages)
+        return protocol_register
 
-    it "can find a packet based on pkt_type name":
-        assert chp.find_packet(self.protocol_register, "GetLabel") is DeviceMessages.GetLabel
-        assert chp.find_packet(self.protocol_register, "StatePower") is DeviceMessages.StatePower
+    it "can find a packet based on pkt_type integer", protocol_register:
+        assert chp.find_packet(protocol_register, 23) is DeviceMessages.GetLabel
+        assert chp.find_packet(protocol_register, 116) is LightMessages.GetLightPower
 
-    it "complains if we can't find the packet":
-        with self.fuzzyAssertRaisesError(NoSuchPacket, wanted="GetWat"):
-            chp.find_packet(self.protocol_register, "GetWat")
+    it "can find a packet based on pkt_type name", protocol_register:
+        assert chp.find_packet(protocol_register, "GetLabel") is DeviceMessages.GetLabel
+        assert chp.find_packet(protocol_register, "StatePower") is DeviceMessages.StatePower
 
-        with self.fuzzyAssertRaisesError(NoSuchPacket, wanted=9001):
-            chp.find_packet(self.protocol_register, 9001)
+    it "complains if we can't find the packet", protocol_register:
+        with assertRaises(NoSuchPacket, wanted="GetWat"):
+            chp.find_packet(protocol_register, "GetWat")
 
-describe TestCase, "make_message":
+        with assertRaises(NoSuchPacket, wanted=9001):
+            chp.find_packet(protocol_register, 9001)
+
+describe "make_message":
     it "instantiates the kls without args if no pkt_args":
         pkt_type = mock.Mock(name="pkt_type")
         protocol_register = mock.Mock(name="protocol_register")
@@ -156,7 +159,7 @@ describe TestCase, "make_message":
         assert pkt.payload.as_dict() == {"level": 65535, "duration": 10}
         find_packet.assert_called_once_with(protocol_register, pkt_type)
 
-describe AsyncTestCase, "run":
+describe "run":
     async it "builds a ResultBuilder":
         afr = mock.Mock(name="afr")
         serials = ["d073d5000001", "d073d5000002", "d073d5000003"]
@@ -201,7 +204,7 @@ describe AsyncTestCase, "run":
         script.run_with = RunWith
 
         with mock.patch("photons_interactor.commander.helpers.clone_filter", clone_filter):
-            result = await self.wait_for(chp.run(script, fltr, finder, one=1))
+            result = await chp.run(script, fltr, finder, one=1)
 
         assert result.as_dict() == {
             "results": {
@@ -276,7 +279,7 @@ describe AsyncTestCase, "run":
         script.run_with = RunWith
 
         with mock.patch("photons_interactor.commander.helpers.clone_filter", clone_filter):
-            result = await self.wait_for(chp.run(script, fltr, finder, add_replies=False, one=1))
+            result = await chp.run(script, fltr, finder, add_replies=False, one=1)
         assert result.as_dict() == {
             "results": {"d073d5000001": "ok", "d073d5000002": "ok", "d073d5000003": "ok"}
         }

@@ -33,7 +33,7 @@ setup(
     , entry_points =
       { 'console_scripts' :
         [ 'photons-interactor = photons_interactor.executor:main'
-        , 'run_interactor_pytest = photons_interactor.test_helpers:run_pytest'
+        , 'run_interactor_pytest = photons_interactor.executor:run_pytest'
         ]
       , "lifx.photons": ["interactor = photons_interactor.addon"]
       }
