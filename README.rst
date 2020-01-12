@@ -19,6 +19,14 @@ Make sure you have a version of python greater than python3.6 and do::
     $ pip install lifx-photons-interactor
     $ photons-interactor serve
 
+Running from a docker container
+-------------------------------
+
+If you're not on a mac and want to run via a docker container, you can say::
+
+    $ docker run -it --rm --net=host delfick/photons-interactor:0.6.0
+    
+
 Running from the code
 ---------------------
 
