@@ -13,10 +13,14 @@ images:
     commands:
       - FROM python:3.8.1-slim
 
-      - RUN apt-get update && apt-get install gcc -y
+      - - RUN
+        - apt-get update
+          && apt-get install gcc -y
+          && rm -rf /var/lib/apt/lists/*
+
       - RUN pip install venvstarter
 
-      - ADD LICENSE setup.py interact command /project/
+      - ADD README.rst LICENSE setup.py interact command /project/
       - ADD photons_interactor /project/photons_interactor
 
       - WORKDIR /project
