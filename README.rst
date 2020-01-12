@@ -1,23 +1,57 @@
 Photons Interactor
 ==================
 
-A photons powered server for interacting with LIFX lights over the lan.
+A `Photons <https://delfick.github.io/photons-core>`_ powered server for
+interacting with LIFX lights over the lan.
 
 The server allows us to do continuous discovery and information gathering so that
 all commands are super fast.
 
-Under Construction!!!
+You can find documentation at https://photons-interactor.readthedocs.io
+
+Installation and use
+--------------------
+
+Make sure you have a version of python greater than python3.6 and do::
+
+    $ python -m venv .interactor
+    $ source .interactor/bin/activate
+    $ pip install lifx-photons-interactor
+    $ photons-interactor serve
+
+Running from the code
 ---------------------
 
-Note that this project so it doesn't do much at the moment and so it's not on
-pypi yet.
+You can find the code at https://github.com/delfick/photons-interactor
 
-You can run it locally from a checked out copy of this repository though.
+Once you've checked it out you can start the server by installing python3.6 or
+above and running::
+    
+    $ pip3 install venvster
+    $ ./interact server
 
-As long as you have python3.6 or up installed::
+You can also find a handy script for running commands against the server in
+this repository called ``command``.
 
-  $ pip3 install venvstarter
-  $ ./interact serve
+For example::
+    
+    $ ./command query '{"pkt_type": "GetColor"}'
+    {
+        "results": {
+            "d073d5001337": {
+                "payload": {
+                    "brightness": 1.0,
+                    "hue": 0.0,
+                    "kelvin": 3500,
+                    "label": "",
+                    "power": 65535,
+                    "saturation": 0.0
+                },
+                "pkt_name": "LightState",
+                "pkt_type": 107
+            }
+        }
+    }
 
 The License
 -----------
