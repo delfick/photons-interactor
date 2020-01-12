@@ -11,3 +11,5 @@ photons_interactor/static/node_modules/
 photons_interactor/static/cypress/videos/
 pip-wheel-metadata/
 docker/.harpoon
+dist/
+build/

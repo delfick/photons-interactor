@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 setup(
       name = "photons-interactor"
     , version = VERSION
-    , packages = ['photons_interactor'] + ['photons_interactor.%s' % pkg for pkg in find_packages('photons_interactor')]
+    , packages = find_packages(include="photons_interactor.*", exclude=["tests*"])
     , include_package_data = True
 
     , python_requires = ">= 3.6"
@@ -45,6 +45,7 @@ setup(
     , description = "A server for interacting with LIFX lights over the LAN"
     , license = "cc-by-nc-sa-4.0"
     , keywords = "lifx photons"
+    , long_description = open("README.rst").read()
     )
 
 # fmt: on
