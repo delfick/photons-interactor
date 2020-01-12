@@ -16,7 +16,7 @@ Make sure you have a version of python greater than python3.6 and do::
 
     $ python -m venv .interactor
     $ source .interactor/bin/activate
-    $ pip install lifx-photons-interactor
+    $ pip install photons-interactor
     $ photons-interactor serve
 
 Running from a docker container
