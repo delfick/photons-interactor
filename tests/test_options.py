@@ -1,12 +1,11 @@
 # coding: spec
 
 from unittest import mock
+import pkg_resources
 import os
 
-this_dir = os.path.dirname(__file__)
-dist_dir = os.path.abspath(
-    os.path.join(this_dir, "..", "photons_interactor", "static", "dist", "static")
-)
+interactor_dir = pkg_resources.resource_filename("photons_interactor", "")
+dist_dir = os.path.abspath(os.path.join(interactor_dir, "static", "dist", "static"))
 
 describe "Options":
     it "has defaults", options_maker:
