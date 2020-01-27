@@ -18,6 +18,7 @@ Make sure you have a version of python greater than python3.6 and do::
     $ source .interactor/bin/activate
     $ pip install photons-interactor
     $ photons-interactor serve
+    # go to http://localhost:6100
 
 Running from a docker container
 -------------------------------
