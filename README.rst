@@ -25,7 +25,7 @@ Running from a docker container
 
 If you're not on a mac and want to run via a docker container, you can say::
 
-    $ docker run -it --rm --net=host delfick/photons-interactor:0.6.0
+    $ docker run -it --rm --net=host delfick/photons-interactor:0.6.1
     
 
 Running from the code
