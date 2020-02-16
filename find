@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Helper for searching code base without searching through external code
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+(
+    cd $DIR
+    exec ack "$@" \
+        --ignore-file is:package-lock.json \
+        --ignore-directory .tox \
+        --ignore-directory .photons-interactor \
+        --ignore-directory docker/.harpoon \
+        --ignore-directory dist \
+        --ignore-directory build \
+        --ignore-directory photons_interactor.egg-info \
+        --ignore-directory lifx_photons_core.egg-info \
+        --ignore-directory tools \
+        --ignore-directory docs/.sphinx-build \
+        --ignore-directory photons_interactor/static/cypress \
+        --ignore-directory photons_interactor/static/dist \
+        --ignore-directory photons_interactor/static/node_modules \
+        --ignore-directory docs/_build
+)
