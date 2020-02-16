@@ -12,11 +12,11 @@ from photons_tile_paint.animation import (
     tile_serials_from_reference,
     canvas_to_msgs,
 )
-from photons_control.orientation import reorient, Orientation as O
-from photons_control.tile import tiles_from, orientations_from
 from photons_themes.coords import user_coords_to_pixel_coords
 from photons_messages import DeviceMessages, TileMessages
+from photons_control.planner import Gatherer, make_plans
 from photons_themes.theme import ThemeColor as Color
+from photons_control.planner.plans import ChainPlan
 from photons_themes.canvas import Canvas
 
 from delfick_project.norms import dictobj, sb
@@ -99,15 +99,14 @@ class ArrangeState:
         if errors:
             return {"serial": serial, "data": None}
 
-        coords = []
-        get_chain = TileMessages.GetDeviceChain()
-        async for pkt, _, _ in target.script(get_chain).run_with(
-            serial, afr, error_catcher=errors, message_timeout=5
-        ):
-            if pkt | TileMessages.StateDeviceChain:
-                coords = [((c.user_x, c.user_y), (c.width, c.height)) for c in tiles_from(pkt)]
-                coords = [top_left for top_left, _ in user_coords_to_pixel_coords(coords)]
-                self.serials[serial]["coords"] = coords
+        plans = make_plans(chain=ChainPlan(refresh=True))
+        gatherer = Gatherer(target)
+
+        got = await gatherer.gather_all(plans, serial, afr, error_catcher=errors, message_timeout=5)
+
+        if serial in got and got[serial][0]:
+            pixel_coords = user_coords_to_pixel_coords(got[serial][1]["chain"]["coords_and_sizes"])
+            self.serials[serial]["coords"] = [xy for xy, _ in pixel_coords]
 
         return {"serial": serial, "data": self.info_for_browser(serial)}
 
@@ -124,7 +123,7 @@ class ArrangeState:
             passed = 0
             row = -1
             pixels = self.serials[serial]["color_pixels"][tile_index]
-            orientation = self.serials[serial]["orientations"].get(tile_index, O.RightSideUp)
+            reorient = self.serials[serial]["reorient"]
 
             while passed < 2 and not afr.stop_fut.done():
                 colors = []
@@ -143,7 +142,7 @@ class ArrangeState:
                     x=0,
                     y=0,
                     width=8,
-                    colors=reorient(colors, orientation),
+                    colors=reorient(tile_index, colors),
                     res_required=False,
                     ack_required=False,
                 )
@@ -167,7 +166,7 @@ class ArrangeState:
                     x=0,
                     y=0,
                     width=8,
-                    colors=reorient(pixels, orientation),
+                    colors=reorient(tile_index, pixels),
                     res_required=False,
                     ack_required=True,
                 )
@@ -192,41 +191,33 @@ class ArrangeState:
             await t
 
     async def start(self, serial, info, target, afr):
-        length = 5
         errors = []
-        coords = []
-        orientations = []
 
-        msgs = [TileMessages.GetDeviceChain()]
+        plans = ["chain"]
         if info.get("initial") is None:
             info["initial"] = {"colors": [], "power": 65535}
-            msgs.append(TileMessages.Get64(tile_index=0, length=5, x=0, y=0, width=8))
-            msgs.append(DeviceMessages.GetPower())
+            plans.append("colors")
+            plans.append("power")
 
-        async for pkt, _, _ in target.script(msgs).run_with(serial, afr, error_catcher=errors):
-            if pkt | TileMessages.State64:
-                info["initial"]["colors"].append(
-                    [
-                        {
-                            "hue": c.hue,
-                            "saturation": c.saturation,
-                            "brightness": c.brightness,
-                            "kelvin": c.kelvin,
-                        }
-                        for c in pkt.colors
-                    ]
-                )
-            elif pkt | TileMessages.StateDeviceChain:
-                length = pkt.tile_devices_count
-                orientations = orientations_from(pkt)
-                coords = [((c.user_x, c.user_y), (c.width, c.height)) for c in tiles_from(pkt)]
-                info["coords"] = [top_left for top_left, _ in user_coords_to_pixel_coords(coords)]
-                info["orientations"] = orientations
-            elif pkt | DeviceMessages.StatePower:
-                info["initial"]["power"] = pkt.level
+        plans = make_plans(*plans)
+        gatherer = Gatherer(target)
 
+        got = await gatherer.gather_all(plans, serial, afr, error_catcher=errors)
         if errors:
             return errors, info
+
+        chain = got[serial][1]["chain"]
+        power = got[serial][1].get("power")
+        colors = got[serial][1].get("colors")
+
+        if power is not None:
+            info["initial"]["power"] = power["level"]
+        if colors is not None:
+            info["initial"]["colors"] = colors
+
+        pixel_coords = user_coords_to_pixel_coords(chain["coords_and_sizes"])
+        info["coords"] = [top_left for top_left, _ in pixel_coords]
+        info["reorient"] = chain["reorient"]
 
         if info.get("pixels") is None:
             canvas = Canvas()
@@ -236,6 +227,7 @@ class ArrangeState:
 
             canvas.default_color_func = dcf
 
+            length = len(info["coords"])
             self.style_maker.set_canvas(canvas, length)
             info["pixels"], info["color_pixels"] = make_rgb_and_color_pixels(canvas, length)
 
@@ -246,7 +238,7 @@ class ArrangeState:
                     coords_for_horizontal_line,
                     duration=1,
                     acks=True,
-                    orientations=orientations,
+                    reorient=info["reorient"],
                 )
             )
             await target.script(msgs).run_with_all(serial, afr, error_catcher=errors)
