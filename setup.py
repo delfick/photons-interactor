@@ -14,7 +14,7 @@ setup(
 
     , install_requires =
       [ "delfick_project==0.7.3"
-      , "lifx-photons-core==0.24.5"
+      , "lifx-photons-core==0.24.6"
       , "tornado==5.1.1"
       , "SQLAlchemy==1.3.3"
       , "alembic==1.3.2"
@@ -33,7 +33,7 @@ setup(
     , entry_points =
       { 'console_scripts' :
         [ 'photons-interactor = photons_interactor.executor:main'
-        , 'run_interactor_pytest = photons_interactor.executor:run_pytest'
+        , 'run_interactor_pytest = photons_interactor:run_pytest'
         ]
       , "lifx.photons": ["interactor = photons_interactor.addon"]
       }

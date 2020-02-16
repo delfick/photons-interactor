@@ -11,7 +11,6 @@ from delfick_project.norms import sb
 from textwrap import dedent
 import argparse
 import logging
-import sys
 import os
 
 log = logging.getLogger("photons_interactor.executor")
@@ -109,26 +108,6 @@ class App(App):
         config_option.type = DefaultConfigFile("r")
 
         return parser
-
-
-def run_pytest():
-    import pytest
-
-    class EditConfig:
-        @pytest.hookimpl(hookwrapper=True)
-        def pytest_cmdline_parse(pluginmanager, args):
-            args.extend(
-                [
-                    "--tb=short",
-                    "-o",
-                    "console_output_style=classic",
-                    "-o",
-                    "default_alt_async_timeout=1",
-                ]
-            )
-            yield
-
-    sys.exit(pytest.main(plugins=[EditConfig()]))
 
 
 main = App.main
