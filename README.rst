@@ -25,8 +25,14 @@ Running from a docker container
 
 If you're not on a mac and want to run via a docker container, you can say::
 
-    $ docker run -it --rm --net=host delfick/photons-interactor:0.6.1
-    
+    $ docker run --name=photons \
+        --detach \
+        --restart=always \
+        --net=host \
+        -e TZ=Australia/Melbourne \
+        delfick/photons-interactor:0.6.1
+
+Replace `Australia/Melbourne` with the correct `TZ database name <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_ for your timezone.
 
 Running from the code
 ---------------------
@@ -36,7 +42,7 @@ You can find the code at https://github.com/delfick/photons-interactor
 Once you've checked it out you can start the server by installing python3.6 or
 above and running::
     
-    $ pip3 install venvster
+    $ pip3 install venvstarter
     $ ./interact server
 
 You can also find a handy script for running commands against the server in
