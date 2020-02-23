@@ -92,9 +92,26 @@ class TransformCommand(store.Command):
           """,
     )
 
+    transform_options = dictobj.Field(
+        sb.dictionary_spec(),
+        help="""
+            A dictionay of options that modify the way the tranform
+            is performed:
+
+            keep_brightness
+                Ignore brightness options in the request
+
+            transition_color
+                If the light is off and we power on, setting this to True will mean the
+                color of the light is not set to the new color before we make it appear
+                to be on. This defaults to False, which means it will appear to turn on
+                with the new color
+            """,
+    )
+
     async def execute(self):
         fltr = chp.filter_from_matcher(self.matcher, self.refresh)
-        msg = Transformer.using(self.transform)
+        msg = Transformer.using(self.transform, **self.transform_options)
         script = self.target.script(msg)
         return await chp.run(
             script, fltr, self.finder, add_replies=False, message_timeout=self.timeout

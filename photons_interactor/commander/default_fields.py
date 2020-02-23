@@ -3,7 +3,7 @@ from delfick_project.norms import dictobj, sb
 refresh_field = dictobj.NullableField(
     sb.boolean,
     help="""
-        Whether to refresh our idea of what is on the network"
+        Whether to refresh our idea of what is on the network
 
         If this is False then we will use the cached notion of what's on the network.
       """,

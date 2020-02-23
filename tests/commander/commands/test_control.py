@@ -278,3 +278,60 @@ describe "Control Commands":
                         ),
                     ]
                 )
+            device.reset_received()
+
+        # Power on and transition color
+        for device in fake.devices:
+            device.attrs.power = 0
+            device.attrs.color.brightness = 0.5
+        fake.for_serial("d073d5000001").attrs.power = 65535
+        fake.for_serial("d073d5000003").attrs.power = 65535
+
+        tv_light = fake.for_attribute("label", "tv", expect=1)[0]
+        with tv_light.offline():
+            expected["results"]["d073d5000006"] = {
+                "error": {"message": "Timed out. Waiting for reply to a packet"},
+                "error_code": "TimedOut",
+                "status": 400,
+            }
+            await runner.assertPUT(
+                asserter,
+                "/v1/lifx/command",
+                {
+                    "command": "transform",
+                    "args": {
+                        "transform": {"power": "on", "color": "blue"},
+                        "transform_options": {"transition_color": True},
+                        "timeout": 0.2,
+                    },
+                },
+                json_output=expected,
+            )
+
+        for device in fake.devices:
+            if device.attrs.label == "tv":
+                device.expect_no_set_messages()
+            elif device.serial in ("d073d5000001", "d073d5000003"):
+                device.compare_received_set(
+                    [Parser.color_to_msg("blue", overrides={"res_required": False})]
+                )
+            else:
+                device_reset = Parser.color_to_msg(
+                            "blue",
+                            overrides={
+                                "brightness": 0,
+                                "res_required": False,
+                            },
+                        )
+                device_reset.set_hue = 0
+                device_reset.set_saturation = 0
+                device_reset.set_kelvin = 0
+                device.compare_received_set(
+                    [
+                        device_reset,
+                        DeviceMessages.SetPower(level=65535, res_required=False),
+                        Parser.color_to_msg(
+                            "blue", overrides={"brightness": 0.5, "res_required": False}
+                        ),
+                    ]
+                )
