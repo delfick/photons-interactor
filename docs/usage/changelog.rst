@@ -3,6 +3,9 @@
 Changelog
 =========
 
+0.6.2 - TBD
+  * Updated lifx-photons-core
+
 0.6.1 - 16 Februrary 2020
   * Updated lifx-photons-core
 
