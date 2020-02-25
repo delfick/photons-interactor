@@ -19,6 +19,9 @@ install:
 
 env:
   - CYPRESS_VIDEO=false
+    FILENAME=/tmp/image/context.tar
+    DOCKER_PLATFORM=linux/386,linux/arm64,linux/amd64,linux/arm/v7,linux/arm/v6 
+    TARGET_IMAGE=delfick/photons-interactor
 
 before_script:
   - npm install -g npm@6.4.1
@@ -30,3 +33,40 @@ script:
   - ./test.sh -v
   - photons-interactor npm test --silent
   - ./integrationjstest.sh
+
+jobs:
+  include:
+    - stage: deploy
+      script: skip
+      addons: skip
+      install: skip
+      before_script: skip
+
+      if: tag IS present
+
+      before_deploy:
+        - pip install venvstarter
+        - mkdir /tmp/image
+        - ./docker/harpoon get_docker_context photons-interactor 
+
+        - curl -fsSL https://get.docker.com | sh
+        - echo '{"experimental":"enabled"}' | sudo tee /etc/docker/daemon.json
+        - mkdir -p $HOME/.docker
+        - echo '{"experimental":"enabled"}' | sudo tee $HOME/.docker/config.json
+        - sudo service docker start
+
+        - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        - docker buildx create --name xbuilder --use
+
+        - echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+      deploy:
+        provider: script
+        skip_cleanup: true
+        on:
+          tags: true
+
+        script: >-
+          cd /tmp/image
+          && tar xf context.tar
+          && docker buildx build --progress plain --platform $DOCKER_PLATFORM --push -t ${TARGET_IMAGE}:${TRAVIS_TAG} -t ${TARGET_IMAGE}:latest .

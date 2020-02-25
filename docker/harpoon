@@ -5,7 +5,7 @@ import pkg_resources
 
 from venvstarter import ignite
 ignite(__file__, "harpoon"
-    , deps = ["docker-harpoon==0.15.1"]
+    , deps = ["docker-harpoon==0.16.1"]
     , env = {"HARPOON_CONFIG": "{venv_parent}/harpoon.yml"}
     , min_python_version = 3.6
     )
