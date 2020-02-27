@@ -3,7 +3,7 @@
 Changelog
 =========
 
-0.6.2 - TBD
+0.6.2 - 27 February 2020
   * Updated lifx-photons-core
   * Added ``transform_options`` to the ``transform`` comannd. 
 
