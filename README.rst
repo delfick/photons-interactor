@@ -30,9 +30,31 @@ If you're not on a mac and want to run via a docker container, you can say::
         --restart=always \
         --net=host \
         -e TZ=Australia/Melbourne \
-        delfick/photons-interactor:0.6.1
+        delfick/photons-interactor:0.6.2
 
 Replace `Australia/Melbourne` with the correct `TZ database name <https://en.wikipedia.org/wiki/List_of_tz_database_time_zones>`_ for your timezone.
+
+If you want custom options then I suggest having a folder that looks like::
+
+    custominteractor/
+        interactor.yml
+        Dockerfile
+
+Where the docker file says::
+
+   FROM delfick/photons-interactor:0.6.2
+   ADD interactor.yml /project/interactor.yml
+
+Then run::
+
+    $ cd custominteractor
+    $ docker build . -t custominteractor
+
+    # Run the docker command mentioned above but say "custominteractor"
+    # instead of "delfick/photons-interactor:0.6.2"
+
+Also, with many thanks to @Djelibeybi this docker image will work on many
+architectures, including a Raspberry Pi!
 
 Running from the code
 ---------------------
