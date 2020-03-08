@@ -34,15 +34,16 @@ async def serve(collector, **kwargs):
     await migrate(collector, extra="upgrade head")
 
     options = conf["interactor"]
-    await Server(conf["photons_app"].final_future).serve(
-        options.host,
-        options.port,
-        conf["interactor"],
-        conf["photons_app"].cleaners,
-        conf["target_register"],
-        conf["protocol_register"],
-        conf["animation_options"],
-    )
+    with conf["photons_app"].using_graceful_future() as final_future:
+        await Server(final_future).serve(
+            options.host,
+            options.port,
+            conf["interactor"],
+            conf["photons_app"].cleaners,
+            conf["target_register"],
+            conf["protocol_register"],
+            conf["animation_options"],
+        )
 
 
 @an_action(label="Interactor")

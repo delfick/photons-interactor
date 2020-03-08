@@ -14,7 +14,7 @@ setup(
 
     , install_requires =
       [ "delfick_project==0.7.3"
-      , "lifx-photons-core==0.24.7"
+      , "lifx-photons-core==0.25.0"
       , "tornado==5.1.1"
       , "SQLAlchemy==1.3.3"
       , "alembic==1.3.2"
