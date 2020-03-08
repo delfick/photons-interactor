@@ -9,13 +9,13 @@ from photons_app import helpers as hp
 
 from delfick_project.addons import addon_hook
 from delfick_project.norms import sb
-from functools import partial
 import pkg_resources
 import subprocess
 import logging
 import asyncio
 import shlex
 import time
+import sys
 import os
 
 log = logging.getLogger("photons_interactor.addon")
@@ -100,40 +100,44 @@ async def npm(collector, reference, **kwargs):
         final_future = collector.configuration["photons_app"].final_future
 
         t = None
-        try:
-            collector.configuration["interactor"].host = "127.0.0.1"
-            collector.configuration["interactor"].port = port
-            collector.configuration["interactor"].fake_devices = True
-            collector.configuration["interactor"].database.uri = "sqlite:///:memory:"
+        collector.configuration["interactor"].host = "127.0.0.1"
+        collector.configuration["interactor"].port = port
+        collector.configuration["interactor"].fake_devices = True
+        collector.configuration["interactor"].database.uri = "sqlite:///:memory:"
 
-            t = hp.async_as_background(serve(collector))
+        t = hp.async_as_background(serve(collector))
 
-            start = time.time()
-            while time.time() - start < 5:
-                if port_connected(port):
-                    break
-                await asyncio.sleep(0.01)
+        start = time.time()
+        while time.time() - start < 5:
+            if port_connected(port):
+                break
+            await asyncio.sleep(0.01)
 
-            if not port_connected(port):
-                raise PhotonsAppError("Failed to start server for tests")
+        if not port_connected(port):
+            raise PhotonsAppError("Failed to start server for tests")
 
-            loop = asyncio.get_event_loop()
+        loop = asyncio.get_event_loop()
+
+        def doit():
             if os.environ.get("NO_BUILD_ASSETS") != "1":
                 log.info("Building assets")
-                await loop.run_in_executor(None, partial(assets.run, "run-script", "build"))
+                assets.run("run-script", "build")
 
             log.info("Running cypress")
-            await loop.run_in_executor(
-                None, partial(assets.run, "run-script", f"cypress:{typ}", extra_env=env)
-            )
-        except Exception as error:
-            if not final_future.done():
-                final_future.set_exception(error)
+            assets.run("run-script", f"cypress:{typ}", extra_env=env)
+
+        try:
+            await loop.run_in_executor(None, doit)
         finally:
-            if not final_future.done():
-                final_future.set_result(None)
-            if t:
-                await t
+            exc_info = sys.exc_info()
+            photons_app = collector.configuration["photons_app"]
+
+            if exc_info[1]:
+                photons_app.graceful_final_future.set_exception(exc_info[1])
+            else:
+                photons_app.graceful_final_future.set_result(None)
+
+            await t
 
     try:
         if reference == "install":
