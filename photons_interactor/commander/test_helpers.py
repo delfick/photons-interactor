@@ -126,10 +126,21 @@ strip2 = FakeDevice(
     + [CollectionResponder(group=group_three, location=location_two)],
 )
 
+candle = FakeDevice(
+    "d073d5000007",
+    chp.default_responders(
+        Products.LCM3_CANDLE,
+        label="pretty",
+        power=65535,
+        firmware=chp.Firmware(3, 50, 1562659776000000000),
+    )
+    + [CollectionResponder(group=group_three, location=location_two)],
+)
+
 
 class Fakery:
     def __init__(self):
-        self.devices = [a19_1, a19_2, color1000, white800, strip1, strip2]
+        self.devices = [a19_1, a19_2, color1000, white800, strip1, strip2, candle]
 
     def for_attribute(self, key, value, expect=1):
         got = []
@@ -292,6 +303,23 @@ discovery_response = {
         "saturation": Around(0.5),
         "serial": "d073d5000006",
     },
+    "d073d5000007": {
+        "brightness": 1.0,
+        "cap": ["color", "matrix", "not_chain", "not_ir", "not_multizone", "variable_color_temp"],
+        "firmware_version": "3.50",
+        "group_id": mock.ANY,
+        "group_name": "desk",
+        "hue": 0.0,
+        "kelvin": 3500,
+        "label": "pretty",
+        "location_id": mock.ANY,
+        "location_name": "Work",
+        "power": "on",
+        "product_id": 57,
+        "product_identifier": "lifx_candle",
+        "saturation": 1.0,
+        "serial": "d073d5000007",
+    },
 }
 
 light_state_responses = {
@@ -368,6 +396,18 @@ light_state_responses = {
             "pkt_name": "LightState",
             "pkt_type": 107,
         },
+        "d073d5000007": {
+            "payload": {
+                "brightness": 1.0,
+                "hue": 0.0,
+                "kelvin": 3500,
+                "label": "pretty",
+                "power": 65535,
+                "saturation": 1.0,
+            },
+            "pkt_name": "LightState",
+            "pkt_type": 107,
+        },
     }
 }
 
@@ -383,6 +423,7 @@ label_state_responses = {
         "d073d5000004": {"payload": {"label": "lamp"}, "pkt_name": "StateLabel", "pkt_type": 25},
         "d073d5000005": {"payload": {"label": "desk"}, "pkt_name": "StateLabel", "pkt_type": 25},
         "d073d5000006": {"payload": {"label": "tv"}, "pkt_name": "StateLabel", "pkt_type": 25},
+        "d073d5000007": {"payload": {"label": "pretty"}, "pkt_name": "StateLabel", "pkt_type": 25},
     }
 }
 

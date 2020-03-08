@@ -1,5 +1,6 @@
-from photons_interactor.commander.commands.animations import *  # noqa
-from photons_interactor.commander.commands.control import *  # noqa
-from photons_interactor.commander.commands.scenes import *  # noqa
-from photons_interactor.commander.commands.tiles import *  # noqa
-from photons_interactor.commander.commands.base import *  # noqa
+import os
+
+for filename in os.listdir(os.path.dirname(__file__)):
+    if not filename.startswith("_") and filename.endswith(".py"):
+        name = filename[:-3]
+        __import__(f"photons_interactor.commander.commands.{name}")

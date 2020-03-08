@@ -102,7 +102,7 @@ describe "Control Commands":
         results = cthp.light_state_responses["results"]
         expected = {
             device.serial: results[device.serial]
-            for device in fake.for_attribute("power", 65535, expect=5)
+            for device in fake.for_attribute("power", 65535, expect=6)
         }
         await runner.assertPUT(
             asserter,
@@ -317,12 +317,8 @@ describe "Control Commands":
                 )
             else:
                 device_reset = Parser.color_to_msg(
-                            "blue",
-                            overrides={
-                                "brightness": 0,
-                                "res_required": False,
-                            },
-                        )
+                    "blue", overrides={"brightness": 0, "res_required": False,},
+                )
                 device_reset.set_hue = 0
                 device_reset.set_saturation = 0
                 device_reset.set_kelvin = 0
