@@ -5,6 +5,7 @@ Changelog
 
 0.6.3 - TBD
   * Added ``effects/run``, ``effects/stop`` and ``effects/status`` commands
+  * Added ``power_toggle`` command
 
 0.6.2 - 27 February 2020
   * Updated lifx-photons-core

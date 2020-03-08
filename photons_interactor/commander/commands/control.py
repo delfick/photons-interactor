@@ -2,7 +2,7 @@ from photons_interactor.commander import default_fields as df
 from photons_interactor.commander import helpers as chp
 from photons_interactor.commander.store import store
 
-from photons_control.transform import Transformer
+from photons_control.transform import Transformer, PowerToggle
 
 from delfick_project.norms import dictobj, sb
 
@@ -63,6 +63,35 @@ class QueryCommand(store.Command):
         msg = chp.make_message(self.protocol_register, self.pkt_type, self.pkt_args)
         script = self.target.script(msg)
         return await chp.run(script, fltr, self.finder, message_timeout=self.timeout)
+
+
+@store.command(name="power_toggle")
+class PowerToggleCommand(store.Command):
+    """
+    Toggle the power of the lights you specify
+    """
+
+    finder = store.injected("finder")
+    target = store.injected("targets.lan")
+
+    matcher = df.matcher_field
+    timeout = df.timeout_field
+    refresh = df.refresh_field
+
+    duration = dictobj.NullableField(sb.float_spec)
+
+    async def execute(self):
+        fltr = chp.filter_from_matcher(self.matcher, self.refresh)
+
+        kwargs = {}
+        if self.duration:
+            kwargs["duration"] = self.duration
+        msg = PowerToggle(**kwargs)
+
+        script = self.target.script(msg)
+        return await chp.run(
+            script, fltr, self.finder, add_replies=False, message_timeout=self.timeout
+        )
 
 
 @store.command(name="transform")

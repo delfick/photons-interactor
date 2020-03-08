@@ -3,7 +3,7 @@
 from photons_interactor.commander.store import store, load_commands
 from photons_interactor.commander import test_helpers as cthp
 
-from photons_messages import DeviceMessages
+from photons_messages import DeviceMessages, LightMessages
 from photons_colour import Parser
 
 import pytest
@@ -205,6 +205,34 @@ describe "Control Commands":
         for device in fake.devices:
             if device is not kitchen_light:
                 device.expect_no_set_messages()
+
+    async it "has power_toggle command", fake, runner, asserter:
+        expected = {"results": {device.serial: "ok" for device in fake.devices}}
+
+        await runner.assertPUT(
+            asserter, "/v1/lifx/command", {"command": "power_toggle"}, json_output=expected,
+        )
+
+        for device in fake.devices:
+            if device.serial == "d073d5000001":
+                device.compare_received_set([LightMessages.SetLightPower(level=65535, duration=1)])
+            else:
+                device.compare_received_set([LightMessages.SetLightPower(level=0, duration=1)])
+            device.reset_received()
+
+        await runner.assertPUT(
+            asserter,
+            "/v1/lifx/command",
+            {"command": "power_toggle", "args": {"duration": 2}},
+            json_output=expected,
+        )
+
+        for device in fake.devices:
+            if device.serial == "d073d5000001":
+                device.compare_received_set([LightMessages.SetLightPower(level=0, duration=2)])
+            else:
+                device.compare_received_set([LightMessages.SetLightPower(level=65535, duration=2)])
+            device.reset_received()
 
     async it "has transform command", fake, runner, asserter:
         # Just power
