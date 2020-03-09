@@ -153,6 +153,9 @@ class StopEffectCommand(EffectCommand):
 
 @store.command(name="effects/status")
 class StatusEffectCommand(store.Command):
+    """
+    Returns the current status of effects on devices that support them
+    """
     finder = store.injected("finder")
     target = store.injected("targets.lan")
 
