@@ -9,6 +9,9 @@ from delfick_project.norms import dictobj, sb
 
 @store.command(name="status")
 class StatusCommand(store.Command):
+    """
+    Return "on": true
+    """
     async def execute(self):
         return {"on": True}
 
