@@ -1,3 +1,9 @@
+Deprecated
+==========
+
+This project has been deprecated in favour of
+https://photons.delfick.com/apps/interactor/index.html
+
 Photons Interactor
 ==================
 

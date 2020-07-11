@@ -3,6 +3,10 @@
 Changelog
 =========
 
+0.6.4 - 11 July 2020
+  * This project now lives under
+    https://photons.delfick.com/apps/interactor/index.html
+
 0.6.3 - 8 March 2020
   * Added ``effects/run``, ``effects/stop`` and ``effects/status`` commands
   * Added ``power_toggle`` command
